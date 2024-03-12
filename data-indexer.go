@@ -112,37 +112,3 @@ func updateBRC20State(root verkle.VerkleNode, stateDiff []BRC20StateDiff, prevSi
 	duration := endTime.Sub(startTime)
 	return size, duration
 }
-
-// Entry function of Demo A, return an array contains the global key number, update key number and update time of each block
-func indexBRC20Database(initBlockHeight uint, blockNum uint, startBlockHeight uint) []BlockStatsData {
-	db := ConnectDatabase()
-	stateRoot, initKeyNum, initTime := initBRC20State(db, startBlockHeight, initBlockHeight)
-
-	var res []BlockStatsData
-	totalGlobalKeyNum, totalUpdateKeyNum, totalUpdateTime := 0, 0, time.Duration(0)
-	globalKeyNum := initKeyNum
-	var updateTime time.Duration
-	for i := initBlockHeight + 1; i <= initBlockHeight+blockNum; i += 1 {
-		stateDiff, updateKeyNum := getBRC20StateDiff(db, i)
-		globalKeyNum, updateTime = updateBRC20State(stateRoot, stateDiff, globalKeyNum)
-		totalUpdateKeyNum += updateKeyNum
-		totalGlobalKeyNum += globalKeyNum
-		totalUpdateTime += updateTime
-		res = append(res, BlockStatsData{
-			Height:       i,
-			GlobalKeyNum: globalKeyNum,
-			UpdateKeyNum: updateKeyNum,
-			UpdateTime:   updateTime,
-		})
-	}
-
-	avgGlobalKeyNum := float64(totalGlobalKeyNum) / float64(blockNum)
-	avgUpdateKeyNum := float64(totalUpdateKeyNum) / float64(blockNum)
-	avgUpdateTime := time.Duration(float64(totalUpdateTime) / float64(blockNum))
-	log.Println("Initial Global Key Number: ", initKeyNum)
-	log.Println("Average Global Key Number: ", avgGlobalKeyNum)
-	log.Println("Average Update Key Number: ", avgUpdateKeyNum)
-	log.Println("Initialize Verkle Tree Time: ", initTime)
-	log.Println("Average Update Verkle Tree Time: ", avgUpdateTime)
-	return res
-}

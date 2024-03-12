@@ -337,12 +337,12 @@ func compareServerToOPI(db *gorm.DB, endHeight uint) bool {
 			res, _ := stateRoot.Get([]byte(k), nodeResolveFn)
 			if len(res) == 0 {
 				log.Println("[No such key at height] ", height)
-				log.Println("[No such key]: ", debug[k])
+				log.Println("[No such key]: ", debug_dict[k])
 				return false
 			}
 			if !bytes.Equal(res, v) {
 				log.Println("[Inconsistent at height] ", height)
-				log.Println("[Inconsistent at key]: ", debug[k])
+				log.Println("[Inconsistent at key]: ", debug_dict[k])
 				log.Println("[value from tree]: ", convertByteToInt(res))
 				log.Println("[value from opi]: ", convertByteToInt(v))
 				return false
@@ -353,12 +353,12 @@ func compareServerToOPI(db *gorm.DB, endHeight uint) bool {
 			res, _ := stateRoot.Get([]byte(k), nodeResolveFn)
 			if len(res) == 0 {
 				log.Println("[Tick: No such key at height] ", height)
-				log.Println("[Tick: No such key]: ", debug[k])
+				log.Println("[Tick: No such key]: ", debug_dict[k])
 				return false
 			}
 			if !bytes.Equal(res, v) {
 				log.Println("[Tick: Inconsistent at height] ", height)
-				log.Println("[Tick: Inconsistent at key]: ", debug[k])
+				log.Println("[Tick: Inconsistent at key]: ", debug_dict[k])
 				log.Println("[Tick: value from tree]: ", convertByteToInt(res))
 				log.Println("[Tick: value from opi]: ", convertByteToInt(v))
 				return false

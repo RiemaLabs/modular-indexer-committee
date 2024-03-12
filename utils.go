@@ -5,74 +5,48 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
+	"net"
+	"net/http"
+	"os"
 	"strings"
 	"unicode"
-	"io"
-	"net/http"
-	"net"
-	"mime/multipart"
-	"os"
-	"log"
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
 	"gorm.io/gorm"
 )
 
-var debug = make(map[string]string)
-
-type OrdTransfer struct {
-	ID            uint
-	InscriptionID string
-	OldSatpoint   string
-	NewPkscript   string
-	NewWallet     string
-	SentAsFee     bool
-	Content       []byte
-	ContentType   string
-}
-
-type BRC20Tickers struct {
-	Tick            string
-	RemainingSupply string
-	LimitPerMint    string
-	Decimals        string
-}
-
-type Event struct {
-	SourcePkScript string
-	SourceWallet   string
-	Tick           string
-	Amount         *uint256.Int
-	UsingTxId      string
-}
+var debug_dict = make(map[string]string)
 
 func getMACAddress() string {
-    interfaces, err := net.Interfaces()
-    if err != nil {
-        log.Fatal(err)
-    }
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    for _, iface := range interfaces {
-        // Skip down interface
-        if iface.Flags&net.FlagUp == 0 {
-            continue
-        }
-        // Skip loopback interface
-        if iface.Flags&net.FlagLoopback != 0 {
-            continue
-        }
-        // Get the MAC address
-        mac := iface.HardwareAddr
-        if len(mac) == 0 {
-            continue
-        }
-        // Return the first MAC address found
-        return mac.String()
-    }
+	for _, iface := range interfaces {
+		// Skip down interface
+		if iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		// Skip loopback interface
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		// Get the MAC address
+		mac := iface.HardwareAddr
+		if len(mac) == 0 {
+			continue
+		}
+		// Return the first MAC address found
+		return mac.String()
+	}
 
-    // Return empty string if no MAC address was found
-    return ""
+	// Return empty string if no MAC address was found
+	return ""
 }
 
 func uploadFile(filePath, targetURL string) error {
@@ -314,17 +288,17 @@ func getStateDiff(db *gorm.DB, blockHeight uint) map[string][]byte {
 	for _, diff := range diffBalances {
 		availableBalance := uint256.MustFromDecimal(diff.AvailableBalance)
 		diffState[string(getHash("available-balance", diff.Tick, diff.Pkscript))] = convertIntToByte(availableBalance)
-		debug[string(getHash("available-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", available-balance"
+		debug_dict[string(getHash("available-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", available-balance"
 		walletAddrByte, _ := decodeBitcoinAddress(diff.Wallet)
 		walletAddr := string(walletAddrByte)
 		diffState[string(getHash("available-balance", diff.Tick, walletAddr))] = convertIntToByte(availableBalance)
-		debug[string(getHash("available-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", available-balance"
+		debug_dict[string(getHash("available-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", available-balance"
 
 		overallBalance := uint256.MustFromDecimal(diff.OverallBalance)
 		diffState[string(getHash("overall-balance", diff.Tick, diff.Pkscript))] = convertIntToByte(overallBalance)
-		debug[string(getHash("overall-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", overall-balance"
+		debug_dict[string(getHash("overall-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", overall-balance"
 		diffState[string(getHash("overall-balance", diff.Tick, walletAddr))] = convertIntToByte(overallBalance)
-		debug[string(getHash("overall-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", overall-balance"
+		debug_dict[string(getHash("overall-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", overall-balance"
 	}
 	return diffState
 }
@@ -357,9 +331,9 @@ func getDeployedTicksAtHeight(db *gorm.DB, blockHeight uint) map[string][]byte {
 		diffState[string(keyLPM)] = convertIntToByte(limitPerMint)
 		diffState[string(keyD)] = convertIntToByte(decimals)
 
-		debug[string(keyTick)] = tick + ", existence"
-		debug[string(keyLPM)] = tick + ", limit per mint"
-		debug[string(keyD)] = tick + ", decimals"
+		debug_dict[string(keyTick)] = tick + ", existence"
+		debug_dict[string(keyLPM)] = tick + ", limit per mint"
+		debug_dict[string(keyD)] = tick + ", decimals"
 	}
 	return diffState
 }

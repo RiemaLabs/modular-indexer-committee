@@ -1,0 +1,23 @@
+{
+    "database": {
+        "host": "127.0.0.1",
+        "user": "postgres",
+        "password": "postgres",
+        "dbname": "postgres",
+        "port": "5432"
+    },
+    "report": {
+        "method": "s3",        
+        "uniqueID": "0",
+        "s3": {
+            "bucket": "",
+            "accessKey": ""
+        },
+        "da": {}
+    },
+    "bitcoinRPC": {
+        "url": "",
+        "username": "",
+        "password": ""
+    }
+}

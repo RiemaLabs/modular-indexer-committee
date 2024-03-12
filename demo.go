@@ -13,7 +13,6 @@ import (
 	uint256 "github.com/holiman/uint256"
 
 	"gorm.io/datatypes"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -49,16 +48,6 @@ type BRC20Events struct {
 }
 
 var nodeResolveFn verkle.NodeResolverFn = nil
-
-func ConnectDatabase() *gorm.DB {
-	dsn := "host=127.0.0.1 user=postgres password=170501 dbname=postgres port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	return db
-}
 
 func convertToNoIDStruct(balancesWithID []BRC20HistoricBalances) []BRC20HistoricBalancesNoID {
 	var balancesNoID []BRC20HistoricBalancesNoID
