@@ -1,175 +1,46 @@
 package main
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"log"
-	"mime/multipart"
-	"net"
-	"net/http"
-	"os"
 	"strings"
 	"unicode"
 
+	base58 "github.com/btcsuite/btcd/btcutil/base58"
+	bech32 "github.com/btcsuite/btcd/btcutil/bech32"
+
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
-	"gorm.io/gorm"
+	"golang.org/x/crypto/sha3"
 )
 
-var debug_dict = make(map[string]string)
+var nodeResolveFn verkle.NodeResolverFn = nil
 
-func getMACAddress() string {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, iface := range interfaces {
-		// Skip down interface
-		if iface.Flags&net.FlagUp == 0 {
-			continue
-		}
-		// Skip loopback interface
-		if iface.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-		// Get the MAC address
-		mac := iface.HardwareAddr
-		if len(mac) == 0 {
-			continue
-		}
-		// Return the first MAC address found
-		return mac.String()
-	}
-
-	// Return empty string if no MAC address was found
-	return ""
-}
-
-func uploadFile(filePath, targetURL string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// create a buffer for multipart writting器
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// create the table
-	part, err := writer.CreateFormFile("file", filePath)
-	if err != nil {
-		return err
-	}
-
-	// read from the file
-	_, err = io.Copy(part, file)
-	if err != nil {
-		return err
-	}
-
-	// close the writer
-	err = writer.Close()
-	if err != nil {
-		return err
-	}
-
-	// create request
-	request, err := http.NewRequest("POST", targetURL, body)
-	if err != nil {
-		return err
-	}
-
-	// set up the header and content type
-	request.Header.Set("Content-Type", writer.FormDataContentType())
-
-	// send request
-	client := &http.Client{}
-	resp, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// check if sending is successful
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Server False: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func getMaxBlockHeight() (uint, error) {
-	// API URL to get the latest block height
-	// resp, err := http.Get("https://blockchain.info/latestblock")
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// defer resp.Body.Close()
-
-	// body, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return 0, err
-	// }
-
-	// var result struct {
-	// 	Height int `json:"height"`
-	// }
-
-	// if err = json.Unmarshal(body, &result); err != nil {
-	// 	return 0, err
-	// }
-
-	// return uint(result.Height), nil
-	return 831947, nil
-}
-
-func getBlockHash(blockHeight uint) (string, error) {
-	// API URL to get the block hash
-	resp, err := http.Get(fmt.Sprintf("https://blockchain.info/block-height/%d?format=json", blockHeight))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var result struct {
-		Blocks []struct {
-			Hash string `json:"hash"`
-		} `json:"blocks"`
-	}
-
-	if err = json.Unmarshal(body, &result); err != nil {
-		return "", err
-	}
-
-	if len(result.Blocks) > 0 {
-		return result.Blocks[0].Hash, nil
-	}
-
-	return "", fmt.Errorf("no blocks found at height %d", blockHeight)
+func convertIntToByte(i *uint256.Int) []byte {
+	var dest [32]byte
+	i.WriteToArray32(&dest)
+	return dest[:]
 }
 
 func convertByteToInt(b []byte) *uint256.Int {
 	return uint256.NewInt(0).SetBytes(b)
 }
 
-func convertStringTo32Byte(s string) []byte {
-	var b [32]byte
-	copy(b[:], s)
-	return b[:]
-}
-
-func convert32ByteToString(b []byte) string {
-	return string(b)
+// Get hash value by keccak256(“available_balance” + “keccak256("tick_name")” + "keccak256("wallet_address")")
+func getHash(prefix string, tick string, pkScript string) []byte {
+	prefixBytes := []byte(prefix)
+	tickData := []byte(tick)
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write(tickData)
+	tickHash := hasher.Sum(nil)
+	pkScriptData := []byte(pkScript)
+	hasher = sha3.NewLegacyKeccak256()
+	hasher.Write(pkScriptData)
+	pkScriptHash := hasher.Sum(nil)
+	hasher = sha3.NewLegacyKeccak256()
+	hasher.Write(append(append(prefixBytes, tickHash...), pkScriptHash...))
+	return hasher.Sum(nil)
 }
 
 func getTickHash(tick string) ([]byte, []byte, []byte, []byte) {
@@ -276,105 +147,40 @@ func getLimit() *uint256.Int {
 	return result
 }
 
-func getStateDiff(db *gorm.DB, blockHeight uint) map[string][]byte {
-	var diffBalances []BRC20HistoricBalances
-	sql := `
-		SELECT * FROM public.brc20_historic_balances where block_height = ?
-		ORDER BY id ASC
-		`
-	db.Raw(sql, blockHeight).Scan(&diffBalances)
-
-	diffState := make(map[string][]byte)
-	for _, diff := range diffBalances {
-		availableBalance := uint256.MustFromDecimal(diff.AvailableBalance)
-		diffState[string(getHash("available-balance", diff.Tick, diff.Pkscript))] = convertIntToByte(availableBalance)
-		debug_dict[string(getHash("available-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", available-balance"
-		walletAddrByte, _ := decodeBitcoinAddress(diff.Wallet)
-		walletAddr := string(walletAddrByte)
-		diffState[string(getHash("available-balance", diff.Tick, walletAddr))] = convertIntToByte(availableBalance)
-		debug_dict[string(getHash("available-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", available-balance"
-
-		overallBalance := uint256.MustFromDecimal(diff.OverallBalance)
-		diffState[string(getHash("overall-balance", diff.Tick, diff.Pkscript))] = convertIntToByte(overallBalance)
-		debug_dict[string(getHash("overall-balance", diff.Tick, diff.Pkscript))] = diff.Tick + ", pkscript: " + diff.Pkscript + ", overall-balance"
-		diffState[string(getHash("overall-balance", diff.Tick, walletAddr))] = convertIntToByte(overallBalance)
-		debug_dict[string(getHash("overall-balance", diff.Tick, walletAddr))] = diff.Tick + ", wallet: " + diff.Wallet + ", overall-balance"
+func decodeBitcoinAddress(address string) ([]byte, error) {
+	hrp, data, errBech32 := bech32.Decode(address)
+	if errBech32 == nil && hrp == "bc" {
+		// 32 bytes or 20 bytes
+		decoded, err := bech32.ConvertBits(data[1:], 5, 8, false)
+		if err != nil {
+			return nil, err
+		}
+		decoded, _ = padTo32Bytes(decoded)
+		return decoded, nil
 	}
-	return diffState
+
+	decoded := base58.Decode(address)
+	if len(decoded) > 0 {
+		decoded, _ = padTo32Bytes(decoded)
+		return decoded, nil
+	}
+
+	return nil, errors.New("invalid or unsupported bitcoin address format")
 }
 
-func getGlobalState(db *gorm.DB, blockHeight uint) []BRC20StateDiff {
-	var diffBalances []BRC20HistoricBalances
-	db.Where("block_height <= ?", blockHeight).Unscoped().Find(&diffBalances)
-	var diffState []BRC20StateDiff
-	for _, diff := range diffBalances {
-		availableBalance := uint256.MustFromDecimal(diff.AvailableBalance)
-		diffState = append(diffState, BRC20StateDiff{
-			Key:   string(getHash("available-balance", diff.Tick, diff.Pkscript)),
-			Value: convertIntToByte(availableBalance),
-		})
+// padTo32Bytes takes a byte slice and, if it's shorter than 32 bytes, pads it with zeros until it reaches 32 bytes in length.
+func padTo32Bytes(data []byte) ([]byte, error) {
+	if len(data) > 32 {
+		return nil, errors.New("data length greater than 32 bytes")
 	}
-	return diffState
-}
-
-func getDeployedTicksAtHeight(db *gorm.DB, blockHeight uint) map[string][]byte {
-	var deployedTicks []BRC20Tickers
-	db.Where("block_height=?", blockHeight).Unscoped().Find(&deployedTicks)
-	diffState := make(map[string][]byte)
-	for _, deployedTick := range deployedTicks {
-		tick, _, limitPerMintString, decimalsString := deployedTick.Tick, deployedTick.RemainingSupply, deployedTick.LimitPerMint, deployedTick.Decimals
-		keyTick, _, keyLPM, keyD := getTickHash(tick)
-
-		limitPerMint := uint256.MustFromDecimal(limitPerMintString)
-		decimals := uint256.MustFromDecimal(decimalsString)
-		diffState[string(keyTick)] = convertIntToByte(uint256.NewInt(0))
-		diffState[string(keyLPM)] = convertIntToByte(limitPerMint)
-		diffState[string(keyD)] = convertIntToByte(decimals)
-
-		debug_dict[string(keyTick)] = tick + ", existence"
-		debug_dict[string(keyLPM)] = tick + ", limit per mint"
-		debug_dict[string(keyD)] = tick + ", decimals"
+	if len(data) == 32 {
+		return data, nil // Already 32 bytes, no padding needed.
 	}
-	return diffState
-}
-
-func getDeployedTicks(db *gorm.DB, blockHeight uint) []BRC20StateDiff {
-	var deployedTicks []BRC20Tickers
-	db.Where("block_height<?", blockHeight).Unscoped().Find(&deployedTicks)
-	var diffState []BRC20StateDiff
-	for _, deployedTick := range deployedTicks {
-		tick, remainingSupplyString, limitPerMintString, decimalsString := deployedTick.Tick, deployedTick.RemainingSupply, deployedTick.LimitPerMint, deployedTick.Decimals
-		keyTick, keyRS, keyLPM, keyD := getTickHash(tick)
-		remainingSupply, err := uint256.FromDecimal(remainingSupplyString)
-		if err != nil {
-			continue
-		}
-		limitPerMint, err := uint256.FromDecimal(limitPerMintString)
-		if err != nil {
-			continue
-		}
-		decimals, err := uint256.FromDecimal(decimalsString)
-		if err != nil {
-			continue
-		}
-		diffState = append(diffState, BRC20StateDiff{
-			Key:   string(keyTick),
-			Value: convertIntToByte(uint256.NewInt(0)),
-		})
-		diffState = append(diffState, BRC20StateDiff{
-			Key:   string(keyRS),
-			Value: convertIntToByte(remainingSupply),
-		})
-		diffState = append(diffState, BRC20StateDiff{
-			Key:   string(keyLPM),
-			Value: convertIntToByte(limitPerMint),
-		})
-		diffState = append(diffState, BRC20StateDiff{
-			Key:   string(keyD),
-			Value: convertIntToByte(decimals),
-		})
-	}
-	return diffState
+	// Create a slice of 32 bytes and copy the data into the beginning of it.
+	paddedData := make([]byte, 32)
+	copy(paddedData, data)
+	// The rest will automatically be zeros, as make initializes slice elements to the zero value of the element type.
+	return paddedData, nil
 }
 
 func getValueOrZero(stateRoot verkle.VerkleNode, key []byte) *uint256.Int {
