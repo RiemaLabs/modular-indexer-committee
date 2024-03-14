@@ -21,6 +21,8 @@
         "password": ""
     },
     "service": {
-        
+        "url": "",
+        "name": "",
+        "metaProtocol": "brc-20"
     }
 }
