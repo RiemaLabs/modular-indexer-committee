@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
 	"runtime/debug"
@@ -9,6 +10,113 @@ import (
 
 	"github.com/ethereum/go-verkle"
 )
+
+func catchupStage(getter BitcoinGetter, arguments *RuntimeArguments) (*StateQueue, error) {
+	// Fetch the latest block height.
+	latestHeight, err := getter.GetLatestBlockHeight()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// New queue from the scratch.
+
+	cachePath := ".cache"
+	curHeight := BRC20StartHeight - 1
+	stateRoot := verkle.New()
+	state := State{
+		root:   stateRoot,
+		kv:     make(KeyValueMap),
+		height: curHeight,
+		hash:   "",
+	}
+
+	if arguments.EnableStateRootCache {
+		storedState, err := DeserializeLatestState(cachePath)
+		if err != nil {
+			log.Printf("Warning for loading stateRoot %v\n", err)
+		}
+		if storedState != nil {
+			state = *storedState
+			curHeight = state.height
+		}
+	}
+
+	catchupHeight := latestHeight - BitcoinConfirmations
+
+	if catchupHeight > curHeight {
+		// TODO: Refine the catchup performance by batching query.
+		log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, catchupHeight)
+
+		for i := curHeight; i <= catchupHeight; i++ {
+			ordTransfer, err := getter.GetOrdTransfers(i)
+			if err != nil {
+				return nil, err
+			}
+			state = processOrdTransfer(state, ordTransfer)
+			if i%1000 == 0 {
+				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
+				if arguments.EnableStateRootCache {
+					err := state.SerializeToFile(cachePath)
+					if err != nil {
+						log.Printf("Warning for saving stateRoot %v\n", err)
+					}
+				}
+			}
+			state.height += 1
+		}
+	} else if catchupHeight == curHeight {
+		// stateRoot is located at catchupHeight.
+	} else if catchupHeight < curHeight {
+		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
+	}
+	return NewQueues(getter, state, false, catchupHeight+1)
+}
+
+func serviceStage(getter BitcoinGetter, arguments *RuntimeArguments, queue *StateQueue) {
+	// Provide service
+	var history = make(map[uint]map[string]bool)
+
+	for {
+		curHeight := queue.LastestHeight()
+		latestHeight, err := getter.GetLatestBlockHeight()
+		if err != nil {
+			log.Fatalf("Failed to get the latest block height: %v", err)
+		}
+
+		if curHeight < latestHeight {
+			queue.Lock()
+			err := queue.Update(getter, queue.State(curHeight), latestHeight)
+			queue.Unlock()
+			if err != nil {
+				log.Fatalf("Failed to update the queue: %v", err)
+			}
+		}
+
+		queue.Lock()
+		reorgHeight, err := queue.CheckForReorg(getter)
+
+		if err != nil {
+			log.Fatalf("Failed to check the reorganization: %v", err)
+		}
+
+		if reorgHeight != 0 {
+			err := queue.Update(getter, queue.State(reorgHeight), latestHeight)
+			if err != nil {
+				log.Fatalf("Failed to update the queue: %v", err)
+			}
+		}
+		queue.Unlock()
+
+		if arguments.EnableService {
+			for i := 0; i <= len(queue.states)-1; i++ {
+				go UploadCheckpoint(history, GlobalConfig, queue.states[i].Checkpoint(GlobalConfig))
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
+}
 
 func main() {
 
@@ -43,77 +151,11 @@ func main() {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
 
-	// Fetch the latest block height.
-	latestHeight, err := getter.GetLatestBlockHeight()
+	queue, err := catchupStage(getter, arguments)
 
 	if err != nil {
-		log.Fatalf("Failed to get the latest block height: %v", err)
+		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
-	// New queue from the scratch.
-	// TODO: Store the stateRoot to the local disk and reload them.
-	currentLatestHeight := BRC20StartHeight - 1
-	stateRoot := verkle.New()
-
-	if latestHeight-BitcoinConfirmations > currentLatestHeight {
-		s, err := FastCatchup(getter, stateRoot, currentLatestHeight, latestHeight-BitcoinConfirmations)
-		stateRoot = s
-		if err != nil {
-			log.Fatalf("Failed to catchup the latest block height: %v", err)
-		}
-	} else if latestHeight-BitcoinConfirmations == currentLatestHeight {
-		// stateRoot is located at catchupHeight.
-	} else if latestHeight-BitcoinConfirmations < currentLatestHeight {
-		log.Fatalf("Stored stateRoot is beyond the Bitcoin confirmations.")
-	}
-
-	catchupHeight := latestHeight - BitcoinConfirmations + 1
-	queue, err := NewQueues(getter, stateRoot, false, catchupHeight)
-
-	if err != nil {
-		log.Fatalf("Failed to initial queues: %v", err)
-	}
-
-	// Provide service
-	var history = make(map[uint]map[string]bool)
-
-	for {
-		originalLatestHeight := queue.LastestHeight()
-		latestHeight, err := getter.GetLatestBlockHeight()
-		if err != nil {
-			log.Fatalf("Failed to get the latest block height: %v", err)
-		}
-
-		if originalLatestHeight < latestHeight {
-			queue.Lock()
-			err := queue.Update(getter, queue.LastestStateRoot(), originalLatestHeight, latestHeight)
-			queue.Unlock()
-			if err != nil {
-				log.Fatalf("Failed to update the queue: %v", err)
-			}
-		}
-
-		queue.Lock()
-		reorgHeight, err := queue.CheckForReorg(getter)
-
-		if err != nil {
-			log.Fatalf("Failed to check the reorganization: %v", err)
-		}
-
-		if reorgHeight != 0 {
-			err := queue.Update(getter, queue.StateRoot(reorgHeight), reorgHeight, latestHeight)
-			if err != nil {
-				log.Fatalf("Failed to update the queue: %v", err)
-			}
-		}
-		queue.Unlock()
-
-		if arguments.EnableService {
-			for i := 0; i <= len(queue.states)-1; i++ {
-				go Upload(history, GlobalConfig, queue.states[i].Checkpoint(GlobalConfig))
-			}
-		}
-
-		time.Sleep(60 * time.Second)
-	}
+	serviceStage(getter, arguments, queue)
 }

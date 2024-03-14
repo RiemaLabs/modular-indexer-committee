@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,7 +11,6 @@ import (
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
-	"golang.org/x/crypto/sha3"
 )
 
 var nodeResolveFn verkle.NodeResolverFn = nil
@@ -25,36 +23,6 @@ func convertIntToByte(i *uint256.Int) []byte {
 
 func convertByteToInt(b []byte) *uint256.Int {
 	return uint256.NewInt(0).SetBytes(b)
-}
-
-// Get hash value by keccak256(“available_balance” + “keccak256("tick_name")” + "keccak256("wallet_address")")
-func getHash(prefix string, tick string, pkScript string) []byte {
-	prefixBytes := []byte(prefix)
-	tickData := []byte(tick)
-	hasher := sha3.NewLegacyKeccak256()
-	hasher.Write(tickData)
-	tickHash := hasher.Sum(nil)
-	pkScriptData := []byte(pkScript)
-	hasher = sha3.NewLegacyKeccak256()
-	hasher.Write(pkScriptData)
-	pkScriptHash := hasher.Sum(nil)
-	hasher = sha3.NewLegacyKeccak256()
-	hasher.Write(append(append(prefixBytes, tickHash...), pkScriptHash...))
-	return hasher.Sum(nil)
-}
-
-func getTickHash(tick string) ([]byte, []byte, []byte, []byte) {
-	return getHash("", tick, "tick-exists"), getHash("", tick, "remaining-supply"), getHash("", tick, "limit-per-mint"), getHash("", tick, "decimals")
-}
-
-func getEventHash(eventType string, inscrId string) []byte {
-	// eventData := []byte(eventType)
-	// hasher := sha3.NewLegacyKeccak256()
-	// hasher.Write(eventData)
-	// tickHash := hasher.Sum(nil)
-	// hasher.Write(append([]byte(eventType), tickHash...))
-	// return hasher.Sum(nil)
-	return getHash("", eventType, inscrId)
 }
 
 func isPositiveNumber(s string, doStrip bool) bool {
@@ -133,16 +101,16 @@ func getNumberExtendedTo18Decimals(s string, decimals *uint256.Int, doStrip bool
 func getLimit() *uint256.Int {
 	two64Minus1 := uint256.NewInt(0).Sub(uint256.NewInt(0).Lsh(uint256.NewInt(1), 64), uint256.NewInt(1))
 
-	// 创建(10^18)的uint256.Int表示
+	// Create a uint256.Int representation of (10^18)
 	ten18 := uint256.NewInt(0)
 	for i := 0; i < 18; i++ {
 		ten18 = ten18.Mul(ten18, uint256.NewInt(10))
-		if i == 0 { // 初始化为10在第一次迭代
+		if i == 0 { // Initialize to 10 on the first iteration
 			ten18 = uint256.NewInt(10)
 		}
 	}
 
-	// 计算(2^64 - 1) * (10^18)
+	// Calculate (2^64 - 1) * (10^18)
 	result := uint256.NewInt(0).Mul(two64Minus1, ten18)
 	return result
 }
@@ -181,49 +149,4 @@ func padTo32Bytes(data []byte) ([]byte, error) {
 	copy(paddedData, data)
 	// The rest will automatically be zeros, as make initializes slice elements to the zero value of the element type.
 	return paddedData, nil
-}
-
-func getValueOrZero(stateRoot verkle.VerkleNode, key []byte) *uint256.Int {
-	res := uint256.NewInt(0)
-	value, _ := stateRoot.Get(key, nodeResolveFn)
-	if len(value) == 0 {
-		return res
-	}
-	return res.SetBytes(value)
-}
-
-// save decoded wallet address and pkscript
-func saveSourceWalletAndPkscript(stateRoot verkle.VerkleNode, inscrId string, sourceAddr string, pkScript string) {
-	eventKey := getEventHash("transfer-inscribe-source-wallet", inscrId)
-	stateRoot.Insert(eventKey, []byte(sourceAddr), nodeResolveFn)
-
-	length := len(pkScript)
-	prefix := []byte{byte(length)}
-	if len(pkScript)%2 == 1 {
-		pkScript += "0"
-	}
-	encodedPkscript, _ := hex.DecodeString(pkScript)
-	encodedPkscript = append(prefix, encodedPkscript...)
-	pkScriptKey1 := getEventHash("transfer-inscribe-source-pkscript-1", inscrId)
-	b1, _ := padTo32Bytes(encodedPkscript[:min(len(encodedPkscript), 32)])
-	stateRoot.Insert(pkScriptKey1, b1, nodeResolveFn)
-	if len(encodedPkscript) > 32 {
-		pkScriptKey2 := getEventHash("transfer-inscribe-source-pkscript-2", inscrId)
-		b2, _ := padTo32Bytes(encodedPkscript[32:])
-		stateRoot.Insert(pkScriptKey2, b2, nodeResolveFn)
-	}
-}
-
-// get decoded wallet address and pkscript
-func getSourceWalletAndPkscript(stateRoot verkle.VerkleNode, inscrId string) (string, string) {
-	eventKey := getEventHash("transfer-inscribe-source-wallet", inscrId)
-	sourceAddr, _ := stateRoot.Get(eventKey, nodeResolveFn)
-
-	pkScriptKey1, pkScriptKey2 := getEventHash("transfer-inscribe-source-pkscript-1", inscrId), getEventHash("transfer-inscribe-source-pkscript-2", inscrId)
-	b1, _ := stateRoot.Get(pkScriptKey1, nodeResolveFn)
-	b2, _ := stateRoot.Get(pkScriptKey2, nodeResolveFn)
-	b := append(b1, b2...)
-	length := int(b[0])
-	sourcePkscript := hex.EncodeToString(b[1:])[:length]
-	return string(sourceAddr), sourcePkscript
 }

@@ -1,10 +1,5 @@
 package main
 
-import (
-	uint256 "github.com/holiman/uint256"
-	"gorm.io/gorm"
-)
-
 type Config struct {
 	Database struct {
 		Host     string `json:"host"`
@@ -45,21 +40,6 @@ type OrdTransfer struct {
 	ContentType   string
 }
 
-type BRC20Tickers struct {
-	Tick            string
-	RemainingSupply string
-	LimitPerMint    string
-	Decimals        string
-}
-
-type Event struct {
-	SourcePkScript string
-	SourceWallet   string
-	Tick           string
-	Amount         *uint256.Int
-	UsingTxId      string
-}
-
 type Checkpoint struct {
 	URL          string
 	Name         string
@@ -70,21 +50,9 @@ type Checkpoint struct {
 	Commitment   string
 }
 
-type StateDiff struct {
+type KV struct {
 	Key   string
 	Value []byte
-}
-
-type BRC20HistoricBalances struct {
-	gorm.Model
-	ID               uint   `gorm:"primary_key;auto_increment"`
-	Pkscript         string `gorm:"type:text;not null"`
-	Wallet           string `gorm:"type:text;not null"`
-	Tick             string `gorm:"type:varchar(4);not null"`
-	OverallBalance   string `gorm:"type:numeric(40);not null"`
-	AvailableBalance string `gorm:"type:numeric(40);not null"`
-	BlockHeight      int    `gorm:"type:int;not null"`
-	EventID          int64  `gorm:"type:bigint;not null"`
 }
 
 type BitcoinGetter interface {

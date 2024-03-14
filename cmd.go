@@ -7,7 +7,12 @@ import (
 )
 
 type RuntimeArguments struct {
+	// EnableService: Provide APIs.
 	EnableService bool
+	// EnableCommittee: Upload Checkpoints.
+	EnableCommittee bool
+	// EnableStateRootCache: Store StateRoot as Cache.
+	EnableStateRootCache bool
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -22,15 +27,26 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			if arguments.EnableService {
-				fmt.Println("Service mode is enabled. Starting to provide service...")
-				// Add your service logic here
+				fmt.Println("Service mode is enabled.")
 			} else {
 				fmt.Println("Service mode is disabled.")
+			}
+			if arguments.EnableStateRootCache {
+				fmt.Println("Committee mode is enabled.")
+			} else {
+				fmt.Println("Committee mode is disabled.")
+			}
+			if arguments.EnableStateRootCache {
+				fmt.Println("StateRoot cache is enabled.")
+			} else {
+				fmt.Println("StateRoot cache is disabled.")
 			}
 		},
 	}
 
-	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to start providing service")
+	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to provide service")
+	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee indexer service")
+	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to start providing service")
 
 	return rootCmd
 }

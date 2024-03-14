@@ -30,3 +30,10 @@ go.work
 
 # Config
 config.json
+
+# Cache
+.cache/*
+
+# Debug
+__debug*
+
