@@ -36,5 +36,4 @@ config.json
 
 # Debug
 __debug*
-github.com/RiemaLabs/indexer-committee
-
+indexer-committee
