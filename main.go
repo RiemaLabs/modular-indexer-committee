@@ -13,8 +13,8 @@ import (
 	"github.com/ethereum/go-verkle"
 
 	"nubit-indexer-committee/checkpoint"
-	"nubit-indexer-committee/internal/ord"
-	"nubit-indexer-committee/internal/ord/getter"
+	"nubit-indexer-committee/ord"
+	"nubit-indexer-committee/ord/getter"
 )
 
 const cachePath = ".cache"

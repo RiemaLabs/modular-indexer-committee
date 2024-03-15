@@ -14,7 +14,7 @@ import (
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
 
-	"nubit-indexer-committee/internal/ord/getter"
+	"nubit-indexer-committee/ord/getter"
 )
 
 func (state State) Copy() State {
