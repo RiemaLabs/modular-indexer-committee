@@ -1,8 +1,62 @@
 package getter
 
-// TODO: Use the Bitcoin Block directly
+import (
+	"sync"
+
+	"github.com/btcsuite/btcd/rpcclient"
+)
+
 type BitcoinOrdGetter struct {
+	client *rpcclient.Client
 }
+
+func NewGetter(host, user, pass string) (*BitcoinOrdGetter, error) {
+	connCfg := &rpcclient.ConnConfig{
+		Host:         host,
+		User:         user,
+		Pass:         pass,
+		HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+		DisableTLS:   true, // Bitcoin core does not provide TLS by default
+	}
+	// Notice the notification parameter is nil since notifications are
+	// not supported in HTTP POST mode.
+	client, err := rpcclient.New(connCfg, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BitcoinOrdGetter{
+		client: client,
+	}, nil
+}
+
+func (r *BitcoinOrdGetter)  GetLatestBlockHeight() (uint, error) {
+	return r.client.GetBlockCount()
+}
+
+func (r *BitcoinOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
+	hash, err := r.client.GetBlockHash(int64(blockHeight))
+	if nil != err {
+		return "", err
+	}
+	return hash.String(), err
+}
+
+func (r *BitcoinOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
+	hash, err := r.client.GetBlockHash(int64(blockHeight))
+	if nil != err || hash == nil {
+		return []OrdTransfer{}, err
+	}
+
+	block, err := r.client.GetBlock(hash)
+	if nil != err {
+		return []OrdTransfer{}, err
+	}
+
+	// TODO fetch tx from  block.txdata
+	return []OrdTransfer, nil
+}	
+
 
 // type RPCRequest struct {
 // 	JSONRPC string      `json:"jsonrpc"`
@@ -68,3 +122,6 @@ type BitcoinOrdGetter struct {
 
 // 	return blockCount, nil
 // }
+
+
+var Client 
