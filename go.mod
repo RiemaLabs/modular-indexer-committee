@@ -1,4 +1,4 @@
-module nubit-indexer-committee
+module github.com/RiemaLabs/indexer-committee
 
 go 1.22.0
 

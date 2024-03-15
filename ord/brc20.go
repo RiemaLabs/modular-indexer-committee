@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nubit-indexer-committee/ord/getter"
+	"github.com/RiemaLabs/indexer-committee/ord/getter"
 
 	uint256 "github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"

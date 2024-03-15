@@ -36,5 +36,5 @@ config.json
 
 # Debug
 __debug*
-nubit-indexer-committee
+github.com/RiemaLabs/indexer-committee
 

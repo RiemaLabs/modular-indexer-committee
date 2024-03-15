@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"strconv"
 
-	"nubit-indexer-committee/ord"
+	"github.com/RiemaLabs/indexer-committee/ord"
 )
 
 func NewCheckpoint(indexID IndexerIdentification, state ord.State) Checkpoint {
