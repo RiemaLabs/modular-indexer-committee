@@ -31,7 +31,7 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 			} else {
 				fmt.Println("Service mode is disabled.")
 			}
-			if arguments.EnableStateRootCache {
+			if arguments.EnableCommittee {
 				fmt.Println("Committee mode is enabled.")
 			} else {
 				fmt.Println("Committee mode is disabled.")

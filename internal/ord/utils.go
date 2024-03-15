@@ -1,4 +1,4 @@
-package main
+package ord
 
 import (
 	"errors"
@@ -9,11 +9,8 @@ import (
 	base58 "github.com/btcsuite/btcd/btcutil/base58"
 	bech32 "github.com/btcsuite/btcd/btcutil/bech32"
 
-	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
 )
-
-var nodeResolveFn verkle.NodeResolverFn = nil
 
 func convertIntToByte(i *uint256.Int) []byte {
 	var dest [32]byte

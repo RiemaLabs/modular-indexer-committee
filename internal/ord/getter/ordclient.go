@@ -1,4 +1,4 @@
-package main
+package getter
 
 import (
 	"fmt"
@@ -7,32 +7,40 @@ import (
 	"gorm.io/gorm"
 )
 
-func ConnectOPIDatabase(config Config) (*gorm.DB, error) {
-	host := GlobalConfig.Database.Host
-	user := GlobalConfig.Database.User
-	password := GlobalConfig.Database.Password
-	dbname := GlobalConfig.Database.DBname
-	port := GlobalConfig.Database.Port
+type DatabaseConfig struct {
+	Host     string
+	User     string
+	Password string
+	DBname   string
+	Port     string
+}
+
+type OPIOrdGetter struct {
+	db *gorm.DB
+}
+
+func ConnectOPIDatabase(config DatabaseConfig) (*gorm.DB, error) {
+	host := config.Host
+	user := config.User
+	password := config.Password
+	dbname := config.DBname
+	port := config.Port
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port)
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
-type OPIBitcoinGetter struct {
-	db *gorm.DB
-}
-
-func NewOPIBitcoinGetter(config Config) (*OPIBitcoinGetter, error) {
+func NewOPIBitcoinGetter(config DatabaseConfig) (*OPIOrdGetter, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err
 	}
-	getter := OPIBitcoinGetter{
+	getter := OPIOrdGetter{
 		db: db,
 	}
 	return &getter, err
 }
 
-func (opi *OPIBitcoinGetter) GetLatestBlockHeight() (uint, error) {
+func (opi *OPIOrdGetter) GetLatestBlockHeight() (uint, error) {
 	var blockHeight int
 	sql := `
 		SELECT block_height
@@ -45,7 +53,7 @@ func (opi *OPIBitcoinGetter) GetLatestBlockHeight() (uint, error) {
 	return uint(blockHeight), nil
 }
 
-func (opi *OPIBitcoinGetter) GetBlockHash(blockHeight uint) (string, error) {
+func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 	var blockHash string
 	sql := `
 		SELECT block_hash
@@ -59,7 +67,7 @@ func (opi *OPIBitcoinGetter) GetBlockHash(blockHeight uint) (string, error) {
 	return blockHash, nil
 }
 
-func (opi *OPIBitcoinGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
+func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
 	var ordTransfer []OrdTransfer
 	sql := `
 		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type

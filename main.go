@@ -5,44 +5,77 @@ import (
 	"errors"
 	"log"
 	"os"
+	"os/signal"
 	"runtime/debug"
+	"syscall"
 	"time"
 
 	"github.com/ethereum/go-verkle"
+
+	"nubit-indexer-committee/checkpoint"
+	"nubit-indexer-committee/internal/ord"
+	"nubit-indexer-committee/internal/ord/getter"
 )
 
-func catchupStage(getter BitcoinGetter, arguments *RuntimeArguments) (*StateQueue, error) {
-	// Fetch the latest block height.
-	latestHeight, err := getter.GetLatestBlockHeight()
+const cachePath = ".cache"
 
-	if err != nil {
-		return nil, err
-	}
-
-	// New queue from the scratch.
-
-	cachePath := ".cache"
-	curHeight := BRC20StartHeight - 1
+func load(arguments *RuntimeArguments) (ord.State, uint) {
+	curHeight := ord.BRC20StartHeight - 1
 	stateRoot := verkle.New()
-	state := State{
-		root:   stateRoot,
-		kv:     make(KeyValueMap),
-		height: curHeight,
-		hash:   "",
+	state := ord.State{
+		Root:   stateRoot,
+		KV:     make(ord.KeyValueMap),
+		Height: curHeight,
+		Hash:   "",
 	}
 
 	if arguments.EnableStateRootCache {
-		storedState, err := DeserializeLatestState(cachePath)
+		storedState, err := ord.DeserializeLatestState(cachePath)
 		if err != nil {
 			log.Printf("Warning for loading stateRoot %v\n", err)
 		}
 		if storedState != nil {
 			state = *storedState
-			curHeight = state.height
+			curHeight = state.Height
 		}
 	}
+	return state, curHeight
+}
 
-	catchupHeight := latestHeight - BitcoinConfirmations
+func store(arguments *RuntimeArguments, state ord.State) {
+	if arguments.EnableStateRootCache {
+		err := state.SerializeToFile(cachePath)
+		if err != nil {
+			log.Printf("Warning for saving stateRoot %v\n", err)
+		}
+	}
+}
+
+func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments) (*ord.StateQueue, error) {
+	// Fetch the latest block height.
+	latestHeight, err := getter.GetLatestBlockHeight()
+	if err != nil {
+		return nil, err
+	}
+	catchupHeight := latestHeight - ord.BitcoinConfirmations
+
+	// New queue from the scratch.
+	state, curHeight := load(arguments)
+
+	// Register Exit
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+
+	go func() {
+		for {
+			sig := <-sigChan
+			switch sig {
+			case syscall.SIGINT:
+				store(arguments, state)
+				os.Exit(0)
+			}
+		}
+	}()
 
 	if catchupHeight > curHeight {
 		// TODO: Refine the catchup performance by batching query.
@@ -51,29 +84,25 @@ func catchupStage(getter BitcoinGetter, arguments *RuntimeArguments) (*StateQueu
 		for i := curHeight; i <= catchupHeight; i++ {
 			ordTransfer, err := getter.GetOrdTransfers(i)
 			if err != nil {
+				store(arguments, state)
 				return nil, err
 			}
-			state = processOrdTransfer(state, ordTransfer)
+			state = ord.Exec(state, ordTransfer)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
-				if arguments.EnableStateRootCache {
-					err := state.SerializeToFile(cachePath)
-					if err != nil {
-						log.Printf("Warning for saving stateRoot %v\n", err)
-					}
-				}
 			}
-			state.height += 1
+			state.Height += 1
 		}
 	} else if catchupHeight == curHeight {
 		// stateRoot is located at catchupHeight.
 	} else if catchupHeight < curHeight {
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
-	return NewQueues(getter, state, false, catchupHeight+1)
+	store(arguments, state)
+	return ord.NewQueues(getter, state, false, catchupHeight+1)
 }
 
-func serviceStage(getter BitcoinGetter, arguments *RuntimeArguments, queue *StateQueue) {
+func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *ord.StateQueue) {
 	// Provide service
 	var history = make(map[uint]map[string]bool)
 
@@ -109,8 +138,15 @@ func serviceStage(getter BitcoinGetter, arguments *RuntimeArguments, queue *Stat
 		queue.Unlock()
 
 		if arguments.EnableService {
-			for i := 0; i <= len(queue.states)-1; i++ {
-				go UploadCheckpoint(history, GlobalConfig, queue.states[i].Checkpoint(GlobalConfig))
+			indexerID := checkpoint.IndexerIdentification{
+				URL:          GlobalConfig.Service.URL,
+				Name:         GlobalConfig.Service.Name,
+				Version:      Version,
+				MetaProtocol: GlobalConfig.Service.MetaProtocol,
+			}
+			for i := 0; i <= len(queue.States)-1; i++ {
+				c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
+				go checkpoint.UploadCheckpoint(history, indexerID, c)
 			}
 		}
 
@@ -145,7 +181,7 @@ func main() {
 	}
 
 	// Use OPI database as the getter.
-	getter, err := NewOPIBitcoinGetter(GlobalConfig)
+	getter, err := getter.NewOPIBitcoinGetter(getter.DatabaseConfig(GlobalConfig.Database))
 
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)

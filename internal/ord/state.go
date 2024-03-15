@@ -1,8 +1,7 @@
-package main
+package ord
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -14,45 +13,36 @@ import (
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
+
+	"nubit-indexer-committee/internal/ord/getter"
 )
-
-const Suffix = ".dat"
-
-type KeyValueMap = map[[32]byte][]byte
-
-type State struct {
-	root   verkle.VerkleNode
-	kv     KeyValueMap
-	height uint
-	hash   string
-}
 
 func (state State) Copy() State {
 	newKV := make(KeyValueMap)
-	for k, v := range state.kv {
+	for k, v := range state.KV {
 		newKV[k] = v
 	}
 	return State{
-		root:   state.root.Copy(),
-		kv:     newKV,
-		height: state.height,
-		hash:   state.hash,
+		Root:   state.Root.Copy(),
+		KV:     newKV,
+		Height: state.Height,
+		Hash:   state.Hash,
 	}
 }
 
 func (state *State) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) error {
-	state.kv[[32]byte(key)] = value
-	err := state.root.Insert(key, value, nodeResolverFn)
+	state.KV[[32]byte(key)] = value
+	err := state.Root.Insert(key, value, nodeResolverFn)
 	return err
 }
 
 func (state *State) Get(key []byte, nodeResolverFn verkle.NodeResolverFn) ([]byte, error) {
-	return state.root.Get(key, nodeResolverFn)
+	return state.Root.Get(key, nodeResolverFn)
 }
 
 func (state *State) GetValueOrZero(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
-	value, _ := state.root.Get(key, nodeResolveFn)
+	value, _ := state.Root.Get(key, nodeResolveFn)
 	if len(value) == 0 {
 		return res
 	}
@@ -61,36 +51,19 @@ func (state *State) GetValueOrZero(key []byte) *uint256.Int {
 
 // Historical state neither uploads Checkpoint nor records hash.
 func (state *State) HasHash() bool {
-	return state.hash != ""
-}
-
-func (state *State) Checkpoint(config Config) Checkpoint {
-	blockHeight := strconv.FormatUint(uint64(state.height), 10)
-	blockHash := state.hash
-	bytes := state.root.Commit().Bytes()
-	commitment := base64.StdEncoding.EncodeToString(bytes[:])
-	content := Checkpoint{
-		URL:          config.Service.URL,
-		Name:         config.Service.Name,
-		Version:      Version,
-		MetaProtocol: config.Service.MetaProtocol,
-		Height:       blockHeight,
-		Hash:         blockHash,
-		Commitment:   commitment,
-	}
-	return content
+	return state.Hash != ""
 }
 
 func (state *State) SerializeToFile(path string) error {
 	// TODO: Using a native database instead of a key-value store for state management.
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(state.kv)
+	err := encoder.Encode(state.KV)
 	if err != nil {
 		return err
 	}
 
-	fileName := fmt.Sprintf("%d%s", state.height, Suffix)
+	fileName := fmt.Sprintf("%d%s", state.Height, SerializationFileSuffix)
 	filePath := filepath.Join(path, fileName)
 	err = os.WriteFile(filePath, buffer.Bytes(), 0666)
 	if err != nil {
@@ -111,8 +84,8 @@ func DeserializeLatestState(path string) (*State, error) {
 	// Iterate through all files
 	for _, file := range files {
 		// Check if the file has the suffix
-		if filepath.Ext(file.Name()) == Suffix {
-			heightString := strings.TrimSuffix(file.Name(), Suffix)
+		if filepath.Ext(file.Name()) == SerializationFileSuffix {
+			heightString := strings.TrimSuffix(file.Name(), SerializationFileSuffix)
 			height, err := strconv.Atoi(heightString)
 			if err == nil && height > maxHeight {
 				// Update the maximum state.height and corresponding file name
@@ -134,15 +107,17 @@ func DeserializeLatestState(path string) (*State, error) {
 		if err != nil {
 			return nil, err
 		}
+		log.Println("Start to rebuild verkle tree.")
 		root := verkle.New()
 		for k, v := range kv {
 			root.Insert(k[:], v, nodeResolveFn)
 		}
+		log.Println("End to rebuild verkle tree.")
 		state := State{
-			root:   root,
-			kv:     kv,
-			height: uint(maxHeight),
-			hash:   "",
+			Root:   root,
+			KV:     kv,
+			Height: uint(maxHeight),
+			Hash:   "",
 		}
 		return &state, nil
 	} else {
@@ -153,12 +128,12 @@ func DeserializeLatestState(path string) (*State, error) {
 // Maintain a queue of states to prepare for the re-org.
 // TODO: Use the first state and stateDiffs to represent states.
 type StateQueue struct {
-	states [BitcoinConfirmations]State
+	States [BitcoinConfirmations]State
 	sync.RWMutex
 }
 
 // Build the queue from the start height.
-func NewQueues(getter BitcoinGetter, initState State, queryHash bool, startHeight uint) (*StateQueue, error) {
+func NewQueues(getter getter.OrdGetter, initState State, queryHash bool, startHeight uint) (*StateQueue, error) {
 	var states [BitcoinConfirmations]State
 	state := initState
 	for i := startHeight; i <= startHeight+BitcoinConfirmations-1; i++ {
@@ -166,7 +141,7 @@ func NewQueues(getter BitcoinGetter, initState State, queryHash bool, startHeigh
 		if err != nil {
 			return nil, err
 		}
-		state = processOrdTransfer(state.Copy(), ordTransfer)
+		state = Exec(state.Copy(), ordTransfer)
 		var hash string
 		if queryHash {
 			hash, err = getter.GetBlockHash(i)
@@ -176,62 +151,62 @@ func NewQueues(getter BitcoinGetter, initState State, queryHash bool, startHeigh
 		} else {
 			hash = ""
 		}
-		state.height = i
-		state.hash = hash
+		state.Height = i
+		state.Hash = hash
 		states[i-startHeight] = state
 	}
 	queue := StateQueue{
-		states: states,
+		States: states,
 	}
 	return &queue, nil
 }
 
 func (queue *StateQueue) StartHeight() uint {
-	return queue.states[0].height
+	return queue.States[0].Height
 }
 
 func (queue *StateQueue) LastestHeight() uint {
-	return queue.StartHeight() + uint(len(queue.states))
+	return queue.StartHeight() + uint(len(queue.States))
 }
 
 func (queue *StateQueue) LastestState() State {
-	return queue.states[len(queue.states)-1]
+	return queue.States[len(queue.States)-1]
 }
 
 func (queue *StateQueue) State(blockHeight uint) State {
-	return queue.states[blockHeight-queue.StartHeight()]
+	return queue.States[blockHeight-queue.StartHeight()]
 }
 
 // Offer the latest state and pop the oldest state.
 func (queue *StateQueue) Offer(element State) {
-	for i := 0; i <= len(queue.states)-2; i++ {
-		queue.states[i] = queue.states[i+1]
+	for i := 0; i <= len(queue.States)-2; i++ {
+		queue.States[i] = queue.States[i+1]
 	}
-	queue.states[len(queue.states)-1] = element
+	queue.States[len(queue.States)-1] = element
 }
 
 func (queue *StateQueue) Println() {
-	log.Println("====", len(queue.states), "====", queue.StartHeight(), "====")
-	for _, node := range queue.states {
-		log.Print(node.height, "*")
+	log.Println("====", len(queue.States), "====", queue.StartHeight(), "====")
+	for _, node := range queue.States {
+		log.Print(node.Height, "*")
 	}
 }
 
-func (queue *StateQueue) Update(getter BitcoinGetter, initState State, latestHeight uint) error {
+func (queue *StateQueue) Update(getter getter.OrdGetter, initState State, latestHeight uint) error {
 	state := initState
-	curHeight := state.height
+	curHeight := state.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return err
 		}
-		state = processOrdTransfer(state.Copy(), ordTransfer)
+		state = Exec(state.Copy(), ordTransfer)
 		hash, err := getter.GetBlockHash(i)
 		if err != nil {
 			return err
 		}
-		state.height = i
-		state.hash = hash
+		state.Height = i
+		state.Hash = hash
 		queue.Offer(state)
 	}
 	return nil
@@ -239,11 +214,11 @@ func (queue *StateQueue) Update(getter BitcoinGetter, initState State, latestHei
 
 // Check if the reorganization happened.
 // If so, return the height where the reorganization happened, else, return 0.
-func (queue *StateQueue) CheckForReorg(getter BitcoinGetter) (uint, error) {
-	for i := 0; i <= len(queue.states)-1; i++ {
-		state := queue.states[i]
-		height := state.height
-		hash := state.hash
+func (queue *StateQueue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
+	for i := 0; i <= len(queue.States)-1; i++ {
+		state := queue.States[i]
+		height := state.Height
+		hash := state.Hash
 		newHash, err := getter.GetBlockHash(height)
 		if err != nil {
 			return 0, err

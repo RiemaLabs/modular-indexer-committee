@@ -1,4 +1,4 @@
-module committee
+module nubit-indexer-committee
 
 go 1.22.0
 

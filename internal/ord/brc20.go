@@ -1,4 +1,4 @@
-package main
+package ord
 
 import (
 	"encoding/hex"
@@ -8,12 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"nubit-indexer-committee/internal/ord/getter"
+
 	uint256 "github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
-
-// The first block height of the brc-20 protocol.
-const BRC20StartHeight uint = 779832
 
 // Get hash value by keccak256(“available_balance” + “keccak256("tick_name")” + "keccak256("wallet_address")")
 func getHash(prefix string, tick string, pkScript string) []byte {
@@ -189,7 +188,7 @@ func transferTransferNormal(state State, inscrId string, spentPkScript string, s
 }
 
 // Input previous verkle tree and all ord records in a block, then get the K-V array that the verkle tree should update
-func processOrdTransfer(state State, ordTransfer []OrdTransfer) State {
+func Exec(state State, ordTransfer []getter.OrdTransfer) State {
 	upperLimit := getLimit()
 	if len(ordTransfer) == 0 {
 		return state
