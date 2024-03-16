@@ -106,8 +106,10 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 				Version:      Version,
 				MetaProtocol: GlobalConfig.Service.MetaProtocol,
 			}
+			// log.Println(indexerID)
 			for i := 0; i <= len(queue.States)-1; i++ {
 				c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
+				// log.Println(c)
 				go checkpoint.UploadCheckpoint(history, indexerID, c)
 			}
 		}
