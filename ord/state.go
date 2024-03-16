@@ -3,12 +3,7 @@ package ord
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
 
 	verkle "github.com/ethereum/go-verkle"
@@ -54,75 +49,40 @@ func (state *State) HasHash() bool {
 	return state.Hash != ""
 }
 
-func (state *State) SerializeToFile(path string) error {
-	// TODO: Using a native database instead of a key-value store for state management.
+func (state *State) Serialize() (*bytes.Buffer, error) {
+	// TODO: Use a native database instead of a key-value store for the state management.
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
 	err := encoder.Encode(state.KV)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	fileName := fmt.Sprintf("%d%s", state.Height, SerializationFileSuffix)
-	filePath := filepath.Join(path, fileName)
-	err = os.WriteFile(filePath, buffer.Bytes(), 0666)
-	if err != nil {
-		return err
-	}
-	return nil
+	return &buffer, nil
 }
 
-func DeserializeLatestState(path string) (*State, error) {
-	files, err := os.ReadDir(path)
+func Deserialize(buffer *bytes.Buffer, height uint) (*State, error) {
+	var kv KeyValueMap
+	decoder := gob.NewDecoder(buffer)
+	err := decoder.Decode(&kv)
 	if err != nil {
 		return nil, err
 	}
-	// Variables to keep track of the file with the maximum state.height
-	var maxHeight int
-	var maxFile string
-
-	// Iterate through all files
-	for _, file := range files {
-		// Check if the file has the suffix
-		if filepath.Ext(file.Name()) == SerializationFileSuffix {
-			heightString := strings.TrimSuffix(file.Name(), SerializationFileSuffix)
-			height, err := strconv.Atoi(heightString)
-			if err == nil && height > maxHeight {
-				// Update the maximum state.height and corresponding file name
-				maxHeight = height
-				maxFile = file.Name()
-			}
+	log.Println("Start to rebuild verkle tree.")
+	root := verkle.New()
+	for k, v := range kv {
+		err := root.Insert(k[:], v, nodeResolveFn)
+		if err != nil {
+			return nil, nil
 		}
 	}
-	if maxFile != "" {
-		data, err := os.ReadFile(filepath.Join(path, maxFile))
-		if err != nil {
-			return nil, err
-		}
-		var buffer bytes.Buffer
-		var kv KeyValueMap
-		buffer = *bytes.NewBuffer(data)
-		decoder := gob.NewDecoder(&buffer)
-		err = decoder.Decode(&kv)
-		if err != nil {
-			return nil, err
-		}
-		log.Println("Start to rebuild verkle tree.")
-		root := verkle.New()
-		for k, v := range kv {
-			root.Insert(k[:], v, nodeResolveFn)
-		}
-		log.Println("End to rebuild verkle tree.")
-		state := State{
-			Root:   root,
-			KV:     kv,
-			Height: uint(maxHeight),
-			Hash:   "",
-		}
-		return &state, nil
-	} else {
-		return nil, nil
+	log.Println("End to rebuild verkle tree.")
+	state := State{
+		Root:   root,
+		KV:     kv,
+		Height: height,
+		Hash:   "",
 	}
+	return &state, nil
 }
 
 // Maintain a queue of states to prepare for the re-org.

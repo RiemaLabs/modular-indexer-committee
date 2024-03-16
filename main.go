@@ -4,54 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
-	"os/signal"
 	"runtime/debug"
-	"syscall"
 	"time"
-
-	"github.com/ethereum/go-verkle"
 
 	"github.com/RiemaLabs/indexer-committee/checkpoint"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/indexer-committee/storage"
 )
 
-const cachePath = ".cache"
-
-func load(arguments *RuntimeArguments) (ord.State, uint) {
-	curHeight := ord.BRC20StartHeight - 1
-	stateRoot := verkle.New()
-	state := ord.State{
-		Root:   stateRoot,
-		KV:     make(ord.KeyValueMap),
-		Height: curHeight,
-		Hash:   "",
-	}
-
-	if arguments.EnableStateRootCache {
-		storedState, err := ord.DeserializeLatestState(cachePath)
-		if err != nil {
-			log.Printf("Warning for loading stateRoot %v\n", err)
-		}
-		if storedState != nil {
-			state = *storedState
-			curHeight = state.Height
-		}
-	}
-	return state, curHeight
-}
-
-func store(arguments *RuntimeArguments, state ord.State) {
-	if arguments.EnableStateRootCache {
-		err := state.SerializeToFile(cachePath)
-		if err != nil {
-			log.Printf("Warning for saving stateRoot %v\n", err)
-		}
-	}
-}
-
-func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments) (*ord.StateQueue, error) {
+func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*ord.StateQueue, error) {
 	// Fetch the latest block height.
 	latestHeight, err := getter.GetLatestBlockHeight()
 	if err != nil {
@@ -59,23 +24,10 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments) (*ord.St
 	}
 	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
-	// New queue from the scratch.
-	state, curHeight := load(arguments)
+	state := storage.LoadState(arguments.EnableStateRootCache, initHeight)
+	curHeight := state.Height
 
-	// Register Exit
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
-
-	go func() {
-		for {
-			sig := <-sigChan
-			switch sig {
-			case syscall.SIGINT:
-				store(arguments, state)
-				os.Exit(0)
-			}
-		}
-	}()
+	// Start to catch-up
 
 	if catchupHeight > curHeight {
 		// TODO: Refine the catchup performance by batching query.
@@ -84,12 +36,17 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments) (*ord.St
 		for i := curHeight; i <= catchupHeight; i++ {
 			ordTransfer, err := getter.GetOrdTransfers(i)
 			if err != nil {
-				store(arguments, state)
 				return nil, err
 			}
 			state = ord.Exec(state, ordTransfer)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
+				if arguments.EnableStateRootCache {
+					err := storage.StoreState(state, state.Height-2000)
+					if err != nil {
+						log.Printf("Failed to store the cache at height: %d", i)
+					}
+				}
 			}
 			state.Height += 1
 		}
@@ -98,7 +55,12 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments) (*ord.St
 	} else if catchupHeight < curHeight {
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
-	store(arguments, state)
+	if arguments.EnableStateRootCache {
+		err := storage.StoreState(state, state.Height-2000)
+		if err != nil {
+			log.Printf("Failed to store the cache at height: %d", catchupHeight)
+		}
+	}
 	return ord.NewQueues(getter, state, false, catchupHeight+1)
 }
 
@@ -156,6 +118,11 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 
 func main() {
 
+	// 启动 HTTP 服务器，提供 pprof 分析接口
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
+
 	arguments := NewRuntimeArguments()
 	rootCmd := arguments.MakeCmd()
 	if err := rootCmd.Execute(); err != nil {
@@ -187,7 +154,7 @@ func main() {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
 
-	queue, err := catchupStage(getter, arguments)
+	queue, err := catchupStage(getter, arguments, ord.BRC20StartHeight-1)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
