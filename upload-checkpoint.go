@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
+	"net"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -22,33 +22,8 @@ const (
 )
 
 // URI s3://arn:aws:s3:us-west-2:905418332373:accesspoint/ap-indexer
-
 // We will be using this client everywhere in our code
 var awsS3Client *s3.Client
-
-func test() {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AWS_S3_REGION),
-		config.WithSharedCredentialsFiles(
-			[]string{"test/credentials", "data/credentials"},
-		),
-		config.WithSharedConfigFiles(
-			[]string{"test/config", "data/config"},
-		))
-	awsS3Client = s3.NewFromConfig(cfg)
-
-	// Get the first page of results for ListObjectsV2 for a bucket
-	output, err := awsS3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: aws.String(AWS_S3_BUCKET),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("first page results:")
-	for _, object := range output.Contents {
-		log.Printf("key=%s size=%d", aws.ToString(object.Key), object.Size)
-	}
-}
 
 type UploadHistory = map[uint]map[string]bool
 
@@ -70,10 +45,14 @@ func Upload(history UploadHistory, configUpload Config, checkpoint Checkpoint) {
 	}
 	awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
-	downloader := manager.NewDownloader(awsS3Client)
+	// downloader := manager.NewDownloader(awsS3Client)
 
+	mac, err := getMACAddress()
+	if err != nil {
+		log.Fatal(err)
+	}
 	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
-		getMACAddress(), checkpoint.MetaProtocol, checkpoint.Height, checkpoint.Hash)
+		mac, checkpoint.MetaProtocol, checkpoint.Height, checkpoint.Hash)
 
 	// change format into JSON
 	checkpointJSON, err := json.Marshal(checkpoint)
@@ -106,27 +85,22 @@ func Upload(history UploadHistory, configUpload Config, checkpoint Checkpoint) {
 		log.Println("Upload output:", output)
 		history[uint(heightUint)][objectKey] = true
 	}
-
-	// test get object from the bucket
-	// Create the replica file
-	newFile, err := os.Create("replica.json")
-	if err != nil {
-		log.Println(err)
-	}
-	defer newFile.Close()
-
-	numBytes, err := downloader.Download(context.TODO(), newFile, &s3.GetObjectInput{
-		Bucket: aws.String(AWS_S3_BUCKET),
-		Key:    aws.String(objectKey),
-	})
-	if (err != nil) && (numBytes > 0) {
-		log.Println("File downloaded successfully!")
-	} else {
-		log.Println("File download failed!")
-	}
 }
 
-func getMACAddress() string {
-	// For test set "00:00:00:00:00:00" temp.
-	return "00:00:00:00:00:00"
+func getMACAddress() (string, error) {
+	// all interfaces info
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	// the first MAC addr of non-vertical interface
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 {
+			// filter virtual and loop interfaces
+			return iface.HardwareAddr.String(), nil
+		}
+	}
+
+	return "", fmt.Errorf("no active non-loopback network interface found")
 }
