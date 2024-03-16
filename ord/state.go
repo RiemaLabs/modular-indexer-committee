@@ -191,3 +191,14 @@ func (queue *StateQueue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 	}
 	return 0, nil
 }
+
+func SafeInsert(root verkle.VerkleNode, key []byte, value []byte, resolver verkle.NodeResolverFn) error {
+	i := root.(*verkle.InternalNode)
+	stem := verkle.KeyToStem(key)
+	cur_values, err := i.GetValuesAtStem(stem, resolver)
+	if err != nil {
+		return err
+	}
+	cur_values[key[verkle.StemSize]] = value
+	return i.InsertValuesAtStem(stem, cur_values, resolver)
+}
