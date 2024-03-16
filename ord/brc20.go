@@ -69,14 +69,19 @@ func GetHash(stateID StateID, uniqueID string, tick string) []byte {
 	hasher := sha3.New224()
 	hasher.Write(prefixBytes)
 	prefixHash := hasher.Sum(nil)
-	if len(tick) == 4 {
-		return append(append(prefixHash[:27], stateID[:]...), []byte(tick)...)
+	var res []byte
+	if len(tick) == 4 || len(tick) == 5 {
+		panic(fmt.Sprintf("Tick must be 4 or 5 bytes! Current is %s", tick))
+	} else if len(tick) == 4 {
+		res = append(append(prefixHash[:27], stateID[:]...), []byte(tick)...)
+	} else {
+		// Introduced by the BP04: https://github.com/brc20-devs/brc20-proposals/blob/main/bp04-self-mint/proposal.md
+		res = append(append(prefixHash[:26], stateID[:]...), []byte(tick)...)
 	}
-	// Introduced by the BP04: https://github.com/brc20-devs/brc20-proposals/blob/main/bp04-self-mint/proposal.md
-	if len(tick) == 5 {
-		return append(append(prefixHash[:26], stateID[:]...), []byte(tick)...)
+	if len(res) != 32 {
+		panic(fmt.Sprintf("Key must be 32 bytes! Current is %d", len(res)))
 	}
-	panic(fmt.Sprintf("Tick must be 4 or 5 bytes! Current is %s", tick))
+	return res
 }
 
 func GetTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
