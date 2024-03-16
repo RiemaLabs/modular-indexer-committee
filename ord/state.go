@@ -67,7 +67,6 @@ func Deserialize(buffer *bytes.Buffer, height uint) (*State, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Start to rebuild verkle tree.")
 	root := verkle.New()
 	for k, v := range kv {
 		err := root.Insert(k[:], v, nodeResolveFn)
@@ -75,7 +74,23 @@ func Deserialize(buffer *bytes.Buffer, height uint) (*State, error) {
 			return nil, nil
 		}
 	}
-	log.Println("End to rebuild verkle tree.")
+
+	//
+	// file, _ := os.Create("output.txt")
+	// defer file.Close()
+	// keys := make([][32]byte, 0, len(kv))
+	// for k := range kv {
+	// 	keys = append(keys, k)
+	// }
+	// sort.Slice(keys, func(i, j int) bool {
+	// 	return bytes.Compare(keys[i][:], keys[j][:]) < 0
+	// })
+	// for _, k := range keys {
+	// 	hexKey := hex.EncodeToString(k[:])
+	// 	fmt.Fprintf(file, "%s:%s\n", hexKey, hex.EncodeToString(kv[k]))
+	// }
+	//
+
 	state := State{
 		Root:   root,
 		KV:     kv,

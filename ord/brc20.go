@@ -70,7 +70,7 @@ func GetHash(stateID StateID, uniqueID string, tick string) []byte {
 	hasher.Write(prefixBytes)
 	prefixHash := hasher.Sum(nil)
 	var res []byte
-	if len(tick) == 4 || len(tick) == 5 {
+	if !(len(tick) == 4 || len(tick) == 5) {
 		panic(fmt.Sprintf("Tick must be 4 or 5 bytes! Current is %s", tick))
 	} else if len(tick) == 4 {
 		res = append(append(prefixHash[:27], stateID[:]...), []byte(tick)...)
