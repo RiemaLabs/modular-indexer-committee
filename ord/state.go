@@ -3,6 +3,7 @@ package ord
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"sync"
 
@@ -26,7 +27,10 @@ func (state State) Copy() State {
 }
 
 func (state *State) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) error {
-	state.KV[[32]byte(key)] = value
+	if len(value) != 32 {
+		panic(fmt.Sprintf("The length of value is mismatched. It should be 32, but currently it is: %d", len(value)))
+	}
+	state.KV[[32]byte(key)] = [32]byte(value)
 	err := state.Root.Insert(key, value, nodeResolverFn)
 	return err
 }
@@ -69,27 +73,12 @@ func Deserialize(buffer *bytes.Buffer, height uint) (*State, error) {
 	}
 	root := verkle.New()
 	for k, v := range kv {
-		err := root.Insert(k[:], v, nodeResolveFn)
+		err := root.Insert(k[:], v[:], nodeResolveFn)
 		if err != nil {
 			return nil, nil
 		}
 	}
-
-	//
-	// file, _ := os.Create("output.txt")
-	// defer file.Close()
-	// keys := make([][32]byte, 0, len(kv))
-	// for k := range kv {
-	// 	keys = append(keys, k)
-	// }
-	// sort.Slice(keys, func(i, j int) bool {
-	// 	return bytes.Compare(keys[i][:], keys[j][:]) < 0
-	// })
-	// for _, k := range keys {
-	// 	hexKey := hex.EncodeToString(k[:])
-	// 	fmt.Fprintf(file, "%s:%s\n", hexKey, hex.EncodeToString(kv[k]))
-	// }
-	//
+	root.Commit()
 
 	state := State{
 		Root:   root,

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime/debug"
@@ -117,12 +116,6 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 }
 
 func main() {
-
-	// 启动 HTTP 服务器，提供 pprof 分析接口
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
-
 	arguments := NewRuntimeArguments()
 	rootCmd := arguments.MakeCmd()
 	if err := rootCmd.Execute(); err != nil {

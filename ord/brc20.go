@@ -3,7 +3,6 @@ package ord
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/big"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-type StateID = [1]byte
+type StateID = [4]byte
 
 // tick - pkscript - uint256
 var AvailableBalancePkscript StateID = StateID{0x0}
@@ -61,40 +60,62 @@ var TransferTransferCount EventID = EventID{0x3}
 // event - TransferInscribeCount
 var TransferInscribeCount EventID = EventID{0x4}
 
-// Get hash value by keccak224(uniqueID)[:27] (27bytes) + stateID (1bytes) + tick (4bytes).
-// Or, get hash value by keccak224(uniqueID)[:26] (26bytes) + stateID (1bytes) + tick (5bytes).
+// // Get hash value by keccak224(uniqueID)[:27] (27bytes) + stateID (1bytes) + tick (4bytes).
+// // Or, get hash value by keccak224(uniqueID)[:26] (26bytes) + stateID (1bytes) + tick (5bytes).
+// func GetHash(stateID StateID, uniqueID string, tick string) []byte {
+// 	prefix := uniqueID
+// 	prefixBytes := []byte(prefix)
+// 	hasher := sha3.New224()
+// 	hasher.Write(prefixBytes)
+// 	prefixHash := hasher.Sum(nil)
+// 	var res []byte
+// 	if !(len(tick) == 4 || len(tick) == 5) {
+// 		panic(fmt.Sprintf("Tick must be 4 or 5 bytes! Current is %s", tick))
+// 	} else if len(tick) == 4 {
+// 		res = append(append(prefixHash[:27], stateID[:]...), []byte(tick)...)
+// 	} else {
+// 		// Introduced by the BP04: https://github.com/brc20-devs/brc20-proposals/blob/main/bp04-self-mint/proposal.md
+// 		res = append(append(prefixHash[:26], stateID[:]...), []byte(tick)...)
+// 	}
+// 	if len(res) != 32 {
+// 		panic(fmt.Sprintf("Key must be 32 bytes! Current is %d", len(res)))
+// 	}
+// 	return res
+// }
+
+// // Get hash value by eventID (4bytes) + keccak224(inscrID) (28 bytes).
+// func GetEventHash(eventID EventID, inscrID string) []byte {
+// 	inscrIDByte := []byte(inscrID)
+// 	hasher := sha3.New224()
+// 	hasher.Write(inscrIDByte)
+// 	inscrIDHash := hasher.Sum(nil)
+// 	return append(eventID[:], inscrIDHash...)
+// }
+
 func GetHash(stateID StateID, uniqueID string, tick string) []byte {
-	prefix := uniqueID
-	prefixBytes := []byte(prefix)
-	hasher := sha3.New224()
-	hasher.Write(prefixBytes)
-	prefixHash := hasher.Sum(nil)
-	var res []byte
-	if !(len(tick) == 4 || len(tick) == 5) {
-		panic(fmt.Sprintf("Tick must be 4 or 5 bytes! Current is %s", tick))
-	} else if len(tick) == 4 {
-		res = append(append(prefixHash[:27], stateID[:]...), []byte(tick)...)
-	} else {
-		// Introduced by the BP04: https://github.com/brc20-devs/brc20-proposals/blob/main/bp04-self-mint/proposal.md
-		res = append(append(prefixHash[:26], stateID[:]...), []byte(tick)...)
-	}
-	if len(res) != 32 {
-		panic(fmt.Sprintf("Key must be 32 bytes! Current is %d", len(res)))
-	}
-	return res
+	stateBytes := stateID[:]
+	uniqueBytes := []byte(uniqueID)
+	tickBytes := []byte(tick)
+	preImg := append(append(uniqueBytes, tickBytes...), stateBytes...)
+
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write(preImg)
+	resHash := hasher.Sum(nil)
+	return resHash
+}
+
+func GetEventHash(eventID EventID, inscrID string) []byte {
+	eventBytes := eventID[:]
+	inscrBytes := []byte(inscrID)
+	preImg := append(eventBytes, inscrBytes...)
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write(preImg)
+	resHash := hasher.Sum(nil)
+	return resHash
 }
 
 func GetTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
 	return GetHash(Exists, "", tick), GetHash(RemainingSupply, "", tick), GetHash(MaxSupply, "", tick), GetHash(LimitPerMint, "", tick), GetHash(Decimals, "", tick)
-}
-
-// Get hash value by eventID (4bytes) + keccak224(inscrID) (28 bytes).
-func GetEventHash(eventID EventID, inscrID string) []byte {
-	inscrIDByte := []byte(inscrID)
-	hasher := sha3.New224()
-	hasher.Write(inscrIDByte)
-	inscrIDHash := hasher.Sum(nil)
-	return append(eventID[:], inscrIDHash...)
 }
 
 func deployInscribe(state State, inscrID string, newPkscript string, newAddr string, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int) State {
