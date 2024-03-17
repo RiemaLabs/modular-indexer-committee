@@ -16,20 +16,19 @@ import (
 const cachePath = ".cache"
 const fileSuffix = ".dat"
 
-func LoadState(enableStateRootCache bool, initHeight uint) ord.State {
+func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
 	curHeight := initHeight
-	stateRoot := verkle.New()
-	state := ord.State{
-		Root:   stateRoot,
-		KV:     make(ord.KeyValueMap),
+	myHeader := ord.Header{
+		Root:   verkle.New(),
 		Height: curHeight,
 		Hash:   "",
+		KV:     make(ord.KeyValueMap),
+		Temp:   ord.DiffList{},
 	}
-
 	if enableStateRootCache {
 		files, err := os.ReadDir(cachePath)
 		if err != nil {
-			return state
+			return myHeader
 		}
 		// Variables to keep track of the file with the maximum state.height
 		var maxHeight int
@@ -48,25 +47,28 @@ func LoadState(enableStateRootCache bool, initHeight uint) ord.State {
 				}
 			}
 		}
+
 		if maxFile != "" {
 			data, err := os.ReadFile(filepath.Join(cachePath, maxFile))
 			if err != nil {
-				return state
+				return myHeader
 			}
 			var buffer = bytes.NewBuffer(data)
 			log.Println("Start to rebuild verkle tree.")
 			storedState, err := ord.Deserialize(buffer, uint(maxHeight))
 			if err != nil {
-				return state
+				return myHeader
 			}
 			log.Println("End to rebuild verkle tree.")
 			return *storedState
 		}
+
 	}
-	return state
+	return myHeader
 }
 
-func StoreState(state ord.State, evictHeight uint) error {
+
+func StoreState(header ord.Header, evictHeight uint) error {
 	buffer, err := state.Serialize()
 	bytes := buffer.Bytes()
 	if err != nil {

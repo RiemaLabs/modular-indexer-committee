@@ -24,31 +24,30 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 	}
 	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
-	state := storage.LoadState(arguments.EnableStateRootCache, initHeight)
-	curHeight := state.Height
+	header := storage.LoadHeader(arguments.EnableStateRootCache, initHeight)
+	curHeight := header.Height
 
 	// Start to catch-up
-
 	if catchupHeight > curHeight {
 		// TODO: Refine the catchup performance by batching query.
 		log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, catchupHeight)
 
-		for i := curHeight; i <= catchupHeight; i++ {
+		for i := curHeight + 1; i <= catchupHeight; i++ {
 			ordTransfer, err := getter.GetOrdTransfers(i)
 			if err != nil {
 				return nil, err
 			}
-			state = ord.Exec(state, ordTransfer)
+			ord.Exec(&header, ordTransfer)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
-					err := storage.StoreState(state, state.Height-2000)
+					err := storage.StoreState(state, state.Height-2000) // TODO
 					if err != nil {
 						log.Printf("Failed to store the cache at height: %d", i)
 					}
 				}
 			}
-			state.Height += 1
+			header.Paging(getter, false, ord.NodeResolveFn)
 		}
 	} else if catchupHeight == curHeight {
 		// stateRoot is located at catchupHeight.
@@ -56,15 +55,16 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
 	if arguments.EnableStateRootCache {
+		// TODO
 		err := storage.StoreState(state, state.Height-2000)
 		if err != nil {
 			log.Printf("Failed to store the cache at height: %d", catchupHeight)
 		}
 	}
-	return ord.NewQueues(getter, state, false, catchupHeight+1)
+	return ord.NewQueues(getter, &header, true, catchupHeight+1)
 }
 
-func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *ord.StateQueue) {
+func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *ord.Queue) {
 	// Provide service
 	var history = make(map[uint]map[string]bool)
 
@@ -77,7 +77,7 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 
 		if curHeight < latestHeight {
 			queue.Lock()
-			err := queue.Update(getter, queue.State(curHeight), latestHeight)
+			err := queue.Update(getter, latestHeight)
 			queue.Unlock()
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)
@@ -92,7 +92,7 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 		}
 
 		if reorgHeight != 0 {
-			err := queue.Update(getter, queue.State(reorgHeight), latestHeight)
+			err := queue.Recovery(getter, reorgHeight)
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)
 			}
