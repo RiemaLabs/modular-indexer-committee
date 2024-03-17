@@ -18,10 +18,10 @@ import (
 	"github.com/RiemaLabs/indexer-committee/ord"
 )
 
-func NewCheckpoint(indexID IndexerIdentification, state ord.State) Checkpoint {
-	blockHeight := strconv.FormatUint(uint64(state.Height), 10)
-	blockHash := state.Hash
-	bytes := state.Root.Commit().Bytes()
+func NewCheckpoint(indexID IndexerIdentification, header ord.Header) Checkpoint {
+	blockHeight := strconv.FormatUint(uint64(header.Height), 10)
+	blockHash := header.Hash
+	bytes := header.Root.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
 	content := Checkpoint{
 		URL:          indexID.URL,
