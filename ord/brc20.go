@@ -118,6 +118,7 @@ func GetTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
 	return GetHash(Exists, "", tick), GetHash(RemainingSupply, "", tick), GetHash(MaxSupply, "", tick), GetHash(LimitPerMint, "", tick), GetHash(Decimals, "", tick)
 }
 
+// Read: None
 func deployInscribe(state State, inscrID string, newPkscript string, newAddr string, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int) State {
 	keyExists, keyRemainingSupply, keyMaxSupply, keyLimitPerMint, keyDecimals := GetTickStatus(tick)
 	state.Insert(keyExists, convertIntToByte(uint256.NewInt(0)), nodeResolveFn)
@@ -128,13 +129,14 @@ func deployInscribe(state State, inscrID string, newPkscript string, newAddr str
 	return state
 }
 
+// Read: AvailableBalancePkscript, OverallBalancePkscript, AvailableBalance, OverallBalance, keyRemainingSupply.
 func mintInscribe(state State, inscrID string, newPkscript string, newAddr string, tick string, amount *uint256.Int) State {
 	newAddrByte, _ := decodeBitcoinAddress(newAddr)
 	newAddr = string(newAddrByte)
 
 	// store tick + pkscript
 	availableKey, overallKey := GetHash(AvailableBalancePkscript, newPkscript, tick), GetHash(OverallBalancePkscript, newPkscript, tick)
-	prevAvailableBalance, prevOverallBalance := state.GetValueOrZero(availableKey), state.GetValueOrZero(overallKey)
+	prevAvailableBalance, prevOverallBalance := state.GetUInt256(availableKey), state.GetUInt256(overallKey)
 	newAvailableBalance, newOverallBalance := uint256.NewInt(0).Add(prevAvailableBalance, amount), uint256.NewInt(0).Add(prevOverallBalance, amount)
 	state.Insert(availableKey, convertIntToByte(newAvailableBalance), nodeResolveFn)
 	state.Insert(overallKey, convertIntToByte(newOverallBalance), nodeResolveFn)
@@ -203,7 +205,7 @@ func transferInscribe(state State, inscrID string, sourcePkScript string, source
 
 	// update transfer-inscribe event count
 	eventCntKey := GetEventHash(TransferInscribeCount, inscrID)
-	newEventCnt := uint256.NewInt(0).Add(state.GetValueOrZero(eventCntKey), uint256.NewInt(1))
+	newEventCnt := uint256.NewInt(0).Add(state.GetUInt256(eventCntKey), uint256.NewInt(1))
 	state.Insert(eventCntKey, convertIntToByte(newEventCnt), nodeResolveFn)
 
 	return state
@@ -211,10 +213,10 @@ func transferInscribe(state State, inscrID string, sourcePkScript string, source
 
 func isUsedOrInvalid(state State, inscrID string) bool {
 	tIEventKey := GetEventHash(TransferInscribeCount, inscrID)
-	transferInscribeCnt := state.GetValueOrZero(tIEventKey)
+	transferInscribeCnt := state.GetUInt256(tIEventKey)
 
 	tTEventKey := GetEventHash(TransferTransferCount, inscrID)
-	transferTransferCnt := state.GetValueOrZero(tTEventKey)
+	transferTransferCnt := state.GetUInt256(tTEventKey)
 
 	return !transferInscribeCnt.Eq(uint256.NewInt(1)) || !transferTransferCnt.IsZero()
 }
@@ -222,7 +224,7 @@ func isUsedOrInvalid(state State, inscrID string) bool {
 func transferTransferSpendToFee(state State, inscrID string, tick string, amount *uint256.Int, txId uint) State {
 	sourceAddr, sourcePkScript := getSourceWalletAndPkscript(state, inscrID)
 	availableKey := GetHash(AvailableBalance, sourceAddr, tick)
-	lastAvailableBalance := state.GetValueOrZero(availableKey)
+	lastAvailableBalance := state.GetUInt256(availableKey)
 	newAvailableBalance := uint256.NewInt(0).Add(lastAvailableBalance, amount)
 	state.Insert(availableKey, convertIntToByte(newAvailableBalance), nodeResolveFn)
 	availableKey = GetHash(AvailableBalancePkscript, sourcePkScript, tick)
@@ -230,7 +232,7 @@ func transferTransferSpendToFee(state State, inscrID string, tick string, amount
 
 	// update transfer-transfer event count
 	eventCntKey := GetEventHash(TransferTransferCount, inscrID)
-	newTransferTransferCnt := uint256.NewInt(0).Add(state.GetValueOrZero(eventCntKey), uint256.NewInt(1))
+	newTransferTransferCnt := uint256.NewInt(0).Add(state.GetUInt256(eventCntKey), uint256.NewInt(1))
 	state.Insert(eventCntKey, convertIntToByte(newTransferTransferCnt), nodeResolveFn)
 
 	return state
@@ -242,14 +244,14 @@ func transferTransferNormal(state State, inscrID string, spentPkScript string, s
 
 	sourceAddr, sourcePkScript := getSourceWalletAndPkscript(state, inscrID)
 	sourceOverallKey := GetHash(OverallBalance, sourceAddr, tick)
-	newSourceOverallBalance := uint256.NewInt(0).Sub(state.GetValueOrZero(sourceOverallKey), amount)
+	newSourceOverallBalance := uint256.NewInt(0).Sub(state.GetUInt256(sourceOverallKey), amount)
 	state.Insert(sourceOverallKey, convertIntToByte(newSourceOverallBalance), nodeResolveFn)
 
 	sourcePkOverallKey := GetHash(OverallBalancePkscript, sourcePkScript, tick)
 	state.Insert(sourcePkOverallKey, convertIntToByte(newSourceOverallBalance), nodeResolveFn)
 
 	spentAvailableKey, spentOverallKey := GetHash(AvailableBalance, spentAddr, tick), GetHash(OverallBalance, spentAddr, tick)
-	newSpentAvailableBalance, newSpentOverallBalance := uint256.NewInt(0).Add(state.GetValueOrZero(spentAvailableKey), amount), uint256.NewInt(0).Add(state.GetValueOrZero(spentOverallKey), amount)
+	newSpentAvailableBalance, newSpentOverallBalance := uint256.NewInt(0).Add(state.GetUInt256(spentAvailableKey), amount), uint256.NewInt(0).Add(state.GetUInt256(spentOverallKey), amount)
 	state.Insert(spentAvailableKey, convertIntToByte(newSpentAvailableBalance), nodeResolveFn)
 	state.Insert(spentOverallKey, convertIntToByte(newSpentOverallBalance), nodeResolveFn)
 	spentAvailableKey, spentOverallKey = GetHash(AvailableBalancePkscript, spentPkScript, tick), GetHash(OverallBalancePkscript, spentPkScript, tick)
@@ -258,7 +260,7 @@ func transferTransferNormal(state State, inscrID string, spentPkScript string, s
 
 	// update transfer-transfer event count
 	eventCntKey := GetEventHash(TransferTransferCount, inscrID)
-	newTransferTransferCnt := uint256.NewInt(0).Add(state.GetValueOrZero(eventCntKey), uint256.NewInt(1))
+	newTransferTransferCnt := uint256.NewInt(0).Add(state.GetUInt256(eventCntKey), uint256.NewInt(1))
 	state.Insert(eventCntKey, convertIntToByte(newTransferTransferCnt), nodeResolveFn)
 	return state
 }
@@ -424,7 +426,7 @@ func Exec(state State, ordTransfer []getter.OrdTransfer) State {
 			}
 			// check if available balance is enough
 			if oldSatpoint == "" {
-				availableBalance := state.GetValueOrZero(GetHash(AvailableBalancePkscript, newPkscript, tick))
+				availableBalance := state.GetUInt256(GetHash(AvailableBalancePkscript, newPkscript, tick))
 
 				if availableBalance.Lt(amount) {
 					continue // not enough available balance

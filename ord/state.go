@@ -39,7 +39,7 @@ func (state *State) Get(key []byte, nodeResolverFn verkle.NodeResolverFn) ([]byt
 	return state.Root.Get(key, nodeResolverFn)
 }
 
-func (state *State) GetValueOrZero(key []byte) *uint256.Int {
+func (state *State) GetUInt256(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
 	value, _ := state.Root.Get(key, nodeResolveFn)
 	if len(value) == 0 {
