@@ -67,7 +67,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
 	return myHeader
 }
 
-func StoreState(header ord.Header, evictHeight uint) error {
+func StoreHeader(header ord.Header, evictHeight uint) error {
 	buffer, err := header.Serialize()
 	bytes := buffer.Bytes()
 	if err != nil {

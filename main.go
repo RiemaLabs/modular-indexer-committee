@@ -39,7 +39,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
-					err := storage.StoreState(header, header.Height-2000) // TODO
+					err := storage.StoreHeader(header, header.Height-2000) // TODO
 					if err != nil {
 						log.Printf("Failed to store the cache at height: %d", i)
 					}
@@ -54,7 +54,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 	}
 	if arguments.EnableStateRootCache {
 		// TODO
-		err := storage.StoreState(header, header.Height-2000)
+		err := storage.StoreHeader(header, header.Height-2000)
 		if err != nil {
 			log.Printf("Failed to store the cache at height: %d", catchupHeight)
 		}
