@@ -68,14 +68,14 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
 }
 
 
-func StoreState(header ord.Header, evictHeight uint) error {
-	buffer, err := state.Serialize()
+func StoreHeader(header ord.Header, evictHeight uint) error {
+	buffer, err := header.Serialize()
 	bytes := buffer.Bytes()
 	if err != nil {
 		return err
 	}
 
-	fileName := fmt.Sprintf("%d%s", state.Height, fileSuffix)
+	fileName := fmt.Sprintf("%d%s", header.Height, fileSuffix)
 	filePath := filepath.Join(cachePath, fileName)
 	err = os.WriteFile(filePath, bytes, 0666)
 	if err != nil {

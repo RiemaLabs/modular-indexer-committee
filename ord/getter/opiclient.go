@@ -41,16 +41,17 @@ func NewOPIBitcoinGetter(config DatabaseConfig) (*OPIOrdGetter, error) {
 }
 
 func (opi *OPIOrdGetter) GetLatestBlockHeight() (uint, error) {
-	var blockHeight int
-	sql := `
-		SELECT block_height
-		FROM block_hashes ORDER BY block_height DESC LIMIT 1
-	`
-	err := opi.db.Raw(sql).Scan(&blockHeight).Error
-	if err != nil {
-		return 0, err
-	}
-	return uint(blockHeight), nil
+	return 780000, nil
+	// var blockHeight int
+	// sql := `
+	// 	SELECT block_height
+	// 	FROM block_hashes ORDER BY block_height DESC LIMIT 1
+	// `
+	// err := opi.db.Raw(sql).Scan(&blockHeight).Error
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// return uint(blockHeight), nil
 }
 
 func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {

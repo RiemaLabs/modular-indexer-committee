@@ -5,15 +5,13 @@ import (
 	"encoding/gob"
 
 	verkle "github.com/ethereum/go-verkle"
-
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
-func (state *State) Serialize() (*bytes.Buffer, error) {
+func (header *Header) Serialize() (*bytes.Buffer, error) {
 	// TODO: Use a native database instead of a key-value store for the state management.
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(state.KV)
+	err := encoder.Encode(header.KV)
 	if err != nil {
 		return nil, err
 	}

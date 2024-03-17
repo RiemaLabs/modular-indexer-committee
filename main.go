@@ -10,13 +10,13 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/RiemaLabs/indexer-committee/checkpoint"
+	// "github.com/RiemaLabs/indexer-committee/checkpoint"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/storage"
 )
 
-func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*ord.StateQueue, error) {
+func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*ord.Queue, error) {
 	// Fetch the latest block height.
 	latestHeight, err := getter.GetLatestBlockHeight()
 	if err != nil {
@@ -41,7 +41,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
-					err := storage.StoreState(state, state.Height-2000) // TODO
+					err := storage.StoreHeader(header, header.Height-2000) // TODO
 					if err != nil {
 						log.Printf("Failed to store the cache at height: %d", i)
 					}
@@ -56,7 +56,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 	}
 	if arguments.EnableStateRootCache {
 		// TODO
-		err := storage.StoreState(state, state.Height-2000)
+		err := storage.StoreHeader(header, header.Height-2000)
 		if err != nil {
 			log.Printf("Failed to store the cache at height: %d", catchupHeight)
 		}
@@ -66,7 +66,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 
 func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *ord.Queue) {
 	// Provide service
-	var history = make(map[uint]map[string]bool)
+	// var history = make(map[uint]map[string]bool)
 
 	for {
 		curHeight := queue.LastestHeight()
@@ -99,18 +99,19 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 		}
 		queue.Unlock()
 
-		if arguments.EnableService {
-			indexerID := checkpoint.IndexerIdentification{
-				URL:          GlobalConfig.Service.URL,
-				Name:         GlobalConfig.Service.Name,
-				Version:      Version,
-				MetaProtocol: GlobalConfig.Service.MetaProtocol,
-			}
-			for i := 0; i <= len(queue.States)-1; i++ {
-				c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
-				go checkpoint.UploadCheckpoint(history, indexerID, c)
-			}
-		}
+		// TODO: later fix
+		// if arguments.EnableService {
+			// indexerID := checkpoint.IndexerIdentification{
+			// 	URL:          GlobalConfig.Service.URL,
+			// 	Name:         GlobalConfig.Service.Name,
+			// 	Version:      Version,
+			// 	MetaProtocol: GlobalConfig.Service.MetaProtocol,
+			// }
+			// for i := 0; i <= len(queue.States)-1; i++ {
+				// c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
+				// go checkpoint.UploadCheckpoint(history, indexerID, c)
+			// }
+		// }
 
 		time.Sleep(60 * time.Second)
 	}
