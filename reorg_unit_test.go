@@ -16,7 +16,7 @@ func TestReorg(t *testing.T) {
 
 	loadService(getter, queue, 3)
 	// Try to recover Root by 1/2/6, and then recover the queue, and remember to compare the commitment
-
+	loadReorg(getter, queue, 0)
 	loadReorg(getter, queue, 1)
 	loadReorg(getter, queue, 2)
 	loadReorg(getter, queue, 3)
@@ -26,7 +26,7 @@ func TestReorg(t *testing.T) {
 }
 
 func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
-	log.Printf("Recover the queue by %d blocks!", recovery)
+	log.Printf("Recover the queue by %d blocks!", recovery+1)
 	// Get Old commitment and print old queue info
 	oldBytes := queue.Header.Root.Commit().Bytes()
 	oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])

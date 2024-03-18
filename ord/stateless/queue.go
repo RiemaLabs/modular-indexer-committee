@@ -88,8 +88,14 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 		queue.Header.Hash = pastState.Hash
 
 		for _, elem := range pastState.Diff.Elements {
-			queue.Header.KV[elem.Key] = elem.OldValue
-			queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			if elem.OldValueExists {
+				queue.Header.KV[elem.Key] = elem.OldValue
+				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			} else {
+				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
+				delete(queue.Header.KV, elem.Key)
+			}
+			
 		}
 	}
 

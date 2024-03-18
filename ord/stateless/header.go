@@ -40,10 +40,16 @@ func (h *Header) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 		copy(newValueArray[:], value)
 	}
 
+	oldExists := true
+	if oldValue == nil {
+		oldExists = false
+	}
+
 	h.Temp.Elements = append(h.Temp.Elements, TripleElement{
 		Key:      keyArray,
 		OldValue: oldValueArray,
 		NewValue: newValueArray,
+		OldValueExists: oldExists,
 	})
 
 	return nil
@@ -79,11 +85,7 @@ func (h *Header) GetString(key []byte) string {
 
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for _, elem := range h.Temp.Elements {
-		if len(elem.NewValue[:]) == 0 {
-			delete(h.KV, elem.Key)
-		} else {
-			h.KV[elem.Key] = elem.NewValue
-		}
+		h.KV[elem.Key] = elem.NewValue
 		h.Root.Insert(elem.Key[:], elem.NewValue[:], nodeResolverFn)
 	}
 
