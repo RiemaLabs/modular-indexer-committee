@@ -37,3 +37,4 @@ config.json
 # Debug
 __debug*
 indexer-committee
+*.prof

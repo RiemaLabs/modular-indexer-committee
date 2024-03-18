@@ -112,6 +112,7 @@ func getLimit() *uint256.Int {
 	return result
 }
 
+// TODO: Support test nets and allow to use a configuration file to set the network selection.
 func decodeBitcoinAddress(address string) ([]byte, error) {
 	hrp, data, errBech32 := bech32.Decode(address)
 	if errBech32 == nil && hrp == "bc" {

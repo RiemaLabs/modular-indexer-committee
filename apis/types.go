@@ -11,7 +11,7 @@ type Brc20VerifiableGetCurrentBalanceOfWalletResponse struct {
 	Proof  string `json:"proof"`
 }
 
-type Brc20VerifiableGetCurrentStateProofResponse struct {
+type Brc20VerifiableLatestStateProofResponse struct {
 	Keys       []string `json:"keys"`
 	PreValues  []string `json:"preValues"`
 	PostValues []string `json:"postValues"`
