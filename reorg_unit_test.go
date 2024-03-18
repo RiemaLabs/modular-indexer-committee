@@ -22,7 +22,6 @@ func TestReorg(t *testing.T) {
 	loadReorg(getter, queue, 3)
 	loadReorg(getter, queue, 4) // at most
 	// loadReorg(getter, queue, 5)
-
 }
 
 func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
