@@ -59,7 +59,7 @@ func (queue *Queue) Offer() {
 func (queue *Queue) Println() {
 	log.Println("====", queue.Header.Height, "====", queue.Header.Hash, "====")
 	for _, node := range queue.History {
-		log.Print(node.Height, "*")
+		log.Print(node.Height, "*", node.Hash)
 	}
 }
 
@@ -74,7 +74,6 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		queue.Offer()
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
-	queue.Println()
 	return nil
 }
 
@@ -94,7 +93,10 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 		}
 	}
 
+	log.Print(curHeight, startHeight, recoveryTillHeight)
+
 	for j := recoveryTillHeight - 1; j < curHeight; j++ {
+		log.Print("===",j)
 		index := j - startHeight
 		ordTransfer, err := getter.GetOrdTransfers(j + 1)
 		if err != nil {
