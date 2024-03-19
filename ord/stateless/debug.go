@@ -1,14 +1,13 @@
 package stateless
 
 import (
-	"log"
-	"encoding/base64"
-	"os"
-	"fmt"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"fmt"
+	"log"
+	"os"
 	"sort"
-
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
@@ -19,11 +18,10 @@ func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight ui
 
 	queue.DebugCommitment("Before Recovery")
 	// queue.DebugKV("Before Recovery")
-	
 
 	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
 		// Recover header from i
-		index2 := i-startHeight
+		index2 := i - startHeight
 		pastState := queue.History[index2]
 		// pastState := queue.GerDiffAtHeight(i)
 		queue.Header.Height = i
@@ -45,7 +43,7 @@ func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight ui
 	log.Print(curHeight, startHeight, recoveryTillHeight)
 
 	for j := recoveryTillHeight - 1; j < curHeight; j++ {
-		log.Print("===",j)
+		log.Print("===", j)
 		index := j - startHeight
 		ordTransfer, err := getter.GetOrdTransfers(j + 1)
 		if err != nil {
@@ -70,7 +68,6 @@ func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight ui
 	return nil
 }
 
-
 func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) error {
 	curHeight := queue.Header.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
@@ -93,27 +90,27 @@ func (queue *Queue) DebugKV(addition string) {
 	KVCommitment := generateMapHash(queue.Header.KV)
 	curHeight := queue.Header.Height
 
-    // Use os.Create to create a file for writing
+	// Use os.Create to create a file for writing
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        // Handle the error; you might want to log it or return it
-        fmt.Println("Error creating file:", err)
-        return
-    }
-    defer file.Close()
+	if err != nil {
+		// Handle the error; you might want to log it or return it
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
 
-    // Write the data to the file
+	// Write the data to the file
 	// TODO: write height, addition and commitment into the file in one line, seperate by ====
 	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, KVCommitment)
-    _, err = file.WriteString(data)
-    if err != nil {
-        // Handle the error
-        fmt.Println("Error writing to file:", err)
-        return
-    }
+	_, err = file.WriteString(data)
+	if err != nil {
+		// Handle the error
+		fmt.Println("Error writing to file:", err)
+		return
+	}
 
-    // Optionally, report success
-    fmt.Println("File written successfully")
+	// Optionally, report success
+	fmt.Println("File written successfully")
 }
 
 func (queue *Queue) DebugCommitment(addition string) {
@@ -123,27 +120,27 @@ func (queue *Queue) DebugCommitment(addition string) {
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
 	curHeight := queue.Header.Height
 
-    // Use os.Create to create a file for writing
+	// Use os.Create to create a file for writing
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        // Handle the error; you might want to log it or return it
-        fmt.Println("Error creating file:", err)
-        return
-    }
-    defer file.Close()
+	if err != nil {
+		// Handle the error; you might want to log it or return it
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
 
-    // Write the data to the file
+	// Write the data to the file
 	// TODO: write height, addition and commitment into the file in one line, seperate by ====
 	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, commitment)
-    _, err = file.WriteString(data)
-    if err != nil {
-        // Handle the error
-        fmt.Println("Error writing to file:", err)
-        return
-    }
+	_, err = file.WriteString(data)
+	if err != nil {
+		// Handle the error
+		fmt.Println("Error writing to file:", err)
+		return
+	}
 
-    // Optionally, report success
-    fmt.Println("File written successfully")
+	// Optionally, report success
+	fmt.Println("File written successfully")
 }
 
 func generateMapHash(kvMap KeyValueMap) string {
@@ -158,7 +155,7 @@ func generateMapHash(kvMap KeyValueMap) string {
 
 	var data []byte
 	for _, k := range keys {
-		data = append(data, k[:]...)       // Append key
+		data = append(data, k[:]...) // Append key
 		temp := kvMap[k]
 		data = append(data, temp[:]...) // Correctly append the value
 	}

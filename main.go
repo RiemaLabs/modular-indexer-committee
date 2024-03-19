@@ -27,7 +27,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 
 	// Start to catch-up
 	if catchupHeight > curHeight {
-		// TODO: Refine the catchup performance by batching query.
+		// TODO: Medium. Refine the catchup performance by batching query.
 		log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, catchupHeight)
 
 		for i := curHeight + 1; i <= catchupHeight; i++ {

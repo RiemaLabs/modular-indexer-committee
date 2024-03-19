@@ -74,7 +74,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 
 	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
 		// Recover header from i
-		index2 := i-startHeight
+		index2 := i - startHeight
 		pastState := queue.History[index2]
 		queue.Header.Height = i
 		queue.Header.Hash = pastState.Hash
@@ -93,7 +93,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 	log.Print(curHeight, startHeight, recoveryTillHeight)
 
 	for j := recoveryTillHeight - 1; j < curHeight; j++ {
-		log.Print("===",j)
+		log.Print("===", j)
 		index := j - startHeight
 		ordTransfer, err := getter.GetOrdTransfers(j + 1)
 		if err != nil {
@@ -115,7 +115,6 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 
 	return nil
 }
-
 
 func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 	// return the height that needs to start reorg

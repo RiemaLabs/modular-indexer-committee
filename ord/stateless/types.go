@@ -12,10 +12,10 @@ import (
 const ValueSize = 32
 
 type TripleElement struct {
-	Key      			[verkle.KeySize]byte
-	OldValue 			[ValueSize]byte
-	NewValue 			[ValueSize]byte
-	OldValueExists 		bool
+	Key            [verkle.KeySize]byte
+	OldValue       [ValueSize]byte
+	NewValue       [ValueSize]byte
+	OldValueExists bool
 }
 
 type DiffList struct {
@@ -48,17 +48,17 @@ type Queue struct {
 }
 
 type KVStorage interface {
-	Insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) error
+	insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn)
 
-	Get(key []byte, nodeResolverFn verkle.NodeResolverFn) ([]byte, error)
+	get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte
 
-	InsertUInt256(key []byte, value *uint256.Int) error
+	InsertUInt256(key []byte, value *uint256.Int)
 
 	GetUInt256(key []byte) *uint256.Int
 
-	InsertBytes(key []byte, value []byte) error
+	InsertBytes(key []byte, value []byte)
 
-	GetString(key []byte) string
+	GetBytes(key []byte) []byte
 
 	Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error
 }

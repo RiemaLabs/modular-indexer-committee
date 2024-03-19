@@ -3,7 +3,7 @@ package ord
 type TXID string
 
 type Wallet string
-type Pkscript string
+type PkScript string
 
 // Example: 521f8eccffa4c41a3a7728dd012ea5a4a02feed81f41159231251ecf1e5c79dai0
 // The part in front of the i is the transaction ID (txid) of the reveal transaction.

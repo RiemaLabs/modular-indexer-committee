@@ -68,7 +68,6 @@ func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 }
 
 func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
-	// TODO
 	var ordTransfers []OrdTransfer
 	sql := `
 		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
@@ -87,7 +86,7 @@ func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error
 	return ordTransfers, nil
 }
 
-func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableOrdTransfer, error) {
-	// TODO
-	return make([]VerifiableOrdTransfer, 0), nil
+func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableBRC20Transfer, error) {
+	// TODO: Urgent.
+	return make([]VerifiableBRC20Transfer, 0), nil
 }

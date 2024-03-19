@@ -1,13 +1,11 @@
 package stateless
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"unicode"
 
 	base58 "github.com/btcsuite/btcd/btcutil/base58"
-	bech32 "github.com/btcsuite/btcd/btcutil/bech32"
 	"github.com/ethereum/go-verkle"
 
 	uint256 "github.com/holiman/uint256"
@@ -108,39 +106,10 @@ func getLimit() *uint256.Int {
 	return result
 }
 
-// TODO: Support test nets and allow to use a configuration file to set the network selection.
-func decodeBitcoinAddress(address string) ([]byte, error) {
-	hrp, data, errBech32 := bech32.Decode(address)
-	if errBech32 == nil && hrp == "bc" {
-		// 32 bytes or 20 bytes
-		decoded, err := bech32.ConvertBits(data[1:], 5, 8, false)
-		if err != nil {
-			return nil, err
-		}
-		decoded, _ = padTo32Bytes(decoded)
-		return decoded, nil
-	}
-
-	decoded := base58.Decode(address)
-	if len(decoded) > 0 {
-		decoded, _ = padTo32Bytes(decoded)
-		return decoded, nil
-	}
-
-	return nil, errors.New("invalid or unsupported bitcoin address format")
+func decodeBitcoinWallet(s string) []byte {
+	return base58.Decode(s)
 }
 
-// padTo32Bytes takes a byte slice and, if it's shorter than 32 bytes, pads it with zeros until it reaches 32 bytes in length.
-func padTo32Bytes(data []byte) ([]byte, error) {
-	if len(data) > 32 {
-		return nil, errors.New("data length greater than 32 bytes")
-	}
-	if len(data) == 32 {
-		return data, nil // Already 32 bytes, no padding needed.
-	}
-	// Create a slice of 32 bytes and copy the data into the beginning of it.
-	paddedData := make([]byte, 32)
-	copy(paddedData, data)
-	// The rest will automatically be zeros, as make initializes slice elements to the zero value of the element type.
-	return paddedData, nil
+func encodeBitcoinWallet(b []byte) string {
+	return base58.Encode(b)
 }
