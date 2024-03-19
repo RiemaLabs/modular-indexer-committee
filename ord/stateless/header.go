@@ -1,4 +1,4 @@
-package ord
+package stateless
 
 import (
 	"bytes"
@@ -28,7 +28,8 @@ func (h *Header) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 		return err
 	}
 
-	var keyArray, oldValueArray, newValueArray [32]byte
+	var keyArray [verkle.KeySize]byte
+	var oldValueArray, newValueArray [ValueSize]byte
 	copy(keyArray[:], key)
 
 	if len(oldValue) > 0 {
@@ -52,6 +53,12 @@ func (h *Header) Get(key []byte, nodeResolverFn verkle.NodeResolverFn) ([]byte, 
 	return h.Root.Get(key, nodeResolverFn)
 }
 
+func (h *Header) InsertUInt256(key []byte, value *uint256.Int) error {
+	var dest [ValueSize]byte
+	value.WriteToArray32(&dest)
+	return h.Insert(key, dest[:], NodeResolveFn)
+}
+
 func (h *Header) GetUInt256(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
 	value, _ := h.Root.Get(key, NodeResolveFn)
@@ -59,6 +66,15 @@ func (h *Header) GetUInt256(key []byte) *uint256.Int {
 		return res
 	}
 	return res.SetBytes(value)
+}
+
+func (h *Header) InsertBytes(key []byte, value []byte) error {
+	// The first slot is the length of string.
+	slots := uint256.NewInt(uint64((len(value) + ValueSize - 1) / ValueSize))
+}
+
+func (h *Header) GetString(key []byte) string {
+	return ""
 }
 
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {

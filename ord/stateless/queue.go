@@ -1,8 +1,9 @@
-package ord
+package stateless
 
 import (
 	"log"
 
+	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
@@ -146,8 +147,8 @@ func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 }
 
 func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHeight uint) (*Queue, error) {
-	var stateList [BitcoinConfirmations - 1]DiffState
-	for i := startHeight; i <= startHeight+BitcoinConfirmations-2; i++ {
+	var stateList [ord.BitcoinConfirmations - 1]DiffState
+	for i := startHeight; i <= startHeight+ord.BitcoinConfirmations-2; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return nil, err

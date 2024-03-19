@@ -22,7 +22,7 @@ func NewRuntimeArguments() *RuntimeArguments {
 func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use: "Nubit Committee Indexer",
-		// TODO: Add descriptions.
+		// TODO: Urgent. Add descriptions.
 		Short: "",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {

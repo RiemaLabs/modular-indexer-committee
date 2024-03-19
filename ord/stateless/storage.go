@@ -1,4 +1,4 @@
-package storage
+package stateless
 
 import (
 	"bytes"
@@ -9,21 +9,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/ethereum/go-verkle"
 )
 
 const cachePath = ".cache"
 const fileSuffix = ".dat"
 
-func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
+func LoadHeader(enableStateRootCache bool, initHeight uint) Header {
 	curHeight := initHeight
-	myHeader := ord.Header{
+	myHeader := Header{
 		Root:   verkle.New(),
 		Height: curHeight,
 		Hash:   "",
-		KV:     make(ord.KeyValueMap),
-		Temp:   ord.DiffList{},
+		KV:     make(KeyValueMap),
+		Temp:   DiffList{},
 	}
 	if enableStateRootCache {
 		files, err := os.ReadDir(cachePath)
@@ -55,7 +54,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
 			}
 			var buffer = bytes.NewBuffer(data)
 			log.Println("Start to rebuild verkle tree.")
-			storedState, err := ord.Deserialize(buffer, uint(maxHeight), nil)
+			storedState, err := Deserialize(buffer, uint(maxHeight), nil)
 			if err != nil {
 				return myHeader
 			}
@@ -67,7 +66,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) ord.Header {
 	return myHeader
 }
 
-func StoreHeader(header ord.Header, evictHeight uint) error {
+func StoreHeader(header Header, evictHeight uint) error {
 	buffer, err := header.Serialize()
 	bytes := buffer.Bytes()
 	if err != nil {

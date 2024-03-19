@@ -11,10 +11,10 @@ import (
 
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
-	"github.com/RiemaLabs/indexer-committee/storage"
+	"github.com/RiemaLabs/indexer-committee/ord/stateless"
 )
 
-func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*ord.Queue, error) {
+func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*stateless.Queue, error) {
 	// Fetch the latest block height.
 	latestHeight, err := getter.GetLatestBlockHeight()
 	if err != nil {
@@ -22,7 +22,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 	}
 	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
-	header := storage.LoadHeader(arguments.EnableStateRootCache, initHeight)
+	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
 
 	// Start to catch-up
@@ -35,17 +35,17 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 			if err != nil {
 				return nil, err
 			}
-			ord.Exec(&header, ordTransfer)
+			stateless.Exec(&header, ordTransfer)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
-					err := storage.StoreHeader(header, header.Height-2000) // TODO
+					err := stateless.StoreHeader(header, header.Height-2000)
 					if err != nil {
 						log.Printf("Failed to store the cache at height: %d", i)
 					}
 				}
 			}
-			header.Paging(getter, false, ord.NodeResolveFn)
+			header.Paging(getter, false, stateless.NodeResolveFn)
 		}
 	} else if catchupHeight == curHeight {
 		// stateRoot is located at catchupHeight.
@@ -53,18 +53,16 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
 	if arguments.EnableStateRootCache {
-		// TODO
-		err := storage.StoreHeader(header, header.Height-2000)
+		err := stateless.StoreHeader(header, header.Height-2000)
 		if err != nil {
 			log.Printf("Failed to store the cache at height: %d", catchupHeight)
 		}
 	}
-	return ord.NewQueues(getter, &header, true, catchupHeight+1)
+	return stateless.NewQueues(getter, &header, true, catchupHeight+1)
 }
 
-func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *ord.Queue) {
-	// TODO: Fix
-	// // Provide service
+func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue) {
+	// TODO: Urgent. Provide service.
 	// var history = make(map[uint]map[string]bool)
 
 	for {
@@ -99,7 +97,6 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *o
 		queue.Unlock()
 
 		if arguments.EnableService {
-			// TODO: Fix
 			// indexerID := checkpoint.IndexerIdentification{
 			// 	URL:          GlobalConfig.Service.URL,
 			// 	Name:         GlobalConfig.Service.Name,
@@ -148,7 +145,7 @@ func main() {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
 
-	queue, err := catchupStage(getter, arguments, ord.BRC20StartHeight-1)
+	queue, err := catchupStage(getter, arguments, stateless.BRC20StartHeight-1)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
