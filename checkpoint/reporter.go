@@ -33,18 +33,12 @@ func NewCheckpoint(indexID IndexerIdentification, header stateless.Header) Check
 	return content
 }
 
-const (
-	// AWS_S3_REGION = "AWS_REGION"
-	AWS_S3_REGION         = "us-west-2"
-	AWS_S3_BUCKET_INDEXER = "nubit-modular-indexer"
-)
-
 var awsS3Client *s3.Client
 
-func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, checkpoint Checkpoint) {
+func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, checkpoint Checkpoint, region string, bucket string) {
 	// the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:aws.Configconfig.LoadDefaultConfig
 	// creds := credentials.NewStaticCredentialsProvider(your_access_key, your_secret_key, "")
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(AWS_S3_REGION))
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +67,7 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	}
 
 	output, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(AWS_S3_BUCKET_INDEXER),
+		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
 		Body:   bytes.NewReader(checkpointJSON),
 	})
@@ -88,5 +82,4 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	}
 
 	// TODO: upload to DA
-
 }
