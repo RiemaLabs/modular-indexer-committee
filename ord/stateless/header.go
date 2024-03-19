@@ -3,6 +3,7 @@ package stateless
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
@@ -40,10 +41,20 @@ func (h *Header) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 		copy(newValueArray[:], value)
 	}
 
+	oldExists := true
+	if oldValue == nil {
+		oldExists = false
+	}
+
+	if len(value) == 0{
+		log.Print("Critical Error")
+	}
+
 	h.Temp.Elements = append(h.Temp.Elements, TripleElement{
 		Key:      keyArray,
 		OldValue: oldValueArray,
 		NewValue: newValueArray,
+		OldValueExists: oldExists,
 	})
 
 	return nil
@@ -70,7 +81,8 @@ func (h *Header) GetUInt256(key []byte) *uint256.Int {
 
 func (h *Header) InsertBytes(key []byte, value []byte) error {
 	// The first slot is the length of string.
-	slots := uint256.NewInt(uint64((len(value) + ValueSize - 1) / ValueSize))
+	// slots := uint256.NewInt(uint64((len(value) + ValueSize - 1) / ValueSize))
+	return nil
 }
 
 func (h *Header) GetString(key []byte) string {
@@ -79,11 +91,7 @@ func (h *Header) GetString(key []byte) string {
 
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for _, elem := range h.Temp.Elements {
-		if len(elem.NewValue[:]) == 0 {
-			delete(h.KV, elem.Key)
-		} else {
-			h.KV[elem.Key] = elem.NewValue
-		}
+		h.KV[elem.Key] = elem.NewValue
 		h.Root.Insert(elem.Key[:], elem.NewValue[:], nodeResolverFn)
 	}
 

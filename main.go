@@ -58,6 +58,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 			log.Printf("Failed to store the cache at height: %d", catchupHeight)
 		}
 	}
+
 	return stateless.NewQueues(getter, &header, true, catchupHeight+1)
 }
 
