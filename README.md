@@ -8,3 +8,6 @@ In `queue.go`
 ordTransfer, err := getter.GetOrdTransfers(i)
 ->
 ordTransfer, err := getter.GetOrdTransfers(i+1)
+
+
+<!-- Debug Recovery的方法，就是把每一次的commitment打印出来 -->

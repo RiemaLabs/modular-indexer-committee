@@ -34,15 +34,6 @@ func (queue *Queue) LastestHeight() uint {
 	return queue.Header.Height
 }
 
-func (queue *Queue) GerDiffAtHeight(height uint) DiffState {
-	curHeight := queue.Header.Height
-	// if height >= curHeight || height < curHeight-5{
-	// return nil
-	// }
-	curLen := len(queue.History)
-	return queue.History[curLen-(int(curHeight-height))]
-}
-
 // Offer the latest state and pop the oldest state.
 func (queue *Queue) Offer() {
 	// Offer is not given parameter to protect from wrong writing
@@ -83,7 +74,8 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 
 	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
 		// Recover header from i
-		pastState := queue.GerDiffAtHeight(i)
+		index2 := i-startHeight
+		pastState := queue.History[index2]
 		queue.Header.Height = i
 		queue.Header.Hash = pastState.Hash
 
@@ -95,7 +87,6 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
 				delete(queue.Header.KV, elem.Key)
 			}
-			
 		}
 	}
 
@@ -124,6 +115,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 
 	return nil
 }
+
 
 func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 	// return the height that needs to start reorg

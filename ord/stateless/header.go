@@ -3,6 +3,7 @@ package stateless
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
@@ -43,6 +44,10 @@ func (h *Header) Insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	oldExists := true
 	if oldValue == nil {
 		oldExists = false
+	}
+
+	if len(value) == 0{
+		log.Print("Critical Error")
 	}
 
 	h.Temp.Elements = append(h.Temp.Elements, TripleElement{

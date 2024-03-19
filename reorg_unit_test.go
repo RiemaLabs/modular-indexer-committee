@@ -14,7 +14,7 @@ func TestReorg(t *testing.T) {
 	getter, _ := loadMain()
 	queue := loadCatchUp()
 
-	loadService(getter, queue, 3)
+	loadService(getter, queue, 10)
 	// Try to recover Root by 1/2/6, and then recover the queue, and remember to compare the commitment
 	loadReorg(getter, queue, 0)
 	loadReorg(getter, queue, 1)
