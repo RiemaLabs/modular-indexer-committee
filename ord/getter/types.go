@@ -1,18 +1,29 @@
 package getter
 
+import "github.com/RiemaLabs/indexer-committee/ord"
+
 type OrdTransfer struct {
 	ID            uint
 	InscriptionID string
 	OldSatpoint   string
-	NewPkscript   string
-	NewWallet     string
+	NewPkScript   ord.PkScript
+	NewWallet     ord.Wallet
 	SentAsFee     bool
 	Content       []byte
 	ContentType   string
+}
+
+// For the verification of light client.
+type VerifiableBRC20Transfer struct {
+	// "" -> satPoint0 -> satPoint1 -> ...
+	SatPointPath []string
+
+	Transfer OrdTransfer
 }
 
 type OrdGetter interface {
 	GetLatestBlockHeight() (uint, error)
 	GetBlockHash(blockHeight uint) (string, error)
 	GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error)
+	GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableBRC20Transfer, error)
 }

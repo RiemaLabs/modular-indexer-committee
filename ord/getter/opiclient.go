@@ -41,17 +41,16 @@ func NewOPIBitcoinGetter(config DatabaseConfig) (*OPIOrdGetter, error) {
 }
 
 func (opi *OPIOrdGetter) GetLatestBlockHeight() (uint, error) {
-	return 780000, nil
-	// var blockHeight int
-	// sql := `
-	// 	SELECT block_height
-	// 	FROM block_hashes ORDER BY block_height DESC LIMIT 1
-	// `
-	// err := opi.db.Raw(sql).Scan(&blockHeight).Error
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// return uint(blockHeight), nil
+	var blockHeight int
+	sql := `
+		SELECT block_height
+		FROM block_hashes ORDER BY block_height DESC LIMIT 1
+	`
+	err := opi.db.Raw(sql).Scan(&blockHeight).Error
+	if err != nil {
+		return 0, err
+	}
+	return uint(blockHeight), nil
 }
 
 func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
@@ -69,7 +68,7 @@ func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 }
 
 func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
-	var ordTransfer []OrdTransfer
+	var ordTransfers []OrdTransfer
 	sql := `
 		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
 		FROM ord_transfers ot
@@ -80,9 +79,14 @@ func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error
 			AND oc."content" is not null AND oc."content"->>'p' = 'brc-20'
 		ORDER BY ot.id asc;
 		`
-	err := opi.db.Raw(sql, blockHeight).Scan(&ordTransfer).Error
+	err := opi.db.Raw(sql, blockHeight).Scan(&ordTransfers).Error
 	if err != nil {
 		return make([]OrdTransfer, 0), err
 	}
-	return ordTransfer, nil
+	return ordTransfers, nil
+}
+
+func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableBRC20Transfer, error) {
+	// TODO: Urgent.
+	return make([]VerifiableBRC20Transfer, 0), nil
 }

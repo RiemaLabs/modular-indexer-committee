@@ -1,8 +1,9 @@
-package ord
+package stateless
 
 import (
 	"log"
 
+	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
@@ -33,15 +34,6 @@ func (queue *Queue) LastestHeight() uint {
 	return queue.Header.Height
 }
 
-func (queue *Queue) GerDiffAtHeight(height uint) DiffState {
-	curHeight := queue.Header.Height
-	// if height >= curHeight || height < curHeight-5{
-	// return nil
-	// }
-	curLen := len(queue.History)
-	return queue.History[curLen-(int(curHeight-height))]
-}
-
 // Offer the latest state and pop the oldest state.
 func (queue *Queue) Offer() {
 	// Offer is not given parameter to protect from wrong writing
@@ -58,7 +50,7 @@ func (queue *Queue) Offer() {
 func (queue *Queue) Println() {
 	log.Println("====", queue.Header.Height, "====", queue.Header.Hash, "====")
 	for _, node := range queue.History {
-		log.Print(node.Height, "*")
+		log.Print(node.Height, "*", node.Hash)
 	}
 }
 
@@ -73,7 +65,6 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		queue.Offer()
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
-	queue.Println()
 	return nil
 }
 
@@ -83,17 +74,26 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 
 	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
 		// Recover header from i
-		pastState := queue.GerDiffAtHeight(i)
+		index2 := i - startHeight
+		pastState := queue.History[index2]
 		queue.Header.Height = i
 		queue.Header.Hash = pastState.Hash
 
 		for _, elem := range pastState.Diff.Elements {
-			queue.Header.KV[elem.Key] = elem.OldValue
-			queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			if elem.OldValueExists {
+				queue.Header.KV[elem.Key] = elem.OldValue
+				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			} else {
+				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
+				delete(queue.Header.KV, elem.Key)
+			}
 		}
 	}
 
+	log.Print(curHeight, startHeight, recoveryTillHeight)
+
 	for j := recoveryTillHeight - 1; j < curHeight; j++ {
+		log.Print("===", j)
 		index := j - startHeight
 		ordTransfer, err := getter.GetOrdTransfers(j + 1)
 		if err != nil {
@@ -146,8 +146,8 @@ func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 }
 
 func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHeight uint) (*Queue, error) {
-	var stateList [BitcoinConfirmations - 1]DiffState
-	for i := startHeight; i <= startHeight+BitcoinConfirmations-2; i++ {
+	var stateList [ord.BitcoinConfirmations - 1]DiffState
+	for i := startHeight; i <= startHeight+ord.BitcoinConfirmations-2; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return nil, err

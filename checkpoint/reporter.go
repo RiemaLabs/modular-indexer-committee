@@ -9,14 +9,14 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
+	"github.com/RiemaLabs/indexer-committee/ord/stateless"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
 )
 
-func NewCheckpoint(indexID IndexerIdentification, header ord.Header) Checkpoint {
+func NewCheckpoint(indexID IndexerIdentification, header stateless.Header) Checkpoint {
 	blockHeight := strconv.FormatUint(uint64(header.Height), 10)
 	blockHash := header.Hash
 	bytes := header.Root.Commit().Bytes()
