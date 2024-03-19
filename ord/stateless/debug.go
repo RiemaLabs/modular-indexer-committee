@@ -1,4 +1,4 @@
-package ord
+package stateless
 
 import (
 	"log"
@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"sort"
+
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
@@ -146,13 +147,11 @@ func (queue *Queue) DebugCommitment(addition string) {
 }
 
 func generateMapHash(kvMap KeyValueMap) string {
-	// 提取所有的键
 	keys := make([][32]byte, 0, len(kvMap))
 	for k := range kvMap {
 		keys = append(keys, k)
 	}
 
-	// 对键进行排序
 	sort.Slice(keys, func(i, j int) bool {
 		return compareByteArrays(keys[i], keys[j])
 	})
@@ -173,5 +172,5 @@ func compareByteArrays(a, b [32]byte) bool {
 			return a[i] < b[i]
 		}
 	}
-	return false // 如果完全相同，则返回false
+	return false
 }

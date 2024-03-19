@@ -81,7 +81,8 @@ func (h *Header) GetUInt256(key []byte) *uint256.Int {
 
 func (h *Header) InsertBytes(key []byte, value []byte) error {
 	// The first slot is the length of string.
-	slots := uint256.NewInt(uint64((len(value) + ValueSize - 1) / ValueSize))
+	// slots := uint256.NewInt(uint64((len(value) + ValueSize - 1) / ValueSize))
+	return nil
 }
 
 func (h *Header) GetString(key []byte) string {

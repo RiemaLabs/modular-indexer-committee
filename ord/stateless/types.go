@@ -12,9 +12,10 @@ import (
 const ValueSize = 32
 
 type TripleElement struct {
-	Key      [verkle.KeySize]byte
-	OldValue [ValueSize]byte
-	NewValue [ValueSize]byte
+	Key      			[verkle.KeySize]byte
+	OldValue 			[ValueSize]byte
+	NewValue 			[ValueSize]byte
+	OldValueExists 		bool
 }
 
 type DiffList struct {
