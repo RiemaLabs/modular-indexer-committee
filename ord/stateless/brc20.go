@@ -313,8 +313,8 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 			}
 			keyExists, _, _, _, _ := getTickStatus(tick)
 			tickExists := state.GetUInt256(keyExists)
-			if tickExists.Eq(uint256.NewInt(0)) {
-				continue // not deployed
+			if !tickExists.Eq(uint256.NewInt(0)) {
+				continue // already deployed
 			}
 			decimals := uint256.NewInt(18)
 			if decValue, ok := js["dec"]; ok {
@@ -332,10 +332,11 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 				continue // invalid decimals
 			}
 			var maxSupply *uint256.Int
+			var err error
 			if !isPositiveNumberWithDot(maxSupplyValue, false) {
 				continue
 			} else {
-				maxSupply, err := getNumberExtendedTo18Decimals(maxSupplyValue, decimals, false)
+				maxSupply, err = getNumberExtendedTo18Decimals(maxSupplyValue, decimals, false)
 				if err != nil || maxSupply == nil {
 					continue // invalid max supply
 				}

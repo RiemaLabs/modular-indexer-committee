@@ -7,7 +7,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.7
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.52.1
-	github.com/btcsuite/btcd v0.24.0
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/ethereum/go-verkle v0.1.1-0.20240119133216-f8289fc59149
 	github.com/holiman/uint256 v1.2.4
@@ -35,16 +34,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.4 // indirect
 	github.com/aws/smithy-go v1.20.1 // indirect
 	github.com/bits-and-blooms/bitset v1.7.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.1.3 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
-	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
-	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
-	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233 // indirect
-	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect

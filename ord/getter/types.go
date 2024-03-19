@@ -14,7 +14,7 @@ type OrdTransfer struct {
 }
 
 // For the verification of light client.
-type VerifiableBRC20Transfer struct {
+type VerifiableOrdTransfer struct {
 	// "" -> satPoint0 -> satPoint1 -> ...
 	SatPointPath []string
 
@@ -25,5 +25,5 @@ type OrdGetter interface {
 	GetLatestBlockHeight() (uint, error)
 	GetBlockHash(blockHeight uint) (string, error)
 	GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error)
-	GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableBRC20Transfer, error)
+	GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableOrdTransfer, error)
 }

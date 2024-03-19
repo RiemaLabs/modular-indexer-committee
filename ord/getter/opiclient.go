@@ -86,7 +86,26 @@ func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error
 	return ordTransfers, nil
 }
 
-func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableBRC20Transfer, error) {
-	// TODO: Urgent.
-	return make([]VerifiableBRC20Transfer, 0), nil
+func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableOrdTransfer, error) {
+	var vots []VerifiableOrdTransfer
+	ots, err := opi.GetOrdTransfers(blockHeight)
+	if err != nil {
+		return make([]VerifiableOrdTransfer, 0), nil
+	}
+	for _, ot := range ots {
+		sql := `
+
+		`
+		var path []string
+		err := opi.db.Raw(sql, blockHeight).Scan(&path).Error
+		if err != nil {
+			return make([]VerifiableOrdTransfer, 0), err
+		}
+		vot := VerifiableOrdTransfer{
+			Transfer:     ot,
+			SatPointPath: path,
+		}
+		vots = append(vots, vot)
+	}
+	return vots, nil
 }
