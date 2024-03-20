@@ -31,7 +31,8 @@ func loadService(getter *getter.OPIOrdGetter, queue *stateless.Queue, upHeight u
 
 	if curHeight < latestHeight {
 		queue.Lock()
-		err := queue.DebugUpdate(getter, latestHeight)
+		err := queue.DebugUpdateStrong(getter, latestHeight)
+		// err := queue.DebugUpdate(getter, latestHeight) // For other cases
 		queue.Unlock()
 		if err != nil {
 			log.Fatalf("Failed to update the queue: %v", err)

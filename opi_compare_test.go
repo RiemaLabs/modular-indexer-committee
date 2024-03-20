@@ -5,13 +5,14 @@ import (
 )
 
 func TestOPI(t *testing.T) {
-	loadCatchUp(780000)
+	var catchupHeight uint = 780000
+	var toHeight uint = 785000
+	goTOHeight(toHeight, catchupHeight)
 }
 
 
-func goTOHeight() {
+func goTOHeight(toHeight uint, startHeight uint) {
 	getter, _ := loadMain()
-	queue := loadCatchUp(780000)
-	loadService(getter, queue, 5000)
-
+	queue := loadCatchUp(startHeight)
+	loadService(getter, queue, toHeight-startHeight)
 }

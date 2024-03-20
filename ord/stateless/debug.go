@@ -3,14 +3,28 @@ package stateless
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/indexer-committee/ord"
 )
+
+type Record struct {
+	ID              int
+	Pkscript        string
+	Wallet          string
+	Tick            string
+	OverallBalance  string
+	AvailableBalance string
+	BlockHeight     uint
+	EventID         uint
+}
 
 func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
 	curHeight := queue.Header.Height
@@ -78,47 +92,20 @@ func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) erro
 		queue.Offer()
 		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
-		ExamimeTransfers(ordTransfer, i)
 	}
 	return nil
 }
 
-func ExamimeTransfers(ordTransfer []getter.OrdTransfer, height uint) {
-	// first get transfers
-	for _, trans := range(ordTransfer) {
-		pkScript := trans.NewPkScript
-		curHeight := height
-		
-	}
-}
-
-type Matches struct {
-	Tick            string
-	OverallBalance  string
-	AvailableBalance string
-}
-func ExamineTransfers(ordTransfer []getter.OrdTransfer, height uint, pkScript string) []Matches {
-	
-	
-	matches := // TODO
-
-	// Iterate over each transfer and check for matching blockHeight and pkScript
-	for _, trans := range ordTransfer {
-		pkScript := trans.NewPkScript
-		curHeight := height
-		// TODO: match the csv file
-	}
-	
-	// Return the slice with all matching entries
-	return matches
-}
-
 func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint) error {
-	// Write all KV to files
+	// TODO: first load the csv file
+	records, err := loadOPIKV("./opiKV/data.csv")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		os.Exit(1)
+	}
+
 	curHeight := queue.Header.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
-		queue.DebugCommitment("During Updating")
-		// queue.DebugKV("During Updating")
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return err
@@ -126,14 +113,85 @@ func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint
 		Exec(&queue.Header, ordTransfer)
 		queue.Offer()
 		queue.Header.OrdTrans = ordTransfer
-		queue.KVTOfile()
 		queue.Header.Paging(getter, true, NodeResolveFn)
+
+		// Start checking
+		newHeight := queue.Header.Height
+		if newHeight >= 780000 {
+			if recordsForHeight, found := records[newHeight]; found {
+				for _, ele := range(recordsForHeight) {
+					opiTick := ele.Tick
+					opiPkScript := ele.Pkscript
+					opiOverallBalance := ele.OverallBalance
+					opiAvailableBalance := ele.AvailableBalance
+
+					var ordPkScript ord.PkScript = ord.PkScript(opiPkScript)
+					_, _, availableBalance, overallBalance := GetBalances(&queue.Header, opiTick, ordPkScript)
+					availableBalanceStr := availableBalance.String()
+					overallBalanceStr := overallBalance.String()
+
+					if availableBalanceStr != opiAvailableBalance {
+						fmt.Printf("Error, not match at %d for availableBalance", newHeight)
+					}
+					if overallBalanceStr != opiOverallBalance {
+						fmt.Printf("Error, not match at %d for overallBalance", newHeight)
+					}
+				}
+			}
+		}
 	}
 	return nil
 }
 
-func (queue *Queue) KVTOfile() {
+func loadOPIKV(filepath string) (map[uint][]Record, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil, err
+	}
+	defer file.Close()
 
+	reader := csv.NewReader(file)
+	_, err = reader.Read()
+	if err != nil {
+		fmt.Println("Error reading first line:", err)
+		return nil, err
+	}
+
+	records := make(map[uint][]Record)
+
+	for {
+		line, err := reader.Read()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			fmt.Println("Error reading line:", err)
+			return nil, err
+		}
+
+		id, _ := strconv.Atoi(line[0])
+		blockHeightUint64, _ := strconv.ParseUint(line[6], 10, 32)
+		blockHeight := uint(blockHeightUint64)
+		eventID, _ := strconv.ParseUint(line[7], 10, 32)
+
+		// overallBalance, _ := uint256.FromDecimal(line[4])
+		// availableBalance, _ := uint256.FromDecimal(line[5])
+
+		record := Record{
+			ID:               id,
+			Pkscript:         line[1],
+			Wallet:           line[2],
+			Tick:             line[3],
+			OverallBalance:   line[4],
+			AvailableBalance: line[5],
+			BlockHeight:      uint(blockHeight),
+			EventID:          uint(eventID),
+		}
+
+		records[blockHeight] = append(records[blockHeight], record)
+	}
+	return records, nil
 }
 
 func (queue *Queue) DebugKV(addition string) {
