@@ -97,7 +97,7 @@ func (h *Header) InsertBytes(key []byte, value []byte) {
 	h.InsertUInt256(newKey, uint256.NewInt(uint64(requiredSlots)))
 
 	for i := range requiredSlots {
-		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i)
+		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
 		h.insert(newKey, value[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
 	}
 }
@@ -109,7 +109,7 @@ func (h *Header) GetBytes(key []byte) []byte {
 	requiredSlots := h.GetUInt256(newKey).Uint64()
 	value := make([]byte, 0)
 	for i := range requiredSlots {
-		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i)
+		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
 		value = append(value, h.get(newKey, NodeResolveFn)...)
 	}
 	return value
