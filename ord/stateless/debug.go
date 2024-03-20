@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord"
+	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
 type Record struct {
@@ -98,7 +98,7 @@ func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) erro
 
 func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint) error {
 	// TODO: first load the csv file
-	records, err := loadOPIKV("./opiKV/data.csv")
+	records, err := loadOPIKV("./data/data.csv")
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		os.Exit(1)
@@ -125,8 +125,8 @@ func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint
 					opiOverallBalance := ele.OverallBalance
 					opiAvailableBalance := ele.AvailableBalance
 
-					var ordPkScript ord.PkScript = ord.PkScript(opiPkScript)
-					_, _, availableBalance, overallBalance := GetBalances(&queue.Header, opiTick, ordPkScript)
+					var ordPkscript ord.Pkscript = ord.Pkscript(opiPkScript)
+					_, _, availableBalance, overallBalance := GetBalances(&queue.Header, opiTick, ordPkscript)
 					availableBalanceStr := availableBalance.String()
 					overallBalanceStr := overallBalance.String()
 
