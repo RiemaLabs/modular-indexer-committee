@@ -8,7 +8,7 @@ type OrdTransferJSON struct {
 	ID            uint         `json:"ID"`
 	InscriptionID string       `json:"inscriptionID"`
 	NewSatpoint   string       `json:"newSatpoint"`
-	NewPkScript   ord.PkScript `json:"newPkscript"`
+	NewPkscript   ord.Pkscript `json:"newPkscript"`
 	NewWallet     ord.Wallet   `json:"newWallet"`
 	SentAsFee     bool         `json:"sentAsFee"`
 	Content       string       `json:"content"`

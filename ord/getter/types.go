@@ -7,7 +7,7 @@ type OrdTransfer struct {
 	InscriptionID string
 	OldSatpoint   string
 	NewSatpoint   string
-	NewPkScript   ord.PkScript
+	NewPkscript   ord.Pkscript
 	NewWallet     ord.Wallet
 	SentAsFee     bool
 	Content       []byte

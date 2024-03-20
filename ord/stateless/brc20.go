@@ -22,15 +22,15 @@ type LocationID = byte
 
 type Dynamic = string
 
-// Tick+PkScript State
-// Key: Keccak256(tick + PkScript + "static")[:StemSize] + LocationID
+// Tick+Pkscript State
+// Key: Keccak256(tick + Pkscript + "static")[:StemSize] + LocationID
 // Value: uint256
-var AvailableBalancePkScript LocationID = 0x00
-var OverallBalancePkScript LocationID = 0x01
+var AvailableBalancePkscript LocationID = 0x00
+var OverallBalancePkscript LocationID = 0x01
 
-func getTickPkScriptHash(tick string, PkScript ord.PkScript, stateID LocationID) []byte {
+func getTickPkscriptHash(tick string, Pkscript ord.Pkscript, stateID LocationID) []byte {
 	tickBytes := []byte(tick)
-	uniqueBytes := []byte(PkScript)
+	uniqueBytes := []byte(Pkscript)
 	typeBytes := []byte("static")
 	preImg := append(append(uniqueBytes, tickBytes...), typeBytes...)
 	hasher := sha3.NewLegacyKeccak256()
@@ -39,17 +39,17 @@ func getTickPkScriptHash(tick string, PkScript ord.PkScript, stateID LocationID)
 	return append(resHash[:verkle.StemSize], stateID)
 }
 
-func updateBalance(f func(*uint256.Int) *uint256.Int, state KVStorage, tick string, PkScript ord.PkScript, loc LocationID) {
-	key := getTickPkScriptHash(tick, PkScript, loc)
+func updateBalance(f func(*uint256.Int) *uint256.Int, state KVStorage, tick string, Pkscript ord.Pkscript, loc LocationID) {
+	key := getTickPkscriptHash(tick, Pkscript, loc)
 	value := state.GetUInt256(key)
 	res := f(value)
 	state.InsertUInt256(key, res)
 }
 
 // Available, OverallBalances
-func GetBalances(state KVStorage, tick string, PkScript ord.PkScript) ([]byte, []byte, *uint256.Int, *uint256.Int) {
-	key0 := getTickPkScriptHash(tick, PkScript, AvailableBalancePkScript)
-	key1 := getTickPkScriptHash(tick, PkScript, OverallBalancePkScript)
+func GetBalances(state KVStorage, tick string, Pkscript ord.Pkscript) ([]byte, []byte, *uint256.Int, *uint256.Int) {
+	key0 := getTickPkscriptHash(tick, Pkscript, AvailableBalancePkscript)
+	key1 := getTickPkscriptHash(tick, Pkscript, OverallBalancePkscript)
 	value0 := state.GetUInt256(key0)
 	value1 := state.GetUInt256(key1)
 	return key0, key1, value0, value1
@@ -88,7 +88,7 @@ func updateTickState(f func(*uint256.Int) *uint256.Int, state KVStorage, tick st
 // Wallet State
 // Key: Keccak256(wallet + "static")[:StemSize] + LocationID
 // Value: []byte (Less than 1534 bytes)
-var WalletLatestPkScript LocationID = 0x00
+var WalletLatestPkscript LocationID = 0x00
 
 func getWalletHash(wallet string, locationID LocationID) []byte {
 	walletBytes := []byte(wallet)
@@ -100,18 +100,18 @@ func getWalletHash(wallet string, locationID LocationID) []byte {
 	return append(resHash[:verkle.StemSize], locationID)
 }
 
-func updateLatestPkScript(state KVStorage, wallet ord.Wallet, PkScript ord.PkScript) {
-	key := getWalletHash(string(wallet), WalletLatestPkScript)
-	value := string(PkScript)
+func updateLatestPkscript(state KVStorage, wallet ord.Wallet, Pkscript ord.Pkscript) {
+	key := getWalletHash(string(wallet), WalletLatestPkscript)
+	value := string(Pkscript)
 	bytes, err := hex.DecodeString(value)
 	if err != nil {
-		panic(fmt.Errorf("error decoding PkScript: %v", err))
+		panic(fmt.Errorf("error decoding Pkscript: %v", err))
 	}
 	state.InsertBytes(key, bytes)
 }
 
-func GetLatestPkScript(state KVStorage, wallet string) ([]byte, string) {
-	key := getWalletHash(wallet, WalletLatestPkScript)
+func GetLatestPkscript(state KVStorage, wallet string) ([]byte, string) {
+	key := getWalletHash(wallet, WalletLatestPkscript)
 	value := state.GetBytes(key)
 	return key, hex.EncodeToString(value)
 }
@@ -127,7 +127,7 @@ var TransferTransferCount LocationID = 0x1
 var TransferInscribeSourceWallet LocationID = 0x2
 
 // Value: []byte (Less than 1534 bytes)
-var TransferInscribeSourcePkScript LocationID = 0x5
+var TransferInscribeSourcePkscript LocationID = 0x5
 
 func getEventHash(inscriptionID string, locationID LocationID) []byte {
 	inscribeBytes := []byte(inscriptionID)
@@ -139,27 +139,27 @@ func getEventHash(inscriptionID string, locationID LocationID) []byte {
 	return append(resHash[:verkle.StemSize], locationID)
 }
 
-func updateWalletAndPkScript(state KVStorage, inscriptionID string, wallet ord.Wallet, PkScript ord.PkScript) {
+func updateWalletAndPkscript(state KVStorage, inscriptionID string, wallet ord.Wallet, Pkscript ord.Pkscript) {
 	walletKey := getEventHash(inscriptionID, TransferInscribeSourceWallet)
 	walletBytes := decodeBitcoinWallet(string(wallet))
 	state.InsertBytes(walletKey, walletBytes)
 
-	PkScriptKey := getEventHash(inscriptionID, TransferInscribeSourcePkScript)
-	PkScriptBytes, err := hex.DecodeString(string(PkScript))
+	PkscriptKey := getEventHash(inscriptionID, TransferInscribeSourcePkscript)
+	PkscriptBytes, err := hex.DecodeString(string(Pkscript))
 	if err != nil {
 		panic(err)
 	}
-	state.InsertBytes(PkScriptKey, PkScriptBytes)
+	state.InsertBytes(PkscriptKey, PkscriptBytes)
 }
 
-func getWalletAndPkScript(state KVStorage, inscriptionID string) (ord.Wallet, ord.PkScript) {
+func getWalletAndPkscript(state KVStorage, inscriptionID string) (ord.Wallet, ord.Pkscript) {
 	walletKey := getEventHash(inscriptionID, TransferInscribeSourceWallet)
 	walletBytes := state.GetBytes(walletKey)
 	wallet := encodeBitcoinWallet(walletBytes)
-	PkScriptKey := getEventHash(inscriptionID, TransferInscribeSourcePkScript)
-	PkScriptBytes := state.GetBytes(PkScriptKey)
-	PkScript := hex.EncodeToString(PkScriptBytes)
-	return ord.Wallet(wallet), ord.PkScript(PkScript)
+	PkscriptKey := getEventHash(inscriptionID, TransferInscribeSourcePkscript)
+	PkscriptBytes := state.GetBytes(PkscriptKey)
+	Pkscript := hex.EncodeToString(PkscriptBytes)
+	return ord.Wallet(wallet), ord.Pkscript(Pkscript)
 }
 
 func getEventCounts(state KVStorage, inscriptionID string) (*uint256.Int, *uint256.Int) {
@@ -178,38 +178,38 @@ func isUsedOrInvalid(state KVStorage, inscriptionID string) bool {
 
 func deployInscribe(state KVStorage, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int) {
 	keyExists, keyRemainingSupply, keyMaxSupply, keyLimitPerMint, keyDecimals := getTickStatus(tick)
-	state.InsertUInt256(keyExists, uint256.NewInt(0))
+	state.InsertUInt256(keyExists, uint256.NewInt(1))
 	state.InsertUInt256(keyRemainingSupply, maxSupply)
 	state.InsertUInt256(keyMaxSupply, maxSupply)
 	state.InsertUInt256(keyLimitPerMint, limitPerMint)
 	state.InsertUInt256(keyDecimals, decimals)
 }
 
-func mintInscribe(state KVStorage, newPkScript ord.PkScript, newWallet ord.Wallet, tick string, amount *uint256.Int) {
+func mintInscribe(state KVStorage, newPkscript ord.Pkscript, newWallet ord.Wallet, tick string, amount *uint256.Int) {
 	// update balances
 	f_add := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Add(v, amount)
 	}
 
-	updateBalance(f_add, state, tick, newPkScript, AvailableBalancePkScript)
-	updateBalance(f_add, state, tick, newPkScript, OverallBalancePkScript)
+	updateBalance(f_add, state, tick, newPkscript, AvailableBalancePkscript)
+	updateBalance(f_add, state, tick, newPkscript, OverallBalancePkscript)
 
 	f_sub := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Sub(v, amount)
 	}
 	updateTickState(f_sub, state, tick, RemainingSupply)
-	updateLatestPkScript(state, newWallet, newPkScript)
+	updateLatestPkscript(state, newWallet, newPkscript)
 }
 
-func transferInscribe(state KVStorage, inscriptionID string, sourcePkScript ord.PkScript, sourceWallet ord.Wallet, tick string, amount *uint256.Int) {
+func transferInscribe(state KVStorage, inscriptionID string, sourcePkscript ord.Pkscript, sourceWallet ord.Wallet, tick string, amount *uint256.Int) {
 	f_sub := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Sub(v, amount)
 	}
-	updateBalance(f_sub, state, tick, sourcePkScript, AvailableBalancePkScript)
-	updateLatestPkScript(state, sourceWallet, sourcePkScript)
+	updateBalance(f_sub, state, tick, sourcePkscript, AvailableBalancePkscript)
+	updateLatestPkscript(state, sourceWallet, sourcePkscript)
 
 	// store transfer-inscribe event
-	updateWalletAndPkScript(state, inscriptionID, sourceWallet, sourcePkScript)
+	updateWalletAndPkscript(state, inscriptionID, sourceWallet, sourcePkscript)
 
 	// update transfer-inscribe event count
 	key := getEventHash(inscriptionID, TransferInscribeCount)
@@ -218,12 +218,12 @@ func transferInscribe(state KVStorage, inscriptionID string, sourcePkScript ord.
 }
 
 func transferTransferSpendToFee(state KVStorage, inscriptionID string, tick string, amount *uint256.Int) {
-	sourceWallet, sourcePkScript := getWalletAndPkScript(state, inscriptionID)
+	sourceWallet, sourcePkscript := getWalletAndPkscript(state, inscriptionID)
 	f_add := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Add(v, amount)
 	}
-	updateBalance(f_add, state, tick, sourcePkScript, AvailableBalancePkScript)
-	updateLatestPkScript(state, sourceWallet, sourcePkScript)
+	updateBalance(f_add, state, tick, sourcePkscript, AvailableBalancePkscript)
+	updateLatestPkscript(state, sourceWallet, sourcePkscript)
 
 	// update transfer-transfer event count
 	key := getEventHash(inscriptionID, TransferTransferCount)
@@ -231,22 +231,22 @@ func transferTransferSpendToFee(state KVStorage, inscriptionID string, tick stri
 	state.InsertUInt256(key, newEventCount)
 }
 
-func transferTransferNormal(state KVStorage, inscriptionID string, spentPkScript ord.PkScript, spentWallet ord.Wallet, tick string, amount *uint256.Int) {
-	sourceWallet, sourcePkScript := getWalletAndPkScript(state, inscriptionID)
+func transferTransferNormal(state KVStorage, inscriptionID string, spentPkscript ord.Pkscript, spentWallet ord.Wallet, tick string, amount *uint256.Int) {
+	sourceWallet, sourcePkscript := getWalletAndPkscript(state, inscriptionID)
 	f_sub := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Sub(v, amount)
 	}
-	updateBalance(f_sub, state, tick, sourcePkScript, OverallBalancePkScript)
+	updateBalance(f_sub, state, tick, sourcePkscript, OverallBalancePkscript)
 
-	// Don't worry about sourcePkScript == spentPkScript.
+	// Don't worry about sourcePkscript == spentPkscript.
 	// The update read the value from the storage again.
 	f_add := func(v *uint256.Int) *uint256.Int {
 		return uint256.NewInt(0).Add(v, amount)
 	}
-	updateBalance(f_add, state, tick, spentPkScript, AvailableBalancePkScript)
-	updateBalance(f_add, state, tick, spentPkScript, OverallBalancePkScript)
-	updateLatestPkScript(state, sourceWallet, sourcePkScript)
-	updateLatestPkScript(state, spentWallet, spentPkScript)
+	updateBalance(f_add, state, tick, spentPkscript, AvailableBalancePkscript)
+	updateBalance(f_add, state, tick, spentPkscript, OverallBalancePkscript)
+	updateLatestPkscript(state, sourceWallet, sourcePkscript)
+	updateLatestPkscript(state, spentWallet, spentPkscript)
 
 	// update transfer-transfer event count
 	key := getEventHash(inscriptionID, TransferTransferCount)
@@ -256,7 +256,7 @@ func transferTransferNormal(state KVStorage, inscriptionID string, spentPkScript
 
 func ValidBRC20Transfer(ot getter.OrdTransfer, js map[string]string) (bool, string) {
 	oldSatpoint, _, _, sentAsFee, _, contentType :=
-		ot.OldSatpoint, ot.NewPkScript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType
+		ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType
 	if sentAsFee && oldSatpoint == "" {
 		return false, ""
 	}
@@ -293,8 +293,8 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 		return
 	}
 	for _, ot := range ots {
-		inscriptionID, oldSatpoint, newPkScript, newWallet, sentAsFee, content :=
-			ot.InscriptionID, ot.OldSatpoint, ot.NewPkScript, ot.NewWallet, ot.SentAsFee, ot.Content
+		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content :=
+			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content
 		var js map[string]string
 		json.Unmarshal(content, &js)
 		valid, tick := ValidBRC20Transfer(ot, js)
@@ -397,7 +397,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 			if amount.Gt(remainingSupply) {
 				amount.Set(remainingSupply) // mint remaining token
 			}
-			mintInscribe(state, newPkScript, newWallet, tick, amount)
+			mintInscribe(state, newPkscript, newWallet, tick, amount)
 		}
 
 		// handle transfer
@@ -424,12 +424,12 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 			}
 			// check if available balance is enough
 			if oldSatpoint == "" {
-				availableBalance := state.GetUInt256(getTickPkScriptHash(tick, newPkScript, AvailableBalancePkScript))
+				availableBalance := state.GetUInt256(getTickPkscriptHash(tick, newPkscript, AvailableBalancePkscript))
 
 				if availableBalance.Lt(amount) {
 					continue // not enough available balance
 				} else {
-					transferInscribe(state, inscriptionID, newPkScript, newWallet, tick, amount)
+					transferInscribe(state, inscriptionID, newPkscript, newWallet, tick, amount)
 				}
 			} else {
 				if isUsedOrInvalid(state, inscriptionID) {
@@ -438,7 +438,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer) {
 				if sentAsFee {
 					transferTransferSpendToFee(state, inscriptionID, tick, amount)
 				} else {
-					transferTransferNormal(state, inscriptionID, newPkScript, newWallet, tick, amount)
+					transferTransferNormal(state, inscriptionID, newPkscript, newWallet, tick, amount)
 				}
 			}
 		}

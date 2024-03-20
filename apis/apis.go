@@ -1,21 +1,21 @@
 package apis
 
 import (
-	"net/http"
 	"encoding/base64"
-	
-	"github.com/gin-gonic/gin"
-	verkle "github.com/ethereum/go-verkle"
+	"net/http"
+
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	verkle "github.com/ethereum/go-verkle"
+	"github.com/gin-gonic/gin"
 )
 
 func getAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, BRC20VerifiableCurrentBalanceResult) {
 	queue.Lock()
 	defer queue.Unlock()
 
-	var ordPkScript ord.PkScript = ord.PkScript(pkScript)
-	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(&queue.Header, tick, ordPkScript)
+	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
+	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(&queue.Header, tick, ordPkscript)
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
@@ -34,7 +34,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
-	pkScriptKey, pkScript := stateless.GetLatestPkScript(&queue.Header, wallet)
+	pkScriptKey, pkScript := stateless.GetLatestPkscript(&queue.Header, wallet)
 
 	availKey, overKey, result := getAllBalances(queue, tick, pkScript)
 
@@ -67,7 +67,6 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
 	vProofBytes, _ := vProof.MarshalJSON()
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
-
 
 	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
 		Error:  "None",
@@ -120,14 +119,14 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 			ID:            ordTransfer.ID,
 			InscriptionID: ordTransfer.InscriptionID,
 			NewSatpoint:   ordTransfer.OldSatpoint, // Assuming you want to map OldSatpoint to NewSatpoint
-			NewPkScript:   ordTransfer.NewPkScript,
+			NewPkscript:   ordTransfer.NewPkscript,
 			NewWallet:     ordTransfer.NewWallet,
 			SentAsFee:     ordTransfer.SentAsFee,
 			Content:       base64.StdEncoding.EncodeToString(ordTransfer.Content),
 			ContentType:   ordTransfer.ContentType,
 		})
 	}
-	
+
 	c.JSON(http.StatusOK, Brc20VerifiableLatestStateProofResponse{
 		Keys:       keysStr,
 		KeyExists:  keyExists,
@@ -135,7 +134,7 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 		PostValues: postValuesStr,
 		Proof:      finalproof,
 		OrdTrans:   ordTransfersJSON, // Assuming ordTransfer is correctly typed and can be directly included
-	})	
+	})
 }
 
 func StartService(queue *stateless.Queue) {

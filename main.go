@@ -118,6 +118,8 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *s
 }
 
 func main() {
+	// printCache()
+	// return
 	arguments := NewRuntimeArguments()
 	rootCmd := arguments.MakeCmd()
 	if err := rootCmd.Execute(); err != nil {

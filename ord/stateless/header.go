@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"sort"
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
@@ -133,15 +134,26 @@ func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn 
 	return nil
 }
 
-func (state *Header) Serialize() (*bytes.Buffer, error) {
+func (h *Header) Serialize() (*bytes.Buffer, error) {
 	// TODO: Medium. Use a native database instead of a key-value store for the state management.
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(state.KV)
+	err := encoder.Encode(h.KV)
 	if err != nil {
 		return nil, err
 	}
 	return &buffer, nil
+}
+
+func (h *Header) OrderedKeys() [][verkle.KeySize]byte {
+	keys := make([][verkle.KeySize]byte, 0, len(h.KV))
+	for key := range h.KV {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return string(keys[i][:]) < string(keys[j][:])
+	})
+	return keys
 }
 
 func Deserialize(buffer *bytes.Buffer, height uint, nodeResolverFn verkle.NodeResolverFn) (*Header, error) {
