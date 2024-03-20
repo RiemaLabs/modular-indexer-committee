@@ -47,12 +47,12 @@ func updateBalance(f func(*uint256.Int) *uint256.Int, state KVStorage, tick stri
 }
 
 // Available, OverallBalances
-func GetBalances(state KVStorage, tick string, PkScript ord.PkScript) (*uint256.Int, *uint256.Int) {
+func GetBalances(state KVStorage, tick string, PkScript ord.PkScript) ([]byte, []byte, *uint256.Int, *uint256.Int) {
 	key0 := getTickPkScriptHash(tick, PkScript, AvailableBalancePkScript)
 	key1 := getTickPkScriptHash(tick, PkScript, OverallBalancePkScript)
 	value0 := state.GetUInt256(key0)
 	value1 := state.GetUInt256(key1)
-	return value0, value1
+	return key0, key1, value0, value1
 }
 
 // Tick State
@@ -110,10 +110,10 @@ func updateLatestPkScript(state KVStorage, wallet ord.Wallet, PkScript ord.PkScr
 	state.InsertBytes(key, bytes)
 }
 
-func GetLastestPkScript(state KVStorage, wallet string) string {
+func GetLatestPkScript(state KVStorage, wallet string) ([]byte, string) {
 	key := getWalletHash(wallet, WalletLatestPkScript)
 	value := state.GetBytes(key)
-	return hex.EncodeToString(value)
+	return key, hex.EncodeToString(value)
 }
 
 // TODO: Urgent. Flush to the disk.

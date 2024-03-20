@@ -45,6 +45,9 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 					}
 				}
 			}
+			if i == catchupHeight {
+				header.OrdTrans = ordTransfer
+			}
 			header.Paging(getter, false, stateless.NodeResolveFn)
 		}
 	} else if catchupHeight == curHeight {

@@ -3,6 +3,7 @@ package stateless
 import (
 	"log"
 
+	verkle "github.com/ethereum/go-verkle"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
@@ -63,9 +64,26 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		}
 		Exec(&queue.Header, ordTransfer)
 		queue.Offer()
+		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 	return nil
+}
+
+func Rollingback(root verkle.VerkleNode, stateDiff DiffState) (verkle.VerkleNode, [][]byte, []TripleElement){
+	rollback := root.Copy()
+	var keys [][]byte
+
+	for _, elem := range stateDiff.Diff.Elements {
+		keys = append(keys, elem.Key[:])
+		if elem.OldValueExists {
+			rollback.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+		} else {
+			rollback.Delete(elem.Key[:], NodeResolveFn)
+		}
+	}
+
+	return rollback, keys, stateDiff.Diff.Elements
 }
 
 func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
@@ -93,7 +111,6 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 	log.Print(curHeight, startHeight, recoveryTillHeight)
 
 	for j := recoveryTillHeight - 1; j < curHeight; j++ {
-		log.Print("===", j)
 		index := j - startHeight
 		ordTransfer, err := getter.GetOrdTransfers(j + 1)
 		if err != nil {
@@ -110,6 +127,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 			Hash:   hash,
 			Diff:   queue.Header.Temp,
 		}
+		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 

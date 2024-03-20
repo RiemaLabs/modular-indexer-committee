@@ -1,66 +1,161 @@
 package apis
 
-// import (
-// 	"net/http"
-// 	"strconv"
+import (
+	"net/http"
+	"encoding/base64"
+	
+	"github.com/gin-gonic/gin"
+	verkle "github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/indexer-committee/ord"
+	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+)
 
-// 	"github.com/gin-gonic/gin"
-// 	uint256 "github.com/holiman/uint256"
-// )
+func getAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, BRC20VerifiableCurrentBalanceResult) {
+	queue.Lock()
+	defer queue.Unlock()
 
-// func StartService() {
-// 	r := gin.Default()
-// 	// // Open 3 APIs
-// 	r.GET("/brc20_verifiable_get_current_balance_of_wallet", func(c *gin.Context) {
-// 		verkles.RLock()
-// 		defer verkles.RUnlock()
-// 		tick := c.DefaultQuery("tick", "")
-// 		newPkscript := c.DefaultQuery("pkscript", "")
-// 		availableKey, overallKey := getHash("available-balance", tick, newPkscript), getHash("overall-balance", tick, newPkscript)
-// 		index := len(verkles.verkleElement) - 1
-// 		stateRoot := verkles.verkleElement[index].element
+	var ordPkScript ord.PkScript = ord.PkScript(pkScript)
+	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(&queue.Header, tick, ordPkScript)
+	availableBalanceStr := availableBalance.String()
+	overallBalanceStr := overallBalance.String()
 
-// 		resAvail := uint256.NewInt(0)
-// 		valueAvail, _ := stateRoot.Get(availableKey, nodeResolveFn)
+	result := BRC20VerifiableCurrentBalanceResult{
+		AvailableBalance: availableBalanceStr,
+		OverallBalance:   overallBalanceStr,
+	}
 
-// 		resOverall := uint256.NewInt(0)
-// 		valueOverall, _ := stateRoot.Get(overallKey, nodeResolveFn)
+	return availKey, overKey, result
+}
 
-// 		if len(valueAvail) == 0 && len(valueOverall) == 0 {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": "Tick Pkscript Pair Not found"})
-// 			return
-// 		}
+func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
+	queue.Lock()
+	defer queue.Unlock()
 
-// 		c.JSON(http.StatusOK, gin.H{
-// 			"availableBalance":   resAvail.SetBytes(valueAvail),
-// 			"prevOverallBalance": resOverall.SetBytes(valueOverall),
-// 		})
-// 	})
+	tick := c.DefaultQuery("tick", "")
+	wallet := c.DefaultQuery("wallet", "")
 
-// 	r.GET("brc20_verifiable_block_height", func(c *gin.Context) {
-// 		verkles.RLock()
-// 		defer verkles.RUnlock()
+	pkScriptKey, pkScript := stateless.GetLatestPkScript(&queue.Header, wallet)
 
-// 		c.JSON(http.StatusOK, gin.H{
-// 			"currentHeight": verkles.curHeight,
-// 		})
-// 	})
+	availKey, overKey, result := getAllBalances(queue, tick, pkScript)
 
-// 	r.GET("brc20_verifiable_get_current_statediff", func(c *gin.Context) {
-// 		verkles.RLock()
-// 		defer verkles.RUnlock()
+	keys := [][]byte{pkScriptKey, availKey, overKey}
 
-// 		blockheightQuery := c.DefaultQuery("blockheight", "0")
+	// Generate proof
+	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
+	vProofBytes, _ := vProof.MarshalJSON()
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
-// 		blockheight, err := strconv.ParseUint(blockheightQuery, 10, 64)
-// 		if err != nil {
-// 			// Handle error, maybe return an HTTP error response
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid blockheight parameter"})
-// 			return
-// 		}
-// 		stateDiff := getStateDiff(db, uint(blockheight))
-// 		c.JSON(http.StatusOK, stateDiff)
-// 	})
+	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+		Error:  "None",
+		Result: result,
+		Proof:  finalproof,
+	})
+}
 
-// 	r.Run(":8080")
-// }
+func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
+	queue.Lock()
+	defer queue.Unlock()
+
+	tick := c.DefaultQuery("tick", "")
+	pkScript := c.DefaultQuery("pkscript", "")
+	availKey, overKey, result := getAllBalances(queue, tick, pkScript)
+
+	keys := [][]byte{availKey, overKey}
+	// Generate proof
+	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
+	vProofBytes, _ := vProof.MarshalJSON()
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+
+
+	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+		Error:  "None",
+		Result: result,
+		Proof:  finalproof,
+	})
+}
+
+func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
+	queue.Lock()
+	defer queue.Unlock()
+
+	curHeight := queue.LastestHeight()
+	c.JSON(http.StatusOK, gin.H{
+		"latestHeight": curHeight,
+	})
+}
+
+func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
+	queue.Lock()
+	defer queue.Unlock()
+
+	lastIndex := len(queue.History) - 1
+
+	preState, keys, info := stateless.Rollingback(queue.Header.Root, queue.History[lastIndex])
+
+	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(preState, queue.Header.Root, keys, stateless.NodeResolveFn)
+	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
+	vProofBytes, _ := vProof.MarshalJSON()
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+
+	keysStr := make([]string, len(keys))
+	keyExists := make([]bool, len(info))
+	preValuesStr := make([]string, len(info))
+	postValuesStr := make([]string, len(info))
+
+	for i, elem := range info {
+		keysStr[i] = base64.StdEncoding.EncodeToString(elem.Key[:])
+		keyExists[i] = elem.OldValueExists
+		preValuesStr[i] = base64.StdEncoding.EncodeToString(elem.OldValue[:])
+		postValuesStr[i] = base64.StdEncoding.EncodeToString(elem.NewValue[:])
+	}
+
+	ordTransfers := queue.Header.OrdTrans
+
+	var ordTransfersJSON []OrdTransferJSON
+
+	for _, ordTransfer := range ordTransfers {
+		ordTransfersJSON = append(ordTransfersJSON, OrdTransferJSON{
+			ID:            ordTransfer.ID,
+			InscriptionID: ordTransfer.InscriptionID,
+			NewSatpoint:   ordTransfer.OldSatpoint, // Assuming you want to map OldSatpoint to NewSatpoint
+			NewPkScript:   ordTransfer.NewPkScript,
+			NewWallet:     ordTransfer.NewWallet,
+			SentAsFee:     ordTransfer.SentAsFee,
+			Content:       base64.StdEncoding.EncodeToString(ordTransfer.Content),
+			ContentType:   ordTransfer.ContentType,
+		})
+	}
+	
+	c.JSON(http.StatusOK, Brc20VerifiableLatestStateProofResponse{
+		Keys:       keysStr,
+		KeyExists:  keyExists,
+		PreValues:  preValuesStr,
+		PostValues: postValuesStr,
+		Proof:      finalproof,
+		OrdTrans:   ordTransfersJSON, // Assuming ordTransfer is correctly typed and can be directly included
+	})	
+}
+
+func StartService(queue *stateless.Queue) {
+	r := gin.Default()
+
+	r.GET("/brc20_verifiable_current_balance_of_wallet", func(c *gin.Context) {
+		GetCurrentBalanceOfWallet(c, queue)
+	})
+
+	r.GET("/brc20_verifiable_current_balance_of_pkscript", func(c *gin.Context) {
+		GetCurrentBalanceOfPkscript(c, queue)
+	})
+
+	r.GET("/brc20_verifiable_block_height", func(c *gin.Context) {
+		GetBlockHeight(c, queue)
+	})
+
+	r.GET("/brc20_verifiable_latest_state_proof", func(c *gin.Context) {
+		GetLatestStateProof(c, queue)
+	})
+
+	r.Run(":8080")
+}
