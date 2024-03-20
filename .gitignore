@@ -35,7 +35,6 @@ config.json
 .cache/*
 
 # Debug
-data/
 __debug*
 indexer-committee
 *.prof
