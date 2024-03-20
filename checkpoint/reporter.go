@@ -8,8 +8,13 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
+
+	sdk "github.com/RiemaLabs/nubit-da-sdk"
 
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/nubit-da-sdk/constant"
+	"github.com/RiemaLabs/nubit-da-sdk/types"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -82,4 +87,71 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	}
 
 	// TODO: upload to DA
+	ctx := context.Background()
+	sdk.SetNet(constant.TestNet)
+	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
+		sdk.WithRpc("https://test.api.nubit.network:444"),
+		sdk.WithInviteCode("7mkEPWPBBrMr12WKNsL2UALvqYfbox"),
+		sdk.WithPrivateKey("7ae9984540c0a3bb8d5a627010601d4529c276e526e08b136d1c24e5c72195df"))
+	if clientDA == nil {
+		panic("clientDA is nil")
+	}
+
+	ns, err := clientDA.CreateNamespace("test", "Private", "mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru", []string{"mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru", "mnj48QUBZr8YvRXkgTCCCeRLRkq295LAoK"})
+	if err != nil {
+		log.Fatalf("Failed to create namespace: %v\n", err)
+	}
+	fmt.Println("\n\n namespace---:", ns)
+
+	time.Sleep(time.Second * 22)
+
+	labels := map[string]interface{}{
+		"contentType": "application/json",
+		"customLabel": "value",
+	}
+
+	upload, err := clientDA.UploadBytes(checkpointJSON, checkpoint.Name, 0, labels)
+	if err != nil {
+		fmt.Println("Failed to upload checkpoint:", err)
+		return
+	}
+
+	fmt.Println("\n upload:", upload)
+
+	time.Sleep(time.Second * 22)
+
+	// 获取命名空间列表
+	namespaces, err := clientDA.Client.GetNamespaces(ctx, &types.GetNamespacesReq{Limit: 50, Offset: 0, Filter: struct {
+		Owner string `json:"owner,omitempty"`
+		Admin string `json:"admin,omitempty"`
+	}{
+		Owner: "mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru",
+	}})
+	if err != nil {
+		return
+	}
+
+	var Nss []string
+	if len(namespaces.Namespaces) > 0 {
+		for _, ns := range namespaces.Namespaces {
+			fmt.Println("namespace:", ns.NamespaceID)
+			Nss = append(Nss, ns.NamespaceID)
+		}
+	}
+	fmt.Println("namespace:", Nss)
+
+	// 获取数据
+	datas, err := clientDA.Client.GetDatas(ctx, &types.GetDatasReq{
+		NID:         Nss,
+		BlockNumber: 0,
+	})
+	if err != nil {
+		return
+	}
+	marshal, err := json.Marshal(datas)
+	if err != nil {
+		return
+	}
+	fmt.Println("\n datas:", string(marshal))
+
 }
