@@ -40,3 +40,22 @@ type Brc20VerifiableLatestStateProofResponse struct {
 	Proof      string            `json:"proof"`
 	OrdTrans   []OrdTransferJSON `json:"ordTransfer"`
 }
+
+type Brc20VerifiableGetCurrentBalanceOfWalletRequest struct {
+	Tick   string `json:"tick"`
+	Wallet string `json:"wallet"`
+}
+
+type Brc20VerifiableCurrentBalanceOfPkscriptRequest struct {
+	Tick     string `json:"tick"`
+	Pkscript string `json:"pkscript"`
+}
+
+type Brc20VerifiableCurrentBalanceOfPkscriptRsponse struct {
+	Error  string `json:"error"`
+	Result struct {
+		AvailableBalance string `json:"availableBalance"`
+		OverallBalance   string `json:"overallBalance"`
+	} `json:"result"`
+	Proof string `json:"proof"`
+}
