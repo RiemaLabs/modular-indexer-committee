@@ -90,15 +90,20 @@ func (h *Header) InsertBytes(key []byte, value []byte) {
 		panic(fmt.Errorf("the max length of the byte is: %d at key %s, current is: %d", expectedSize, key, len(value)))
 	}
 	// The first slot is the number of required slots to store the byte.
-	requiredSlots := (len(value) + ValueSize - 1) / ValueSize
 	newKey := make([]byte, verkle.KeySize)
 	copy(newKey, key)
 
-	h.InsertUInt256(newKey, uint256.NewInt(uint64(requiredSlots)))
+	len := len(value)
+	requiredSlots := (len + ValueSize - 1) / ValueSize
+	h.InsertUInt256(newKey, uint256.NewInt(uint64(len)))
+
+	totalLen := requiredSlots * ValueSize
+	padded := make([]byte, totalLen)
+	copy(padded, value)
 
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		h.insert(newKey, value[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
+		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
 	}
 }
 
@@ -106,13 +111,19 @@ func (h *Header) GetBytes(key []byte) []byte {
 	newKey := make([]byte, verkle.KeySize)
 	copy(newKey, key)
 
-	requiredSlots := h.GetUInt256(newKey).Uint64()
-	value := make([]byte, 0)
+	len := h.GetUInt256(newKey).Uint64()
+	if len == 0 {
+		return make([]byte, 0)
+	}
+	requiredSlots := (len + ValueSize - 1) / ValueSize
+
+	padded := make([]byte, 0)
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		value = append(value, h.get(newKey, NodeResolveFn)...)
+		padded = append(padded, h.get(newKey, NodeResolveFn)...)
 	}
-	return value
+	res := padded[:len]
+	return res
 }
 
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
