@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"sort"
 
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
@@ -89,15 +90,20 @@ func (h *Header) InsertBytes(key []byte, value []byte) {
 		panic(fmt.Errorf("the max length of the byte is: %d at key %s, current is: %d", expectedSize, key, len(value)))
 	}
 	// The first slot is the number of required slots to store the byte.
-	requiredSlots := (len(value) + ValueSize - 1) / ValueSize
 	newKey := make([]byte, verkle.KeySize)
 	copy(newKey, key)
 
-	h.InsertUInt256(newKey, uint256.NewInt(uint64(requiredSlots)))
+	len := len(value)
+	requiredSlots := (len + ValueSize - 1) / ValueSize
+	h.InsertUInt256(newKey, uint256.NewInt(uint64(len)))
+
+	totalLen := requiredSlots * ValueSize
+	padded := make([]byte, totalLen)
+	copy(padded, value)
 
 	for i := range requiredSlots {
-		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i)
-		h.insert(newKey, value[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
+		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
+		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
 	}
 }
 
@@ -105,13 +111,19 @@ func (h *Header) GetBytes(key []byte) []byte {
 	newKey := make([]byte, verkle.KeySize)
 	copy(newKey, key)
 
-	requiredSlots := h.GetUInt256(newKey).Uint64()
-	value := make([]byte, 0)
-	for i := range requiredSlots {
-		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i)
-		value = append(value, h.get(newKey, NodeResolveFn)...)
+	len := h.GetUInt256(newKey).Uint64()
+	if len == 0 {
+		return make([]byte, 0)
 	}
-	return value
+	requiredSlots := (len + ValueSize - 1) / ValueSize
+
+	padded := make([]byte, 0)
+	for i := range requiredSlots {
+		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
+		padded = append(padded, h.get(newKey, NodeResolveFn)...)
+	}
+	res := padded[:len]
+	return res
 }
 
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
@@ -133,15 +145,26 @@ func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn 
 	return nil
 }
 
-func (state *Header) Serialize() (*bytes.Buffer, error) {
+func (h *Header) Serialize() (*bytes.Buffer, error) {
 	// TODO: Medium. Use a native database instead of a key-value store for the state management.
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(state.KV)
+	err := encoder.Encode(h.KV)
 	if err != nil {
 		return nil, err
 	}
 	return &buffer, nil
+}
+
+func (h *Header) OrderedKeys() [][verkle.KeySize]byte {
+	keys := make([][verkle.KeySize]byte, 0, len(h.KV))
+	for key := range h.KV {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return string(keys[i][:]) < string(keys[j][:])
+	})
+	return keys
 }
 
 func Deserialize(buffer *bytes.Buffer, height uint, nodeResolverFn verkle.NodeResolverFn) (*Header, error) {

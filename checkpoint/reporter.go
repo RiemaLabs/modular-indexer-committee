@@ -85,8 +85,17 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 		log.Println("Upload output:", output)
 		history[uint(heightUint)][objectKey] = true
 	}
+}
 
-	// TODO: upload to DA
+// TODO: upload to DA
+func UploadCheckpointDA(indexerID IndexerIdentification, checkpoint Checkpoint, region string, bucket string) {
+	// change format into JSON
+	checkpointJSON, err := json.Marshal(checkpoint)
+	if err != nil {
+		log.Printf("Failed to marshal checkpoint to JSON: %v\n", err)
+		return
+	}
+
 	ctx := context.Background()
 	sdk.SetNet(constant.TestNet)
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
@@ -104,21 +113,25 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	fmt.Println("\n\n namespace---:", ns)
 
 	time.Sleep(time.Second * 22)
+	tx, err := clientDA.Client.GetTransaction(ctx, &types.GetTransactionReq{
+		TxID: ns.TxID,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("\n\n transaction:", tx)
 
 	labels := map[string]interface{}{
 		"contentType": "application/json",
 		"customLabel": "value",
 	}
-
-	upload, err := clientDA.UploadBytes(checkpointJSON, checkpoint.Name, 0, labels)
+	upload, err := clientDA.UploadBytes(checkpointJSON, tx.NID, 0, labels)
 	if err != nil {
 		fmt.Println("Failed to upload checkpoint:", err)
 		return
 	}
-
 	fmt.Println("\n upload:", upload)
-
-	time.Sleep(time.Second * 22)
 
 	// 获取命名空间列表
 	namespaces, err := clientDA.Client.GetNamespaces(ctx, &types.GetNamespacesReq{Limit: 50, Offset: 0, Filter: struct {
@@ -131,6 +144,7 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 		return
 	}
 
+	time.Sleep(time.Second * 22)
 	var Nss []string
 	if len(namespaces.Namespaces) > 0 {
 		for _, ns := range namespaces.Namespaces {
@@ -153,5 +167,4 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 		return
 	}
 	fmt.Println("\n datas:", string(marshal))
-
 }

@@ -37,6 +37,7 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 				return nil, err
 			}
 			stateless.Exec(&header, ordTransfer)
+			header.Paging(getter, false, stateless.NodeResolveFn)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
@@ -46,7 +47,9 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 					}
 				}
 			}
-			header.Paging(getter, false, stateless.NodeResolveFn)
+			if i == catchupHeight {
+				header.OrdTrans = ordTransfer
+			}
 		}
 	} else if catchupHeight == curHeight {
 		// stateRoot is located at catchupHeight.
@@ -116,6 +119,8 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *s
 }
 
 func main() {
+	// printCache()
+	// return
 	arguments := NewRuntimeArguments()
 	rootCmd := arguments.MakeCmd()
 	if err := rootCmd.Execute(); err != nil {

@@ -70,7 +70,7 @@ func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
 	var ordTransfers []OrdTransfer
 	sql := `
-		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
+		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
 		FROM ord_transfers ot
 		LEFT JOIN ord_content oc ON ot.inscription_id = oc.inscription_id
 		LEFT JOIN ord_number_to_id onti ON ot.inscription_id = onti.inscription_id
@@ -84,28 +84,4 @@ func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error
 		return make([]OrdTransfer, 0), err
 	}
 	return ordTransfers, nil
-}
-
-func (opi *OPIOrdGetter) GetVerifiableOrdTransfers(blockHeight uint) ([]VerifiableOrdTransfer, error) {
-	var vots []VerifiableOrdTransfer
-	ots, err := opi.GetOrdTransfers(blockHeight)
-	if err != nil {
-		return make([]VerifiableOrdTransfer, 0), nil
-	}
-	for _, ot := range ots {
-		sql := `
-
-		`
-		var path []string
-		err := opi.db.Raw(sql, blockHeight).Scan(&path).Error
-		if err != nil {
-			return make([]VerifiableOrdTransfer, 0), err
-		}
-		vot := VerifiableOrdTransfer{
-			Transfer:     ot,
-			SatPointPath: path,
-		}
-		vots = append(vots, vot)
-	}
-	return vots, nil
 }
