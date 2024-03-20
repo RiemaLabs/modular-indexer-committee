@@ -131,10 +131,14 @@ func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint
 					overallBalanceStr := overallBalance.String()
 
 					if availableBalanceStr != opiAvailableBalance {
-						fmt.Printf("Error, not match at %d for availableBalance", newHeight)
+						fmt.Printf("Error, not match at %d for availableBalance\n", newHeight)
+					} else {
+						fmt.Printf("Some match at %d for availableBalance\n", newHeight)
 					}
 					if overallBalanceStr != opiOverallBalance {
-						fmt.Printf("Error, not match at %d for overallBalance", newHeight)
+						fmt.Printf("Error, not match at %d for overallBalance\n", newHeight)
+					} else {
+						fmt.Printf("Some match at %d for overallBalance\n", newHeight)
 					}
 				}
 			}
