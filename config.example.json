@@ -7,18 +7,12 @@
         "port": "5432"
     },
     "report": {
-        "method": "s3",        
-        "uniqueID": "0",
+        "method": "s3",
         "s3": {
             "bucket": "",
             "accessKey": ""
         },
         "da": {}
-    },
-    "bitcoinRPC": {
-        "url": "",
-        "username": "",
-        "password": ""
     },
     "service": {
         "url": "",
