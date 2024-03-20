@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"encoding/base64"
+	"log"
+
 	// "time"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 
 func TestReorg(t *testing.T) {
 	getter, _ := loadMain()
-	queue := loadCatchUp()
+	queue := loadCatchUp(780000)
 
 	loadService(getter, queue, 10)
 	// Try to recover Root by 1/2/6, and then recover the queue, and remember to compare the commitment

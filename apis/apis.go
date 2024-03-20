@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func getAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, BRC20VerifiableCurrentBalanceResult) {
+func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, BRC20VerifiableCurrentBalanceResult) {
 	queue.Lock()
 	defer queue.Unlock()
 
@@ -36,7 +36,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 
 	pkScriptKey, pkScript := stateless.GetLatestPkscript(&queue.Header, wallet)
 
-	availKey, overKey, result := getAllBalances(queue, tick, pkScript)
+	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
 
 	keys := [][]byte{pkScriptKey, availKey, overKey}
 
@@ -59,7 +59,7 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 
 	tick := c.DefaultQuery("tick", "")
 	pkScript := c.DefaultQuery("pkscript", "")
-	availKey, overKey, result := getAllBalances(queue, tick, pkScript)
+	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
 
 	keys := [][]byte{availKey, overKey}
 	// Generate proof

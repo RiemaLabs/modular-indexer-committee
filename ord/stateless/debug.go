@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/indexer-committee/apis"
 )
 
 func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
@@ -82,6 +83,63 @@ func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) erro
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 	return nil
+}
+
+func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint) error {
+	// Write all KV to files
+	curHeight := queue.Header.Height
+	for i := curHeight + 1; i <= latestHeight; i++ {
+		queue.DebugCommitment("During Updating")
+		// queue.DebugKV("During Updating")
+		ordTransfer, err := getter.GetOrdTransfers(i)
+		if err != nil {
+			return err
+		}
+		Exec(&queue.Header, ordTransfer)
+		queue.Offer()
+		queue.Header.OrdTrans = ordTransfer
+		queue.KVTOfile()
+		queue.Header.Paging(getter, true, NodeResolveFn)
+	}
+	return nil
+}
+
+
+func (queue *Queue) KVTOfile() {
+	curHeight := queue.Header.Height
+	// create a filepath that named curHeight.txt
+	filePath := fmt.Sprintf("/myKV/log2_%d.txt", curHeight)
+
+
+	KVCommitment := generateMapHash(queue.Header.KV)
+
+	for _, ele := range queue.Header.OrdTrans {
+		pkScript := ele.NewPkScript
+		availKey, overKey, result := apis.GetAllBalances(queue, tick, pkScript)
+	}
+
+	// Use os.Create to create a file for writing
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		// Handle the error; you might want to log it or return it
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Write the data to the file
+	// TODO: write height, addition and commitment into the file in one line, seperate by ====
+	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, KVCommitment)
+	_, err = file.WriteString(data)
+	if err != nil {
+		// Handle the error
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+	// Optionally, report success
+	fmt.Println("File written successfully")
+
 }
 
 func (queue *Queue) DebugKV(addition string) {

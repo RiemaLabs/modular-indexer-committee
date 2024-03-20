@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"encoding/base64"
-	"time"
+	"log"
 	"testing"
+	"time"
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
@@ -12,7 +12,7 @@ import (
 
 func TestService(t *testing.T) {
 	getter, _ := loadMain()
-	queue := loadCatchUp()
+	queue := loadCatchUp(780000)
 
 	startTime := time.Now()
 	loadService(getter, queue, 3) // partially update, some history still remain

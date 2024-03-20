@@ -15,13 +15,12 @@ import (
 )
 
 func TestCatchUp(t *testing.T) {
-	loadCatchUp()
+	loadCatchUp(780000)
 }
 
-func loadCatchUp() *stateless.Queue {
+func loadCatchUp(latestHeight uint) *stateless.Queue {
 	getter, arguments := loadMain()
 
-	var latestHeight uint = 780000
 	initHeight := stateless.BRC20StartHeight - 1
 	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
