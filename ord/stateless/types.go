@@ -33,12 +33,19 @@ type DiffState struct {
 type KeyValueMap = map[[verkle.KeySize]byte][ValueSize]byte
 
 type Header struct {
-	Root   verkle.VerkleNode
+	// Verkle Tree Root
+	Root verkle.VerkleNode
+
+	// All Key Values on the Verkle Tree. It shall be consistent with the Root.
+	KV KeyValueMap
+
+	// The state is after the execution of Block Height.
 	Height uint
 	Hash   string
+	Diff   DiffList
 
-	KV       KeyValueMap
-	Temp     DiffList
+	// Temporary Key Values for fast access. It shall be consistent with the Diff.
+	TempKV   KeyValueMap
 	OrdTrans []getter.OrdTransfer
 }
 

@@ -18,7 +18,8 @@ func NewHeader(getter getter.OrdGetter, initState DiffState) Header {
 		Height: initState.Height,
 		Hash:   initState.Hash,
 		KV:     make(KeyValueMap),
-		Temp:   DiffList{},
+		Diff:   DiffList{},
+		TempKV: KeyValueMap{},
 	}
 
 	return myHeader
@@ -28,39 +29,54 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	if len(key) != verkle.KeySize {
 		panic(fmt.Errorf("the length the key to insert bytes must be %d, current is: %d", verkle.KeySize, len(key)))
 	}
-	oldValue := h.get(key, nodeResolverFn)
+	if len(value) != ValueSize {
+		panic(fmt.Errorf("the length the value must be %d, current is: %d", ValueSize, len(key)))
+	}
+
+	// Get the old value from the verkle tree root.
+	oldValue, err := h.Root.Get(key, nodeResolverFn)
+	if err != nil {
+		panic(err)
+	}
+	oldExists := len(oldValue) > 0
+
 	var keyArray [verkle.KeySize]byte
-	var oldValueArray, newValueArray [ValueSize]byte
 	copy(keyArray[:], key)
 
-	if len(oldValue) > 0 {
+	var oldValueArray [ValueSize]byte
+	if oldExists {
 		copy(oldValueArray[:], oldValue)
 	}
 
-	if len(value) > 0 {
-		copy(newValueArray[:], value)
+	var newValueArray [ValueSize]byte
+	copy(newValueArray[:], value)
+
+	diffExists := false
+	for _, ele := range h.Diff.Elements {
+		if ele.Key == keyArray {
+			ele.NewValue = newValueArray
+			diffExists = true
+			break
+		}
+	}
+	if !diffExists {
+		h.Diff.Elements = append(h.Diff.Elements, TripleElement{
+			Key:            keyArray,
+			OldValue:       oldValueArray,
+			NewValue:       newValueArray,
+			OldValueExists: oldExists,
+		})
 	}
 
-	oldExists := true
-	if oldValue == nil {
-		oldExists = false
-	}
-
-	if len(value) != ValueSize {
-		panic(fmt.Errorf("the length of the value must be: %d, current is: %d", len(value), ValueSize))
-	}
-
-	h.Temp.Elements = append(h.Temp.Elements, TripleElement{
-		Key:            keyArray,
-		OldValue:       oldValueArray,
-		NewValue:       newValueArray,
-		OldValueExists: oldExists,
-	})
+	h.TempKV[[verkle.KeySize]byte(key)] = [ValueSize]byte(value)
 }
 
 func (h *Header) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
 	if len(key) != verkle.KeySize {
 		panic(fmt.Errorf("the length the key to insert bytes must be %d, current is: %d", verkle.KeySize, len(key)))
+	}
+	if res, found := h.TempKV[[verkle.KeySize]byte(key)]; found {
+		return res[:]
 	}
 	bytes, err := h.Root.Get(key, nodeResolverFn)
 	if err != nil {
@@ -128,12 +144,13 @@ func (h *Header) GetBytes(key []byte) []byte {
 
 // h.Height ++
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
-	for _, elem := range h.Temp.Elements {
-		h.KV[elem.Key] = elem.NewValue
-		h.Root.Insert(elem.Key[:], elem.NewValue[:], nodeResolverFn)
+	for key, value := range h.TempKV {
+		h.KV[key] = value
+		h.Root.Insert(key[:], value[:], nodeResolverFn)
 	}
 
-	h.Temp = DiffList{}
+	h.Diff = DiffList{}
+	h.TempKV = KeyValueMap{}
 	// Update height and hash
 	h.Height++
 	if queryHash {
@@ -193,7 +210,8 @@ func Deserialize(buffer *bytes.Buffer, height uint, nodeResolverFn verkle.NodeRe
 		KV:     kv,
 		Height: height,
 		Hash:   "",
-		Temp:   DiffList{},
+		Diff:   DiffList{},
+		TempKV: KeyValueMap{},
 	}
 	return &myHeader, nil
 }

@@ -125,7 +125,7 @@ func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight ui
 		queue.History[index] = DiffState{
 			Height: j,
 			Hash:   hash,
-			Diff:   queue.Header.Temp,
+			Diff:   queue.Header.Diff,
 		}
 		queue.Header.Paging(getter, true, NodeResolveFn)
 		queue.DebugCommitment("One Step Update")

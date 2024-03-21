@@ -41,7 +41,7 @@ func (queue *Queue) Offer() {
 	newDiffState := DiffState{
 		Height: queue.Header.Height,
 		Hash:   queue.Header.Hash,
-		Diff:   queue.Header.Temp,
+		Diff:   queue.Header.Diff,
 	}
 
 	copy(queue.History[:], queue.History[1:])
@@ -125,7 +125,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 		queue.History[index] = DiffState{
 			Height: j,
 			Hash:   hash,
-			Diff:   queue.Header.Temp,
+			Diff:   queue.Header.Diff,
 		}
 		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
@@ -181,7 +181,7 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 		stateList[i-startHeight] = DiffState{
 			Height: i,
 			Hash:   hash,
-			Diff:   header.Temp,
+			Diff:   header.Diff,
 		}
 		header.Paging(getter, true, NodeResolveFn)
 	}

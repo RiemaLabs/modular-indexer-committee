@@ -20,13 +20,13 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
 
+	log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, latestHeight)
+
 	catchupHeight := latestHeight - ord.BitcoinConfirmations + 1
 
 	// Start to catch-up
 	// TODO: Medium. Refine the catchup performance by batching query.
 	if catchupHeight > curHeight {
-		log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, catchupHeight)
-
 		for i := curHeight + 1; i <= catchupHeight; i++ {
 			ordTransfer, err := ordGetter.GetOrdTransfers(i)
 			if err != nil {

@@ -22,7 +22,8 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) Header {
 		Height: curHeight,
 		Hash:   "",
 		KV:     make(KeyValueMap),
-		Temp:   DiffList{},
+		Diff:   DiffList{},
+		TempKV: KeyValueMap{},
 	}
 	if enableStateRootCache {
 		files, err := os.ReadDir(cachePath)
