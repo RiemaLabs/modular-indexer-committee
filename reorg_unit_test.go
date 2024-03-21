@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"log"
 
-	"time"
 	"testing"
+	"time"
 
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
@@ -26,12 +26,11 @@ func TestReorg(t *testing.T) {
 }
 
 func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
-	log.Printf("Recover the queue by %d blocks!", recovery+1)
+	log.Printf("Recover The Queue by %d Blocks!", recovery+1)
 	startTime := time.Now()
 
 	oldBytes := queue.Header.Root.Commit().Bytes()
 	oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
-	queue.Println()
 
 	curHeight := queue.Header.Height
 	recoveryTillHeight := curHeight - recovery
@@ -41,9 +40,9 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 	newCommitment := base64.StdEncoding.EncodeToString(newBytes[:])
 
 	if oldCommitment == newCommitment {
-		log.Print("Great! Recovery succeed!")
+		log.Printf("Recover The Queue by %d Blocks Succeed!", recovery+1)
 	} else {
-		log.Print("Recovery failed somewhere!")
+		log.Printf("Recover The Queue by %d Blocks Failed Somewhere!", recovery+1)
 	}
 	elapsed := time.Since(startTime)
 	log.Printf("Recovery One Block Using Time %s\n", elapsed)

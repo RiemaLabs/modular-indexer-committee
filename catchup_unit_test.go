@@ -21,12 +21,11 @@ func TestCatchUp(t *testing.T) {
 	elapsed := time.Since(startTime)
 	elapsedSeconds := float64(elapsed) / float64(time.Second)
 	averageTime := elapsedSeconds / float64(catchupHeight-stateless.BRC20StartHeight)
-	log.Printf("Successfully Updating from %d to %d", stateless.BRC20StartHeight, catchupHeight)
-	log.Printf("Using time %s, and %f perline on average during CatchUp Stage", elapsed, averageTime)
-	log.Printf("With header's height at %d, and header's hash to be %s", queue.Header.Height, queue.Header.Hash)
+	log.Printf("Successfully Updating From %d To %d", stateless.BRC20StartHeight, catchupHeight)
+	log.Printf("Using Time %s, And %f Per Block on Average During CatchUp Stage", elapsed, averageTime)
 
 	// Commitment logging
 	bytes := queue.Header.Root.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
-	log.Printf("Header's commitment is %s", commitment)
+	log.Printf("Header's Commitment Is %s", commitment)
 }
