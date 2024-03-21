@@ -149,26 +149,6 @@ func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) erro
 	return nil
 }
 
-func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint, records *OPIRecords) error {
-	curHeight := queue.Header.Height
-	for i := curHeight; i <= latestHeight; i++ {
-		ordTransfer, err := getter.GetOrdTransfers(i)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer, i)
-		queue.Offer()
-		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
-
-		// Check
-		if records != nil {
-			queue.Header.DebugState(records)
-		}
-	}
-	return nil
-}
-
 func (h *Header) DebugState(records *OPIRecords) {
 	height := h.Height
 	if recordsForHeight, found := (*records)[height]; found {

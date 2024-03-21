@@ -89,7 +89,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 
 		if curHeight < latestHeight {
 			queue.Lock()
-			err := queue.Update(ordGetter, latestHeight)
+			err := queue.Update(ordGetter, latestHeight, nil)
 			queue.Unlock()
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)
