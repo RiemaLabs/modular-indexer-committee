@@ -33,13 +33,13 @@ type DiffState struct {
 type KeyValueMap = map[[verkle.KeySize]byte][ValueSize]byte
 
 type Header struct {
-	Root   		verkle.VerkleNode
-	Height 		uint
-	Hash   		string
+	Root   verkle.VerkleNode
+	Height uint
+	Hash   string
 
-	KV  		KeyValueMap
-	Temp 		DiffList
-	OrdTrans 	[]getter.OrdTransfer
+	KV       KeyValueMap
+	Temp     DiffList
+	OrdTrans []getter.OrdTransfer
 }
 
 type Queue struct {
@@ -62,4 +62,6 @@ type KVStorage interface {
 	GetBytes(key []byte) []byte
 
 	Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error
+
+	GetHeight() uint
 }

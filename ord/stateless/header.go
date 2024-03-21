@@ -126,6 +126,7 @@ func (h *Header) GetBytes(key []byte) []byte {
 	return res
 }
 
+// h.Height ++
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for _, elem := range h.Temp.Elements {
 		h.KV[elem.Key] = elem.NewValue
@@ -143,6 +144,10 @@ func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn 
 		h.Hash = hash
 	}
 	return nil
+}
+
+func (h *Header) GetHeight() uint {
+	return h.Height
 }
 
 func (h *Header) Serialize() (*bytes.Buffer, error) {

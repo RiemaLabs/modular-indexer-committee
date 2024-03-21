@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	_ "net/http/pprof"
 	"os"
@@ -14,29 +15,26 @@ import (
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
 )
 
-func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint) (*stateless.Queue, error) {
+func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
 	// Fetch the latest block height.
-	latestHeight, err := getter.GetLatestBlockHeight()
-	if err != nil {
-		return nil, err
-	}
-	catchupHeight := latestHeight - ord.BitcoinConfirmations
-
 	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
 
+	catchupHeight := latestHeight - ord.BitcoinConfirmations + 1
+
 	// Start to catch-up
+	// TODO: Medium. Refine the catchup performance by batching query.
 	if catchupHeight > curHeight {
-		// TODO: Medium. Refine the catchup performance by batching query.
 		log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, catchupHeight)
 
 		for i := curHeight + 1; i <= catchupHeight; i++ {
-			ordTransfer, err := getter.GetOrdTransfers(i)
+			ordTransfer, err := ordGetter.GetOrdTransfers(i)
 			if err != nil {
 				return nil, err
 			}
-			stateless.Exec(&header, ordTransfer)
-			header.Paging(getter, false, stateless.NodeResolveFn)
+			stateless.Exec(&header, ordTransfer, i)
+			// header.Height ++
+			header.Paging(ordGetter, false, stateless.NodeResolveFn)
 			if i%1000 == 0 {
 				log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 				if arguments.EnableStateRootCache {
@@ -46,39 +44,52 @@ func catchupStage(getter getter.OrdGetter, arguments *RuntimeArguments, initHeig
 					}
 				}
 			}
-			if i == catchupHeight {
-				header.OrdTrans = ordTransfer
-			}
 		}
 	} else if catchupHeight == curHeight {
 		// stateRoot is located at catchupHeight.
 	} else if catchupHeight < curHeight {
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
+
+	// header.Height == catchupHeight
+
+	ots, err := ordGetter.GetOrdTransfers(catchupHeight)
+	if err != nil {
+		return nil, err
+	}
+	header.OrdTrans = ots
+
 	if arguments.EnableStateRootCache {
 		err := stateless.StoreHeader(header, header.Height-2000)
 		if err != nil {
-			log.Printf("Failed to store the cache at height: %d", catchupHeight)
+			log.Printf("Failed to store the cache at height: %d", header.Height)
 		}
 	}
 
-	return stateless.NewQueues(getter, &header, true, catchupHeight+1)
+	queue, err := stateless.NewQueues(ordGetter, &header, true, catchupHeight+1)
+	if err != nil {
+		return nil, err
+	}
+	if queue.LastestHeight() != latestHeight {
+		return nil, fmt.Errorf("mismatched state height: %d and catchup height: %d", queue.LastestHeight(), latestHeight)
+	}
+	return queue, nil
 }
 
-func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue) {
+func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
 	// TODO: Urgent. Provide service.
 	// var history = make(map[uint]map[string]bool)
 
 	for {
 		curHeight := queue.LastestHeight()
-		latestHeight, err := getter.GetLatestBlockHeight()
+		latestHeight, err := ordGetter.GetLatestBlockHeight()
 		if err != nil {
 			log.Fatalf("Failed to get the latest block height: %v", err)
 		}
 
 		if curHeight < latestHeight {
 			queue.Lock()
-			err := queue.Update(getter, latestHeight)
+			err := queue.Update(ordGetter, latestHeight)
 			queue.Unlock()
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)
@@ -86,14 +97,14 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *s
 		}
 
 		queue.Lock()
-		reorgHeight, err := queue.CheckForReorg(getter)
+		reorgHeight, err := queue.CheckForReorg(ordGetter)
 
 		if err != nil {
 			log.Fatalf("Failed to check the reorganization: %v", err)
 		}
 
 		if reorgHeight != 0 {
-			err := queue.Recovery(getter, reorgHeight)
+			err := queue.Recovery(ordGetter, reorgHeight)
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)
 			}
@@ -113,7 +124,7 @@ func serviceStage(getter getter.OrdGetter, arguments *RuntimeArguments, queue *s
 			// }
 		}
 
-		time.Sleep(60 * time.Second)
+		time.Sleep(interval)
 	}
 }
 
@@ -144,18 +155,23 @@ func main() {
 		log.Fatalf("Failed to parse config file: %v", err)
 	}
 
-	// Use OPI database as the getter.
-	getter, err := getter.NewOPIBitcoinGetter(getter.DatabaseConfig(GlobalConfig.Database))
+	// Use OPI database as the ordGetter.
+	ordGetter, err := getter.NewOPIBitcoinGetter(getter.DatabaseConfig(GlobalConfig.Database))
 
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
 
-	queue, err := catchupStage(getter, arguments, stateless.BRC20StartHeight-1)
+	latestHeight, err := ordGetter.GetLatestBlockHeight()
+	if err != nil {
+		log.Fatalf("Failed to get the latest block height: %v", err)
+	}
+
+	queue, err := catchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight-ord.BitcoinConfirmations)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
-	serviceStage(getter, arguments, queue)
+	serviceStage(ordGetter, arguments, queue, 60*time.Second)
 }

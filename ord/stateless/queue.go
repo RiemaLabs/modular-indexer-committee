@@ -3,9 +3,9 @@ package stateless
 import (
 	"log"
 
-	verkle "github.com/ethereum/go-verkle"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	verkle "github.com/ethereum/go-verkle"
 )
 
 func (state DiffState) Copy() DiffState {
@@ -62,7 +62,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		if err != nil {
 			return err
 		}
-		Exec(&queue.Header, ordTransfer)
+		Exec(&queue.Header, ordTransfer, i)
 		queue.Offer()
 		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
@@ -70,7 +70,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 	return nil
 }
 
-func Rollingback(root verkle.VerkleNode, stateDiff DiffState) (verkle.VerkleNode, [][]byte, []TripleElement){
+func Rollingback(root verkle.VerkleNode, stateDiff DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
 	rollback := root.Copy()
 	var keys [][]byte
 
@@ -116,7 +116,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) e
 		if err != nil {
 			return err
 		}
-		Exec(&queue.Header, ordTransfer)
+		Exec(&queue.Header, ordTransfer, j+1)
 		var hash string
 		hash, err = getter.GetBlockHash(j)
 		if err != nil {
@@ -170,7 +170,7 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 		if err != nil {
 			return nil, err
 		}
-		Exec(header, ordTransfer)
+		Exec(header, ordTransfer, i)
 		var hash string
 		if queryHash {
 			hash, err = getter.GetBlockHash(i)

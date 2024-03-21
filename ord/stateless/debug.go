@@ -16,138 +16,19 @@ import (
 )
 
 type Record struct {
-	ID              int
-	Pkscript        string
-	Wallet          string
-	Tick            string
-	OverallBalance  string
+	ID               int
+	Pkscript         string
+	Wallet           string
+	Tick             string
+	OverallBalance   string
 	AvailableBalance string
-	BlockHeight     uint
-	EventID         uint
+	BlockHeight      uint
+	EventID          uint
 }
 
-func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
-	curHeight := queue.Header.Height
-	startHeight := queue.StartHeight()
+type OPIRecords = map[uint][]Record
 
-	queue.DebugCommitment("Before Recovery")
-	// queue.DebugKV("Before Recovery")
-
-	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
-		// Recover header from i
-		index2 := i - startHeight
-		pastState := queue.History[index2]
-		// pastState := queue.GerDiffAtHeight(i)
-		queue.Header.Height = i
-		queue.Header.Hash = pastState.Hash
-
-		for _, elem := range pastState.Diff.Elements {
-			if elem.OldValueExists {
-				queue.Header.KV[elem.Key] = elem.OldValue
-				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
-			} else {
-				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
-				delete(queue.Header.KV, elem.Key)
-			}
-		}
-		queue.DebugCommitment("Being  Reversed")
-		// queue.DebugKV("Being  Reversed")
-	}
-
-	log.Print(curHeight, startHeight, recoveryTillHeight)
-
-	for j := recoveryTillHeight - 1; j < curHeight; j++ {
-		log.Print("===", j)
-		index := j - startHeight
-		ordTransfer, err := getter.GetOrdTransfers(j + 1)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer)
-		var hash string
-		hash, err = getter.GetBlockHash(j)
-		if err != nil {
-			return err
-		}
-		queue.History[index] = DiffState{
-			Height: j,
-			Hash:   hash,
-			Diff:   queue.Header.Temp,
-		}
-		queue.Header.Paging(getter, true, NodeResolveFn)
-		queue.DebugCommitment("One Step Update")
-		// queue.DebugKV("One Step Update")
-	}
-	return nil
-}
-
-func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) error {
-	curHeight := queue.Header.Height
-	for i := curHeight + 1; i <= latestHeight; i++ {
-		ordTransfer, err := getter.GetOrdTransfers(i)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer)
-		queue.Offer()
-		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
-	}
-	return nil
-}
-
-func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint) error {
-	// TODO: first load the csv file
-	records, err := loadOPIKV("./data/data.csv")
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		os.Exit(1)
-	}
-
-	curHeight := queue.Header.Height
-	for i := curHeight + 1; i <= latestHeight; i++ {
-		ordTransfer, err := getter.GetOrdTransfers(i)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer)
-		queue.Offer()
-		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
-
-		// Start checking
-		newHeight := queue.Header.Height
-		if newHeight >= 780000 {
-			if recordsForHeight, found := records[newHeight]; found {
-				for _, ele := range(recordsForHeight) {
-					opiTick := ele.Tick
-					opiPkScript := ele.Pkscript
-					opiOverallBalance := ele.OverallBalance
-					opiAvailableBalance := ele.AvailableBalance
-
-					var ordPkscript ord.Pkscript = ord.Pkscript(opiPkScript)
-					_, _, availableBalance, overallBalance := GetBalances(&queue.Header, opiTick, ordPkscript)
-					availableBalanceStr := availableBalance.String()
-					overallBalanceStr := overallBalance.String()
-
-					if availableBalanceStr != opiAvailableBalance {
-						fmt.Printf("Error, not match at %d for availableBalance\n", newHeight)
-					} else {
-						fmt.Printf("Some match at %d for availableBalance\n", newHeight)
-					}
-					if overallBalanceStr != opiOverallBalance {
-						fmt.Printf("Error, not match at %d for overallBalance\n", newHeight)
-					} else {
-						fmt.Printf("Some match at %d for overallBalance\n", newHeight)
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func loadOPIKV(filepath string) (map[uint][]Record, error) {
+func LoadOPIRecords(filepath string) (OPIRecords, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -196,6 +77,126 @@ func loadOPIKV(filepath string) (map[uint][]Record, error) {
 		records[blockHeight] = append(records[blockHeight], record)
 	}
 	return records, nil
+}
+
+func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
+	curHeight := queue.Header.Height
+	startHeight := queue.StartHeight()
+
+	queue.DebugCommitment("Before Recovery")
+	// queue.DebugKV("Before Recovery")
+
+	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
+		// Recover header from i
+		index2 := i - startHeight
+		pastState := queue.History[index2]
+		// pastState := queue.GerDiffAtHeight(i)
+		queue.Header.Height = i
+		queue.Header.Hash = pastState.Hash
+
+		for _, elem := range pastState.Diff.Elements {
+			if elem.OldValueExists {
+				queue.Header.KV[elem.Key] = elem.OldValue
+				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			} else {
+				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
+				delete(queue.Header.KV, elem.Key)
+			}
+		}
+		queue.DebugCommitment("Being  Reversed")
+		// queue.DebugKV("Being  Reversed")
+	}
+
+	log.Print(curHeight, startHeight, recoveryTillHeight)
+
+	for j := recoveryTillHeight - 1; j < curHeight; j++ {
+		log.Print("===", j)
+		index := j - startHeight
+		ordTransfer, err := getter.GetOrdTransfers(j + 1)
+		if err != nil {
+			return err
+		}
+		Exec(&queue.Header, ordTransfer, j+1)
+		var hash string
+		hash, err = getter.GetBlockHash(j)
+		if err != nil {
+			return err
+		}
+		queue.History[index] = DiffState{
+			Height: j,
+			Hash:   hash,
+			Diff:   queue.Header.Temp,
+		}
+		queue.Header.Paging(getter, true, NodeResolveFn)
+		queue.DebugCommitment("One Step Update")
+		// queue.DebugKV("One Step Update")
+	}
+	return nil
+}
+
+func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) error {
+	curHeight := queue.Header.Height
+	for i := curHeight + 1; i <= latestHeight; i++ {
+		ordTransfer, err := getter.GetOrdTransfers(i)
+		if err != nil {
+			return err
+		}
+		Exec(&queue.Header, ordTransfer, i)
+		queue.Offer()
+		queue.Header.OrdTrans = ordTransfer
+		queue.Header.Paging(getter, true, NodeResolveFn)
+	}
+	return nil
+}
+
+func (queue *Queue) DebugUpdateStrong(getter getter.OrdGetter, latestHeight uint, records *OPIRecords) error {
+	curHeight := queue.Header.Height
+	for i := curHeight; i <= latestHeight; i++ {
+		ordTransfer, err := getter.GetOrdTransfers(i)
+		if err != nil {
+			return err
+		}
+		Exec(&queue.Header, ordTransfer, i)
+		queue.Offer()
+		queue.Header.OrdTrans = ordTransfer
+		queue.Header.Paging(getter, true, NodeResolveFn)
+
+		// Check
+		if records != nil {
+			queue.Header.DebugState(records)
+		}
+	}
+	return nil
+}
+
+func (h *Header) DebugState(records *OPIRecords) {
+	height := h.Height
+	if recordsForHeight, found := (*records)[height]; found {
+		for _, ele := range recordsForHeight {
+			opiTick := ele.Tick
+			opiPkScript := ele.Pkscript
+			opiOverallBalance := ele.OverallBalance
+			opiAvailableBalance := ele.AvailableBalance
+
+			var ordPkscript ord.Pkscript = ord.Pkscript(opiPkScript)
+			_, _, availableBalance, overallBalance := GetBalances(h, opiTick, ordPkscript)
+			availableBalanceStr := availableBalance.String()
+			overallBalanceStr := overallBalance.String()
+
+			if availableBalanceStr != opiAvailableBalance {
+				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
+			} else {
+				fmt.Printf("Some match at %d for availableBalance\n", height)
+			}
+			if overallBalanceStr != opiOverallBalance {
+				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
+			} else {
+				fmt.Printf("Some match at %d for overallBalance\n", height)
+			}
+		}
+	}
 }
 
 func (queue *Queue) DebugKV(addition string) {

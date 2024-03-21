@@ -12,16 +12,16 @@ import (
 )
 
 func TestReorg(t *testing.T) {
-	getter, _ := loadMain()
-	queue := loadCatchUp(780000)
+	ordGetter, _ := loadMain()
+	queue := loadCatchUp(ordGetter, 780000, nil)
 
-	loadService(getter, queue, 10)
+	loadService(ordGetter, queue, 10, nil)
 	// Try to recover Root by 1/2/6, and then recover the queue, and remember to compare the commitment
-	loadReorg(getter, queue, 0)
-	loadReorg(getter, queue, 1)
-	loadReorg(getter, queue, 2)
-	loadReorg(getter, queue, 3)
-	loadReorg(getter, queue, 4) // at most
+	loadReorg(ordGetter, queue, 0)
+	loadReorg(ordGetter, queue, 1)
+	loadReorg(ordGetter, queue, 2)
+	loadReorg(ordGetter, queue, 3)
+	loadReorg(ordGetter, queue, 4) // at most
 	// loadReorg(getter, queue, 5)
 }
 

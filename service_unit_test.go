@@ -12,26 +12,25 @@ import (
 
 func TestService(t *testing.T) {
 	getter, _ := loadMain()
-	queue := loadCatchUp(780000)
+	queue := loadCatchUp(getter, 780000, nil)
 
 	startTime := time.Now()
-	loadService(getter, queue, 3) // partially update, some history still remain
+	loadService(getter, queue, 3, nil) // partially update, some history still remain
 	elapsed := time.Since(startTime)
 	log.Printf("Using time %s\n", elapsed)
 
 	startTime = time.Now()
-	loadService(getter, queue, 10) // all update, no historical record stays
+	loadService(getter, queue, 10, nil) // all update, no historical record stays
 	elapsed = time.Since(startTime)
 	log.Printf("Using time %s\n", elapsed)
 }
 
-func loadService(getter *getter.OPIOrdGetter, queue *stateless.Queue, upHeight uint) {
+func loadService(getter getter.OrdGetter, queue *stateless.Queue, latestHeight uint, records *stateless.OPIRecords) {
 	curHeight := queue.LastestHeight()
-	latestHeight := curHeight + upHeight
 
 	if curHeight < latestHeight {
 		queue.Lock()
-		err := queue.DebugUpdateStrong(getter, latestHeight)
+		err := queue.DebugUpdateStrong(getter, latestHeight, records)
 		// err := queue.DebugUpdate(getter, latestHeight) // For other cases
 		queue.Unlock()
 		if err != nil {

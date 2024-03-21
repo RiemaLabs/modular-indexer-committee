@@ -287,7 +287,10 @@ func ValidBRC20Transfer(ot getter.OrdTransfer, js map[string]string) (bool, stri
 }
 
 // Input previous verkle tree and all ord records in a block, then get the K-V array that the verkle tree should update
-func Exec(state KVStorage, ots []getter.OrdTransfer) {
+func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
+	if state.GetHeight() != blockHeight-1 {
+		panic(fmt.Errorf("mismatched state header: %d and block height: %d", state.GetHeight(), blockHeight-1))
+	}
 	upperLimit := getLimit()
 	if len(ots) == 0 {
 		return

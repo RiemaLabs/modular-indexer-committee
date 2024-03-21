@@ -5,6 +5,7 @@ import "github.com/RiemaLabs/indexer-committee/ord"
 type OrdTransfer struct {
 	ID            uint
 	InscriptionID string
+	BlockHeight   uint
 	OldSatpoint   string
 	NewSatpoint   string
 	NewPkscript   ord.Pkscript

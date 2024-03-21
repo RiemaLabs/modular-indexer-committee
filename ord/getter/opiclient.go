@@ -70,7 +70,7 @@ func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
 	var ordTransfers []OrdTransfer
 	sql := `
-		SELECT ot.id, ot.inscription_id, ot.old_satpoint, ot.new_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
+		SELECT ot.id, ot.inscription_id, ot.block_height, ot.old_satpoint, ot.new_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type
 		FROM ord_transfers ot
 		LEFT JOIN ord_content oc ON ot.inscription_id = oc.inscription_id
 		LEFT JOIN ord_number_to_id onti ON ot.inscription_id = onti.inscription_id
