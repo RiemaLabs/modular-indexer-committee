@@ -79,7 +79,7 @@ func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
 	queue.Lock()
 	defer queue.Unlock()
 
-	curHeight := queue.LastestHeight()
+	curHeight := queue.LatestHeight()
 	c.JSON(http.StatusOK, gin.H{
 		"latestHeight": curHeight,
 	})

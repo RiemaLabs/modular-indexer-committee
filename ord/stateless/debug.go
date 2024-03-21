@@ -166,14 +166,10 @@ func (h *Header) DebugState(records *OPIRecords) {
 			if availableBalanceStr != opiAvailableBalance {
 				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
 				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
-			} else {
-				fmt.Printf("Some match at %d for availableBalance\n", height)
 			}
 			if overallBalanceStr != opiOverallBalance {
 				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
 				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
-			} else {
-				fmt.Printf("Some match at %d for overallBalance\n", height)
 			}
 		}
 	}

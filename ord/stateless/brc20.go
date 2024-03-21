@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 	"strings"
@@ -181,8 +180,8 @@ func deployInscribe(state KVStorage, tick string, maxSupply *uint256.Int, decima
 	state.InsertUInt256(keyExists, uint256.NewInt(1))
 	state.InsertUInt256(keyRemainingSupply, maxSupply)
 	state.InsertUInt256(keyMaxSupply, maxSupply)
-	state.InsertUInt256(keyLimitPerMint, limitPerMint)
 	state.InsertUInt256(keyDecimals, decimals)
+	state.InsertUInt256(keyLimitPerMint, limitPerMint)
 }
 
 func mintInscribe(state KVStorage, newPkscript ord.Pkscript, newWallet ord.Wallet, tick string, amount *uint256.Int) {
@@ -254,38 +253,6 @@ func transferTransferNormal(state KVStorage, inscriptionID string, spentPkscript
 	state.InsertUInt256(key, newEventCount)
 }
 
-func ValidBRC20Transfer(ot getter.OrdTransfer, js map[string]string) (bool, string) {
-	oldSatpoint, _, _, sentAsFee, _, contentType :=
-		ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType
-	if sentAsFee && oldSatpoint == "" {
-		return false, ""
-	}
-	if contentType == "" {
-		return false, ""
-	}
-	decodedBytes, err := hex.DecodeString(contentType)
-	if err == nil {
-		contentType = string(decodedBytes)
-	}
-	contentType = strings.Split(contentType, ";")[0]
-	if contentType != "application/json" && contentType != "text/plain" {
-		return false, ""
-	}
-	tick, ok := js["tick"]
-	if !ok {
-		return false, ""
-	}
-	if _, ok := js["op"]; !ok {
-		return false, ""
-	}
-	tick = strings.ToLower(tick)
-	// NOTATION1 different to BRC20
-	if len(tick) != 4 {
-		return false, ""
-	}
-	return true, tick
-}
-
 // Input previous verkle tree and all ord records in a block, then get the K-V array that the verkle tree should update
 func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 	if state.GetHeight() != blockHeight-1 {
@@ -296,20 +263,42 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 		return
 	}
 	for _, ot := range ots {
-		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content :=
-			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content
+		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content, contentType :=
+			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType
 		var js map[string]string
 		json.Unmarshal(content, &js)
-		valid, tick := ValidBRC20Transfer(ot, js)
-		if !valid {
-			continue
+		if sentAsFee && oldSatpoint == "" {
+			continue // inscribed as fee
+		}
+		if contentType == "" {
+			continue // invalid inscription
+		}
+		decodedBytes, err := hex.DecodeString(contentType)
+		if err == nil {
+			contentType = string(decodedBytes)
+		}
+		contentType = strings.Split(contentType, ";")[0]
+		if contentType != "application/json" && contentType != "text/plain" {
+			continue // invalid inscription
+		}
+		tick, ok := js["tick"]
+		if !ok {
+			continue // invalid inscription
+		}
+		if _, ok := js["op"]; !ok {
+			continue // invalid inscription
+		}
+		tick = strings.ToLower(tick)
+		// NOTATION1 different to BRC20
+		if len(tick) != 4 {
+			continue // invalid tick
 		}
 
 		// handle deploy
 		if js["op"] == "deploy" && oldSatpoint == "" {
-			if tick == "μσ" {
-				log.Println("[enter 0]")
-			}
+			// Note: The implementation of upper-lower case conversion for Greek characters differs between Go and Python.
+			// Go is employed by us while Python is employed by OPI.
+			// Example: tick == "μσ".
 			maxSupplyValue, ok := js["max"]
 			if !ok {
 				continue // invalid inscription
@@ -335,7 +324,6 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 				continue // invalid decimals
 			}
 			var maxSupply *uint256.Int
-			var err error
 			if !isPositiveNumberWithDot(maxSupplyValue, false) {
 				continue
 			} else {
@@ -355,7 +343,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 				if !isPositiveNumberWithDot(lim, false) {
 					continue // invalid limit per mint
 				} else {
-					limitPerMint, err := getNumberExtendedTo18Decimals(lim, decimals, false)
+					limitPerMint, err = getNumberExtendedTo18Decimals(lim, decimals, false)
 					if err != nil || limitPerMint == nil {
 						continue // invalid limit per mint
 					}
