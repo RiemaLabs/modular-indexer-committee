@@ -31,7 +31,7 @@ func TestOPI(t *testing.T) {
 			ordGetterTest.LatestBlockHeight++
 			queue.Unlock()
 		}
-		if ordGetterTest.LatestBlockHeight >= 785000 {
+		if ordGetterTest.LatestBlockHeight >= 781000 {
 			os.Exit(0)
 		}
 		time.Sleep(500 * time.Millisecond)

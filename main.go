@@ -52,7 +52,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 		return nil, errors.New("the stored stateRoot is too advanced to handle reorg situations")
 	}
 
-	// header.Height == catchupHeight
+	// Currently, header.Height equals to catchupHeight.
 
 	ots, err := ordGetter.GetOrdTransfers(catchupHeight)
 	if err != nil {
@@ -78,8 +78,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 }
 
 func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
-	// TODO: Urgent. Provide service.
-	// var history = make(map[uint]map[string]bool)
+	var history = make(map[string]checkpoint.UploadRecord)
 
 	for {
 		curHeight := queue.LatestHeight()
@@ -113,15 +112,29 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 		queue.Unlock()
 
 		if arguments.EnableService {
-			indexerID := checkpoint.IndexerIdentification{
-				URL:          GlobalConfig.Service.URL,
-				Name:         GlobalConfig.Service.Name,
-				Version:      Version,
-				MetaProtocol: GlobalConfig.Service.MetaProtocol,
-			}
-			for i := 0; i <= len(queue.States)-1; i++ {
-				c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
-				go checkpoint.UploadCheckpoint(history, indexerID, c)
+			key := fmt.Sprintf("%d", queue.Header.Height) + queue.Header.Hash
+			if curRecord, found := history[key]; !(found && curRecord.Success) {
+				indexerID := checkpoint.IndexerIdentification{
+					URL:          GlobalConfig.Service.URL,
+					Name:         GlobalConfig.Service.Name,
+					Version:      Version,
+					MetaProtocol: GlobalConfig.Service.MetaProtocol,
+				}
+
+				c := checkpoint.NewCheckpoint(indexerID, queue.Header)
+				err := error(nil)
+				timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
+				if GlobalConfig.Report.Method == "s3" {
+					err = checkpoint.UploadCheckpointByS3(indexerID, c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, timeout)
+				} else if GlobalConfig.Report.Method == "da" {
+					err = checkpoint.UploadCheckpointByDA(indexerID, c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
+				}
+				if err != nil {
+					log.Fatalf("Unable to upload the checkpoint because: %v", err)
+				}
+				history[key] = checkpoint.UploadRecord{
+					Success: true,
+				}
 			}
 		}
 
@@ -130,8 +143,6 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func main() {
-	// printCache()
-	// return
 	arguments := NewRuntimeArguments()
 	rootCmd := arguments.MakeCmd()
 	if err := rootCmd.Execute(); err != nil {

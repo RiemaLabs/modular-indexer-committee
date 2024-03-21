@@ -9,12 +9,18 @@ type Config struct {
 		Port     string `json:"port"`
 	} `json:"database"`
 	Report struct {
-		Method string `json:"method"`
-		S3     struct {
+		Method  string `json:"method"`
+		Timeout int    `json:"timeout"`
+		S3      struct {
 			Bucket    string `json:"bucket"`
+			Region    string `json:"region"`
 			AccessKey string `json:"accessKey"`
 		} `json:"s3"`
-		Da struct{} `json:"da"`
+		Da struct {
+			RPC        string `json:"rpc"`
+			InviteCode string `json:"inviteCode"`
+			PrivateKey string `json:"privateKey"`
+		} `json:"da"`
 	} `json:"report"`
 	Service struct {
 		URL          string `json:"url"`

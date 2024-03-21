@@ -8,11 +8,17 @@
     },
     "report": {
         "method": "s3",
+        "timeout": 2000,
         "s3": {
+            "region": "",
             "bucket": "",
             "accessKey": ""
         },
-        "da": {}
+        "da": {
+            "rpc": "",
+            "inviteCode": "",
+            "privateKey": ""
+        }
     },
     "service": {
         "url": "",

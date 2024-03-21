@@ -41,8 +41,9 @@ type Header struct {
 
 	// The state is after the execution of Block Height.
 	Height uint
-	Hash   string
-	Diff   DiffList
+	// Block Hash.
+	Hash string
+	Diff DiffList
 
 	// Temporary Key Values for fast access. It shall be consistent with the Diff.
 	TempKV   KeyValueMap

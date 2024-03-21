@@ -191,7 +191,6 @@ func (queue *Queue) DebugKV(addition string) {
 	defer file.Close()
 
 	// Write the data to the file
-	// TODO: write height, addition and commitment into the file in one line, seperate by ====
 	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, KVCommitment)
 	_, err = file.WriteString(data)
 	if err != nil {
@@ -221,7 +220,6 @@ func (queue *Queue) DebugCommitment(addition string) {
 	defer file.Close()
 
 	// Write the data to the file
-	// TODO: write height, addition and commitment into the file in one line, seperate by ====
 	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, commitment)
 	_, err = file.WriteString(data)
 	if err != nil {

@@ -115,7 +115,7 @@ func GetLatestPkscript(state KVStorage, wallet string) ([]byte, string) {
 	return key, hex.EncodeToString(value)
 }
 
-// TODO: Urgent. Flush to the disk.
+// TODO: High. Flush to the disk.
 // Inscription Event State
 // Key: Keccak256(inscriptionID + "static")[:StemSize] + LocationID
 // Value: uint256
@@ -253,6 +253,7 @@ func transferTransferNormal(state KVStorage, inscriptionID string, spentPkscript
 	state.InsertUInt256(key, newEventCount)
 }
 
+// TODO: High. Include burn logic.
 // Input previous verkle tree and all ord records in a block, then get the K-V array that the verkle tree should update
 func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 	if state.GetHeight() != blockHeight-1 {

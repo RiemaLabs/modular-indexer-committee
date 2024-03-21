@@ -25,4 +25,8 @@ type Checkpoint struct {
 	Version string `json:"version"`
 }
 
-type UploadHistory = map[uint]map[string]bool
+type UploadRecord struct {
+	Success bool
+}
+
+type UploadHistory = map[uint]map[string]UploadRecord
