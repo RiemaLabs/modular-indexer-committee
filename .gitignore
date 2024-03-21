@@ -33,6 +33,7 @@ config.json
 
 # Cache
 .cache/*
+!.cache/.gitkeep
 
 # Debug
 __debug*
