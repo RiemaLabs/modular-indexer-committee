@@ -1,18 +1,12 @@
 package stateless
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/csv"
-	"encoding/hex"
-	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strconv"
 
 	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
 type Record struct {
@@ -31,7 +25,6 @@ type OPIRecords = map[uint][]Record
 func LoadOPIRecords(filepath string) (OPIRecords, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
 		return nil, err
 	}
 	defer file.Close()
@@ -39,7 +32,6 @@ func LoadOPIRecords(filepath string) (OPIRecords, error) {
 	reader := csv.NewReader(file)
 	_, err = reader.Read()
 	if err != nil {
-		fmt.Println("Error reading first line:", err)
 		return nil, err
 	}
 
@@ -51,7 +43,6 @@ func LoadOPIRecords(filepath string) (OPIRecords, error) {
 			if err.Error() == "EOF" {
 				break
 			}
-			fmt.Println("Error reading line:", err)
 			return nil, err
 		}
 
@@ -79,77 +70,7 @@ func LoadOPIRecords(filepath string) (OPIRecords, error) {
 	return records, nil
 }
 
-func (queue *Queue) DebugRecovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
-	curHeight := queue.Header.Height
-	startHeight := queue.StartHeight()
-
-	queue.DebugCommitment("Before Recovery")
-	// queue.DebugKV("Before Recovery")
-
-	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
-		// Recover header from i
-		index2 := i - startHeight
-		pastState := queue.History[index2]
-		// pastState := queue.GerDiffAtHeight(i)
-		queue.Header.Height = i
-		queue.Header.Hash = pastState.Hash
-
-		for _, elem := range pastState.Diff.Elements {
-			if elem.OldValueExists {
-				queue.Header.KV[elem.Key] = elem.OldValue
-				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
-			} else {
-				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
-				delete(queue.Header.KV, elem.Key)
-			}
-		}
-		queue.DebugCommitment("Being  Reversed")
-		// queue.DebugKV("Being  Reversed")
-	}
-
-	log.Print(curHeight, startHeight, recoveryTillHeight)
-
-	for j := recoveryTillHeight - 1; j < curHeight; j++ {
-		log.Print("===", j)
-		index := j - startHeight
-		ordTransfer, err := getter.GetOrdTransfers(j + 1)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer, j+1)
-		var hash string
-		hash, err = getter.GetBlockHash(j)
-		if err != nil {
-			return err
-		}
-		queue.History[index] = DiffState{
-			Height: j,
-			Hash:   hash,
-			Diff:   queue.Header.Diff,
-		}
-		queue.Header.Paging(getter, true, NodeResolveFn)
-		queue.DebugCommitment("One Step Update")
-		// queue.DebugKV("One Step Update")
-	}
-	return nil
-}
-
-func (queue *Queue) DebugUpdate(getter getter.OrdGetter, latestHeight uint) error {
-	curHeight := queue.Header.Height
-	for i := curHeight + 1; i <= latestHeight; i++ {
-		ordTransfer, err := getter.GetOrdTransfers(i)
-		if err != nil {
-			return err
-		}
-		Exec(&queue.Header, ordTransfer, i)
-		queue.Offer()
-		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
-	}
-	return nil
-}
-
-func (h *Header) DebugState(records *OPIRecords) {
+func (h *Header) VerifyState(records *OPIRecords) {
 	height := h.Height
 	if recordsForHeight, found := (*records)[height]; found {
 		for _, ele := range recordsForHeight {
@@ -164,99 +85,13 @@ func (h *Header) DebugState(records *OPIRecords) {
 			overallBalanceStr := overallBalance.String()
 
 			if availableBalanceStr != opiAvailableBalance {
-				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
-				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
+				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
 			}
 			if overallBalanceStr != opiOverallBalance {
-				panic(fmt.Errorf(`at block height %d, Pkscript %s's availableBalance doens't match.
-				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance))
+				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
 			}
 		}
 	}
-}
-
-func (queue *Queue) DebugKV(addition string) {
-	filePath := "log2_3.txt"
-
-	KVCommitment := generateMapHash(queue.Header.KV)
-	curHeight := queue.Header.Height
-
-	// Use os.Create to create a file for writing
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		// Handle the error; you might want to log it or return it
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-
-	// Write the data to the file
-	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, KVCommitment)
-	_, err = file.WriteString(data)
-	if err != nil {
-		// Handle the error
-		fmt.Println("Error writing to file:", err)
-		return
-	}
-
-	// Optionally, report success
-	fmt.Println("File written successfully")
-}
-
-func (queue *Queue) DebugCommitment(addition string) {
-	filePath := "log1_3.txt"
-
-	bytes := queue.Header.Root.Commit().Bytes()
-	commitment := base64.StdEncoding.EncodeToString(bytes[:])
-	curHeight := queue.Header.Height
-
-	// Use os.Create to create a file for writing
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		// Handle the error; you might want to log it or return it
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-
-	// Write the data to the file
-	data := fmt.Sprintf("%d====%s====%s\n", curHeight, addition, commitment)
-	_, err = file.WriteString(data)
-	if err != nil {
-		// Handle the error
-		fmt.Println("Error writing to file:", err)
-		return
-	}
-
-	// Optionally, report success
-	fmt.Println("File written successfully")
-}
-
-func generateMapHash(kvMap KeyValueMap) string {
-	keys := make([][32]byte, 0, len(kvMap))
-	for k := range kvMap {
-		keys = append(keys, k)
-	}
-
-	sort.Slice(keys, func(i, j int) bool {
-		return compareByteArrays(keys[i], keys[j])
-	})
-
-	var data []byte
-	for _, k := range keys {
-		data = append(data, k[:]...) // Append key
-		temp := kvMap[k]
-		data = append(data, temp[:]...) // Correctly append the value
-	}
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
-}
-
-func compareByteArrays(a, b [32]byte) bool {
-	for i := 0; i < len(a); i++ {
-		if a[i] != b[i] {
-			return a[i] < b[i]
-		}
-	}
-	return false
 }

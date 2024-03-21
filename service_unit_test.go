@@ -17,22 +17,22 @@ func TestService(t *testing.T) {
 	ordGetterTest.LatestBlockHeight = catchupHeight
 
 	startTime := time.Now()
-	loadService(ordGetterTest, queue, 3, nil) // partially update, some history still remain
+	mockService(ordGetterTest, queue, 3) // partially update, some history still remain
 	elapsed := time.Since(startTime)
 	log.Printf("Using Time %s\n", elapsed)
 
 	startTime = time.Now()
-	loadService(ordGetterTest, queue, 10, nil) // all update, no historical record stays
+	mockService(ordGetterTest, queue, 10) // all update, no historical record stays
 	elapsed = time.Since(startTime)
 	log.Printf("Using Time %s\n", elapsed)
 }
 
-func loadService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint, records *stateless.OPIRecords) {
+func mockService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint) {
 	curHeight := queue.LatestHeight()
 	latestHeight := curHeight + upHeight
 	if curHeight < latestHeight {
 		queue.Lock()
-		err := queue.Update(getter, latestHeight, records)
+		err := queue.Update(getter, latestHeight)
 		queue.Unlock()
 		if err != nil {
 			log.Fatalf("Failed To Update The Queue: %v", err)

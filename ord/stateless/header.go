@@ -52,9 +52,9 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	copy(newValueArray[:], value)
 
 	diffExists := false
-	for _, ele := range h.Diff.Elements {
-		if ele.Key == keyArray {
-			ele.NewValue = newValueArray
+	for i, ele := range h.Diff.Elements {
+		if bytes.Equal(keyArray[:], ele.Key[:]) {
+			h.Diff.Elements[i].NewValue = newValueArray
 			diffExists = true
 			break
 		}
@@ -142,7 +142,6 @@ func (h *Header) GetBytes(key []byte) []byte {
 	return res
 }
 
-// h.Height ++
 func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for key, value := range h.TempKV {
 		h.KV[key] = value

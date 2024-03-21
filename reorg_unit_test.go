@@ -7,43 +7,52 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
 )
 
 func TestReorg(t *testing.T) {
-	var catchupHeight uint = 780000
+	var catchupHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
 	ordGetterTest, arguments := loadMain()
 	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
-	loadService(ordGetterTest, queue, 10, nil)
-
-	loadReorg(ordGetterTest, queue, 0)
 	loadReorg(ordGetterTest, queue, 1)
+
+	mockService(ordGetterTest, queue, 10)
+
 	loadReorg(ordGetterTest, queue, 2)
 	loadReorg(ordGetterTest, queue, 3)
 	loadReorg(ordGetterTest, queue, 4)
+	loadReorg(ordGetterTest, queue, 5)
+	loadReorg(ordGetterTest, queue, 6)
 }
 
 func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
-	log.Printf("Recover The Queue by %d Blocks!", recovery+1)
 	startTime := time.Now()
 
-	oldBytes := queue.Header.Root.Commit().Bytes()
-	oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
+	oldCommitments := make([]string, 0)
+
+	for _, h := range queue.History {
+		oldBytes := h.VerkleCommit
+		oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
+		oldCommitments = append(oldCommitments, oldCommitment)
+	}
 
 	curHeight := queue.Header.Height
-	recoveryTillHeight := curHeight - recovery
-	queue.Recovery(getter, recoveryTillHeight)
+	// reorgHeights means that the blockHash of this height changed.
+	reorgHeight := curHeight - recovery + 1
+	queue.Recovery(getter, reorgHeight)
 
-	newBytes := queue.Header.Root.Commit().Bytes()
-	newCommitment := base64.StdEncoding.EncodeToString(newBytes[:])
-
-	if oldCommitment == newCommitment {
-		log.Printf("Recover The Queue by %d Blocks Succeed!", recovery+1)
-	} else {
-		log.Printf("Recover The Queue by %d Blocks Failed Somewhere!", recovery+1)
+	for i, h := range queue.History {
+		newBytes := h.VerkleCommit
+		newCommitment := base64.StdEncoding.EncodeToString(newBytes[:])
+		oldCommitment := oldCommitments[i]
+		if oldCommitment != newCommitment {
+			log.Fatalf("Reorganize the queue by %d blocks failed!", recovery)
+		}
 	}
 	elapsed := time.Since(startTime)
-	log.Printf("Recovery One Block Using Time %s\n", elapsed)
+	log.Printf("Reorganize the queue by %d blocks succeed!", recovery)
+	log.Printf("Timecost: %s\n", elapsed)
 }

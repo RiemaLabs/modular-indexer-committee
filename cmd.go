@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -27,19 +27,19 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			if arguments.EnableService {
-				fmt.Println("Service mode is enabled.")
+				log.Println("Service mode is enabled.")
 			} else {
-				fmt.Println("Service mode is disabled.")
+				log.Println("Service mode is disabled.")
 			}
 			if arguments.EnableCommittee {
-				fmt.Println("Committee mode is enabled.")
+				log.Println("Committee mode is enabled.")
 			} else {
-				fmt.Println("Committee mode is disabled.")
+				log.Println("Committee mode is disabled.")
 			}
 			if arguments.EnableStateRootCache {
-				fmt.Println("StateRoot cache is enabled.")
+				log.Println("StateRoot cache is enabled.")
 			} else {
-				fmt.Println("StateRoot cache is disabled.")
+				log.Println("StateRoot cache is disabled.")
 			}
 		},
 	}

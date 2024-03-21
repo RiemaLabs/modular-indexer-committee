@@ -26,6 +26,8 @@ type DiffList struct {
 type DiffState struct {
 	Height uint
 	Hash   string
+	// ipa.CompressedSize
+	VerkleCommit [32]byte
 
 	Diff DiffList
 }
@@ -52,7 +54,7 @@ type Header struct {
 
 type Queue struct {
 	Header  Header
-	History [ord.BitcoinConfirmations - 1]DiffState
+	History [ord.BitcoinConfirmations]DiffState
 	sync.RWMutex
 }
 

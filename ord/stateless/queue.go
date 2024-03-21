@@ -1,6 +1,8 @@
 package stateless
 
 import (
+	"encoding/base64"
+	"fmt"
 	"log"
 
 	"github.com/RiemaLabs/indexer-committee/ord"
@@ -21,9 +23,10 @@ func (state DiffState) Copy() DiffState {
 
 	newDiff := DiffList{Elements: newElements}
 	return DiffState{
-		Height: state.Height,
-		Hash:   state.Hash,
-		Diff:   newDiff,
+		Height:       state.Height,
+		Hash:         state.Hash,
+		Diff:         newDiff,
+		VerkleCommit: state.VerkleCommit,
 	}
 }
 
@@ -35,19 +38,6 @@ func (queue *Queue) LatestHeight() uint {
 	return queue.Header.Height
 }
 
-// Offer the latest state and pop the oldest state.
-func (queue *Queue) Offer() {
-	// Offer is not given parameter to protect from wrong writing
-	newDiffState := DiffState{
-		Height: queue.Header.Height,
-		Hash:   queue.Header.Hash,
-		Diff:   queue.Header.Diff,
-	}
-
-	copy(queue.History[:], queue.History[1:])
-	queue.History[len(queue.History)-1] = newDiffState
-}
-
 func (queue *Queue) Println() {
 	log.Println("====", queue.Header.Height, "====", queue.Header.Hash, "====")
 	for _, node := range queue.History {
@@ -55,21 +45,31 @@ func (queue *Queue) Println() {
 	}
 }
 
-func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint, records *OPIRecords) error {
+func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 	curHeight := queue.Header.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return err
 		}
+		// Write to Diff
 		Exec(&queue.Header, ordTransfer, i)
-		queue.Offer()
-		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
-
-		if records != nil {
-			queue.Header.DebugState(records)
+		hash, err := getter.GetBlockHash(i)
+		if err != nil {
+			return err
 		}
+		newDiffState := DiffState{
+			Height:       i,
+			Hash:         hash,
+			Diff:         queue.Header.Diff,
+			VerkleCommit: queue.Header.Root.Commit().Bytes(),
+		}
+		copy(queue.History[:], queue.History[1:])
+		queue.History[len(queue.History)-1] = newDiffState
+
+		queue.Header.OrdTrans = ordTransfer
+		// header.Height ++
+		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 	return nil
 }
@@ -90,46 +90,75 @@ func Rollingback(root verkle.VerkleNode, stateDiff DiffState) (verkle.VerkleNode
 	return rollback, keys, stateDiff.Diff.Elements
 }
 
-func (queue *Queue) Recovery(getter getter.OrdGetter, recoveryTillHeight uint) error {
+func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 	curHeight := queue.Header.Height
 	startHeight := queue.StartHeight()
 
-	for i := curHeight - 1; i >= recoveryTillHeight-1; i-- {
-		// Recover header from i
-		index2 := i - startHeight
-		pastState := queue.History[index2]
-		queue.Header.Height = i
-		queue.Header.Hash = pastState.Hash
+	// Rollback to the reorgHeight - 1.
+	for i := curHeight - 1; i >= reorgHeight-1; i-- {
+		index := i - startHeight + 1
+		pastState := queue.History[index]
+
+		// Inner bug in go-verkle, doesn't work.
+		// for _, elem := range pastState.Diff.Elements {
+		// 	if elem.OldValueExists {
+		// 		queue.Header.KV[elem.Key] = elem.OldValue
+		// 		queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+		// 	} else {
+		// 		delete(queue.Header.KV, elem.Key)
+		// 		queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
+		// 	}
+		// }
+		// newRoot := queue.Header.Root
+		// newBytes := queue.Header.Root.Commit().Bytes()
+		// n := base64.StdEncoding.EncodeToString(newBytes[:])
 
 		for _, elem := range pastState.Diff.Elements {
 			if elem.OldValueExists {
 				queue.Header.KV[elem.Key] = elem.OldValue
-				queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
 			} else {
-				queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
 				delete(queue.Header.KV, elem.Key)
 			}
 		}
+		newRoot := verkle.New()
+		for k, v := range queue.Header.KV {
+			newRoot.Insert(k[:], v[:], NodeResolveFn)
+		}
+		newBytes := newRoot.Commit().Bytes()
+		n := base64.StdEncoding.EncodeToString(newBytes[:])
+		o := base64.StdEncoding.EncodeToString(pastState.VerkleCommit[:])
+		if n != o {
+			panic(fmt.Sprintf("Recovery the header failed! The commitment is different: %s and %s", n, o))
+		}
+		queue.Header = Header{
+			Root:     newRoot,
+			KV:       queue.Header.KV,
+			Height:   i,
+			Hash:     pastState.Hash,
+			Diff:     DiffList{},
+			TempKV:   KeyValueMap{},
+			OrdTrans: queue.Header.OrdTrans,
+		}
 	}
 
-	log.Print(curHeight, startHeight, recoveryTillHeight)
-
-	for j := recoveryTillHeight - 1; j < curHeight; j++ {
+	// Compute to the curHeight from the reorgHeight.
+	for j := reorgHeight; j <= curHeight; j++ {
 		index := j - startHeight
-		ordTransfer, err := getter.GetOrdTransfers(j + 1)
+		ordTransfer, err := getter.GetOrdTransfers(j)
 		if err != nil {
 			return err
 		}
-		Exec(&queue.Header, ordTransfer, j+1)
+		Exec(&queue.Header, ordTransfer, j)
 		var hash string
 		hash, err = getter.GetBlockHash(j)
 		if err != nil {
 			return err
 		}
 		queue.History[index] = DiffState{
-			Height: j,
-			Hash:   hash,
-			Diff:   queue.Header.Diff,
+			Height:       j,
+			Hash:         hash,
+			Diff:         queue.Header.Diff,
+			VerkleCommit: queue.Header.Root.Commit().Bytes(),
 		}
 		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
@@ -154,22 +183,12 @@ func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 			return height, nil
 		}
 	}
-	hash := queue.Header.Hash
-	height := queue.Header.Height
-	newHash, err := getter.GetBlockHash(height)
-	if err != nil {
-		return 0, err
-	}
-	if hash == newHash {
-		return 0, nil
-	} else {
-		return height, nil
-	}
+	return 0, nil
 }
 
 func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHeight uint) (*Queue, error) {
-	var stateList [ord.BitcoinConfirmations - 1]DiffState
-	for i := startHeight; i <= startHeight+ord.BitcoinConfirmations-2; i++ {
+	var stateList [ord.BitcoinConfirmations]DiffState
+	for i := startHeight; i <= startHeight+ord.BitcoinConfirmations-1; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
 			return nil, err
@@ -183,9 +202,10 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 			}
 		}
 		stateList[i-startHeight] = DiffState{
-			Height: i,
-			Hash:   hash,
-			Diff:   header.Diff,
+			Height:       i,
+			Hash:         hash,
+			Diff:         header.Diff,
+			VerkleCommit: header.Root.Commit().Bytes(),
 		}
 		header.Paging(getter, true, NodeResolveFn)
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -14,20 +15,20 @@ func TestOPI(t *testing.T) {
 	var latestHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
 	records, err := stateless.LoadOPIRecords("./data/785000-ordi.csv")
 	if err != nil {
-		panic(err)
+		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest, arguments := loadMain()
 	queue, err := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
 	if err != nil {
-		panic(err)
+		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest.LatestBlockHeight = latestHeight
 	go serviceStage(ordGetterTest, &arguments, queue, 500*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
 			queue.Lock()
-			queue.Header.DebugState(&records)
-			fmt.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
+			queue.Header.VerifyState(&records)
+			log.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
 			ordGetterTest.LatestBlockHeight++
 			queue.Unlock()
 		}

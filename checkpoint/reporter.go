@@ -38,9 +38,7 @@ func NewCheckpoint(indexID IndexerIdentification, header stateless.Header) Check
 	return content
 }
 
-var awsS3Client *s3.Client
-
-func UploadCheckpointByS3(indexerID IndexerIdentification, checkpoint Checkpoint, region, bucket string, timeout time.Duration) error {
+func UploadCheckpointByS3(indexerID IndexerIdentification, c Checkpoint, region, bucket string, timeout time.Duration) error {
 	// the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:aws.Configconfig.LoadDefaultConfig
 	// creds := credentials.NewStaticCredentialsProvider(your_access_key, your_secret_key, "")
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
@@ -48,14 +46,14 @@ func UploadCheckpointByS3(indexerID IndexerIdentification, checkpoint Checkpoint
 		return err
 	}
 
-	awsS3Client = s3.NewFromConfig(cfg)
+	var awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
 
 	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
-		checkpoint.Name, checkpoint.MetaProtocol, checkpoint.Height, checkpoint.Hash)
+		c.Name, c.MetaProtocol, c.Height, c.Hash)
 
 	// change format into JSON
-	checkpointJSON, err := json.Marshal(checkpoint)
+	checkpointJSON, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}

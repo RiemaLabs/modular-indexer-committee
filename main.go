@@ -23,7 +23,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 
 	log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, latestHeight)
 
-	catchupHeight := latestHeight - ord.BitcoinConfirmations + 1
+	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
 	// Start to catch-up
 	// TODO: Medium. Refine the catchup performance by batching query.
@@ -89,7 +89,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 
 		if curHeight < latestHeight {
 			queue.Lock()
-			err := queue.Update(ordGetter, latestHeight, nil)
+			err := queue.Update(ordGetter, latestHeight)
 			queue.Unlock()
 			if err != nil {
 				log.Fatalf("Failed to update the queue: %v", err)

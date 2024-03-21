@@ -2,6 +2,7 @@ package stateless
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -98,6 +99,38 @@ func StoreHeader(header Header, evictHeight uint) error {
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func StoreKV(header Header) error {
+	fileName := filepath.Join(cachePath, fmt.Sprintf("%d.kv", header.Height))
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	keys := header.OrderedKeys()
+	for _, k := range keys {
+		v := header.KV[k]
+		_, err := fmt.Fprintf(file, "0x%v: 0x%v\n", hex.EncodeToString(k[:]), hex.EncodeToString(v[:]))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func StoreDiff(diff DiffList, height uint) error {
+	fileName := filepath.Join(cachePath, fmt.Sprintf("%d.csv", height))
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	fmt.Fprintln(file, "Key,OldValue,NewValue,OldValueExists")
+	for _, t := range diff.Elements {
+		fmt.Fprintf(file, "0x%x,0x%x,0x%x,%t\n", t.Key, t.OldValue, t.NewValue, t.OldValueExists)
 	}
 	return nil
 }
