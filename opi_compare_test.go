@@ -31,7 +31,7 @@ func TestOPI(t *testing.T) {
 			fmt.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
 			queue.Unlock()
 		}
-		if ordGetterTest.LatestBlockHeight == 785000 {
+		if ordGetterTest.LatestBlockHeight >= 785000 {
 			os.Exit(0)
 		}
 		time.Sleep(1 * time.Second)

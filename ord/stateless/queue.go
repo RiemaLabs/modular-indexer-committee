@@ -55,7 +55,7 @@ func (queue *Queue) Println() {
 	}
 }
 
-func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
+func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint, records *OPIRecords) error {
 	curHeight := queue.Header.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
@@ -66,6 +66,10 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		queue.Offer()
 		queue.Header.OrdTrans = ordTransfer
 		queue.Header.Paging(getter, true, NodeResolveFn)
+
+		if records != nil {
+			queue.Header.DebugState(records)
+		}
 	}
 	return nil
 }
