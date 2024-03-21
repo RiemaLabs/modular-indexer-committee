@@ -7,13 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
 )
 
 func TestReorg(t *testing.T) {
-	var catchupHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
+	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
@@ -51,7 +50,11 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 		if oldCommitment != newCommitment {
 			log.Fatalf("Reorganize the queue by %d blocks failed!", recovery)
 		}
+		log.Printf("Commitment at height %d: %s", h.Height, newCommitment)
 	}
+	b := queue.Header.Root.Commit().Bytes()
+	latestCommitment := base64.StdEncoding.EncodeToString(b[:])
+	log.Printf("Commitment at height %d: %s", queue.Header.Height, latestCommitment)
 	elapsed := time.Since(startTime)
 	log.Printf("Reorganize the queue by %d blocks succeed!", recovery)
 	log.Printf("Timecost: %s\n", elapsed)

@@ -10,7 +10,7 @@ type OPIOrdGetterTest struct {
 	BlockHash         map[uint]string
 }
 
-func NewOPIOrdGetterTest(config DatabaseConfig) (*OPIOrdGetterTest, error) {
+func NewOPIOrdGetterTest(config *DatabaseConfig) (*OPIOrdGetterTest, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err

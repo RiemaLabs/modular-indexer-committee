@@ -50,10 +50,12 @@ type Header struct {
 	// Temporary Key Values for fast access. It shall be consistent with the Diff.
 	TempKV   KeyValueMap
 	OrdTrans []getter.OrdTransfer
+
+	sync.RWMutex
 }
 
 type Queue struct {
-	Header  Header
+	Header  *Header
 	History [ord.BitcoinConfirmations]DiffState
 	sync.RWMutex
 }
