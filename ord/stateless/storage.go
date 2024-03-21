@@ -16,7 +16,7 @@ import (
 const cachePath = ".cache"
 const fileSuffix = ".dat"
 
-func LoadHeader(enableStateRootCache bool, initHeight uint) Header {
+func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 	curHeight := initHeight
 	myHeader := Header{
 		Root:   verkle.New(),
@@ -29,7 +29,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) Header {
 	if enableStateRootCache {
 		files, err := os.ReadDir(cachePath)
 		if err != nil {
-			return myHeader
+			return &myHeader
 		}
 		// Variables to keep track of the file with the maximum state.height
 		var maxHeight int
@@ -52,23 +52,23 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) Header {
 		if maxFile != "" {
 			data, err := os.ReadFile(filepath.Join(cachePath, maxFile))
 			if err != nil {
-				return myHeader
+				return &myHeader
 			}
 			var buffer = bytes.NewBuffer(data)
 			log.Println("Start to rebuild verkle tree.")
 			storedState, err := Deserialize(buffer, uint(maxHeight), nil)
 			if err != nil {
-				return myHeader
+				return &myHeader
 			}
 			log.Println("End to rebuild verkle tree.")
-			return *storedState
+			return storedState
 		}
 
 	}
-	return myHeader
+	return &myHeader
 }
 
-func StoreHeader(header Header, evictHeight uint) error {
+func StoreHeader(header *Header, evictHeight uint) error {
 	buffer, err := header.Serialize()
 	bytes := buffer.Bytes()
 	if err != nil {
@@ -103,7 +103,7 @@ func StoreHeader(header Header, evictHeight uint) error {
 	return nil
 }
 
-func StoreKV(header Header) error {
+func StoreKV(header *Header) error {
 	fileName := filepath.Join(cachePath, fmt.Sprintf("%d.kv", header.Height))
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -121,7 +121,7 @@ func StoreKV(header Header) error {
 	return nil
 }
 
-func StoreDiff(diff DiffList, height uint) error {
+func StoreDiff(diff *DiffList, height uint) error {
 	fileName := filepath.Join(cachePath, fmt.Sprintf("%d.csv", height))
 	file, err := os.Create(fileName)
 	if err != nil {

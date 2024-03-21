@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 			if err != nil {
 				return nil, err
 			}
-			stateless.Exec(&header, ordTransfer, i)
+			stateless.Exec(header, ordTransfer, i)
 			// header.Height ++
 			header.Paging(ordGetter, false, stateless.NodeResolveFn)
 			if i%1000 == 0 {
@@ -67,7 +68,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 		}
 	}
 
-	queue, err := stateless.NewQueues(ordGetter, &header, true, catchupHeight+1)
+	queue, err := stateless.NewQueues(ordGetter, header, true, catchupHeight+1)
 	if err != nil {
 		return nil, err
 	}
@@ -112,28 +113,41 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 		queue.Unlock()
 
 		if arguments.EnableService {
-			key := fmt.Sprintf("%d", queue.Header.Height) + queue.Header.Hash
-			if curRecord, found := history[key]; !(found && curRecord.Success) {
-				indexerID := checkpoint.IndexerIdentification{
-					URL:          GlobalConfig.Service.URL,
-					Name:         GlobalConfig.Service.Name,
-					Version:      Version,
-					MetaProtocol: GlobalConfig.Service.MetaProtocol,
-				}
-
-				c := checkpoint.NewCheckpoint(indexerID, queue.Header)
-				err := error(nil)
-				timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
-				if GlobalConfig.Report.Method == "s3" {
-					err = checkpoint.UploadCheckpointByS3(indexerID, c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, timeout)
-				} else if GlobalConfig.Report.Method == "da" {
-					err = checkpoint.UploadCheckpointByDA(indexerID, c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
-				}
-				if err != nil {
-					log.Fatalf("Unable to upload the checkpoint because: %v", err)
-				}
-				history[key] = checkpoint.UploadRecord{
-					Success: true,
+			latestHistory := stateless.DiffState{
+				Height:       queue.Header.Height,
+				Hash:         queue.Header.Hash,
+				VerkleCommit: queue.Header.Root.Commit().Bytes(),
+				Diff:         stateless.DiffList{},
+			}
+			hs := make([]*stateless.DiffState, 0)
+			for _, i := range queue.History {
+				hs = append(hs, &i)
+			}
+			hs = append(hs, &latestHistory)
+			for _, i := range hs {
+				key := fmt.Sprintf("%d", i.Height) + i.Hash
+				if curRecord, found := history[key]; !(found && curRecord.Success) {
+					indexerID := checkpoint.IndexerIdentification{
+						URL:          GlobalConfig.Service.URL,
+						Name:         GlobalConfig.Service.Name,
+						Version:      Version,
+						MetaProtocol: GlobalConfig.Service.MetaProtocol,
+					}
+					commitment := base64.StdEncoding.EncodeToString(i.VerkleCommit[:])
+					c := checkpoint.NewCheckpoint(&indexerID, i.Height, i.Hash, commitment)
+					err := error(nil)
+					timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
+					if GlobalConfig.Report.Method == "s3" {
+						err = checkpoint.UploadCheckpointByS3(&indexerID, &c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, timeout)
+					} else if GlobalConfig.Report.Method == "da" {
+						err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
+					}
+					if err != nil {
+						log.Fatalf("Unable to upload the checkpoint because: %v", err)
+					}
+					history[key] = checkpoint.UploadRecord{
+						Success: true,
+					}
 				}
 			}
 		}
@@ -168,7 +182,8 @@ func main() {
 	}
 
 	// Use OPI database as the ordGetter.
-	ordGetter, err := getter.NewOPIBitcoinGetter(getter.DatabaseConfig(GlobalConfig.Database))
+	gd := getter.DatabaseConfig(GlobalConfig.Database)
+	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
 
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)

@@ -19,7 +19,7 @@ type OPIOrdGetter struct {
 	db *gorm.DB
 }
 
-func ConnectOPIDatabase(config DatabaseConfig) (*gorm.DB, error) {
+func ConnectOPIDatabase(config *DatabaseConfig) (*gorm.DB, error) {
 	host := config.Host
 	user := config.User
 	password := config.Password
@@ -29,7 +29,7 @@ func ConnectOPIDatabase(config DatabaseConfig) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
-func NewOPIBitcoinGetter(config DatabaseConfig) (*OPIOrdGetter, error) {
+func NewOPIBitcoinGetter(config *DatabaseConfig) (*OPIOrdGetter, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ import (
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 )
 
-func NewHeader(getter getter.OrdGetter, initState DiffState) Header {
+func NewHeader(getter *getter.OrdGetter, initState *DiffState) *Header {
 	myHeader := Header{
 		Root:   verkle.New(),
 		Height: initState.Height,
@@ -21,8 +21,7 @@ func NewHeader(getter getter.OrdGetter, initState DiffState) Header {
 		Diff:   DiffList{},
 		TempKV: KeyValueMap{},
 	}
-
-	return myHeader
+	return &myHeader
 }
 
 func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) {
@@ -142,7 +141,7 @@ func (h *Header) GetBytes(key []byte) []byte {
 	return res
 }
 
-func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
+func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for key, value := range h.TempKV {
 		h.KV[key] = value
 		h.Root.Insert(key[:], value[:], nodeResolverFn)
@@ -153,7 +152,7 @@ func (h *Header) Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn 
 	// Update height and hash
 	h.Height++
 	if queryHash {
-		hash, err := getter.GetBlockHash(h.Height)
+		hash, err := ordGetter.GetBlockHash(h.Height)
 		if err != nil {
 			return err
 		}

@@ -15,7 +15,7 @@ func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byt
 	defer queue.Unlock()
 
 	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
-	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(&queue.Header, tick, ordPkscript)
+	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, ordPkscript)
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
@@ -34,7 +34,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
-	pkScriptKey, pkScript := stateless.GetLatestPkscript(&queue.Header, wallet)
+	pkScriptKey, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
 
 	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
 
@@ -90,10 +90,10 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 	defer queue.Unlock()
 
 	lastIndex := len(queue.History) - 1
+	postState := queue.Header.Root
+	preState, keys, info := stateless.Rollingback(&queue.History[lastIndex])
 
-	preState, keys, info := stateless.Rollingback(queue.Header.Root, queue.History[lastIndex])
-
-	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(preState, queue.Header.Root, keys, stateless.NodeResolveFn)
+	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
 	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
 	vProofBytes, _ := vProof.MarshalJSON()
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
