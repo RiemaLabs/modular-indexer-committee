@@ -1,0 +1,28 @@
+{
+    "database": {
+        "host": "127.0.0.1",
+        "user": "postgres",
+        "password": "postgres",
+        "dbname": "postgres",
+        "port": "5432"
+    },
+    "report": {
+        "method": "s3",
+        "timeout": 2000,
+        "s3": {
+            "region": "",
+            "bucket": "",
+            "accessKey": ""
+        },
+        "da": {
+            "rpc": "",
+            "inviteCode": "",
+            "privateKey": ""
+        }
+    },
+    "service": {
+        "url": "",
+        "name": "",
+        "metaProtocol": "brc-20"
+    }
+}
