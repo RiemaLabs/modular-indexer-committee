@@ -26,7 +26,7 @@ func TestService(t *testing.T) {
 }
 
 func loadService(getter getter.OrdGetter, queue *stateless.Queue, latestHeight uint, records *stateless.OPIRecords) {
-	curHeight := queue.LastestHeight()
+	curHeight := queue.LatestHeight()
 
 	if curHeight < latestHeight {
 		queue.Lock()

@@ -31,7 +31,7 @@ func (queue *Queue) StartHeight() uint {
 	return queue.History[0].Height
 }
 
-func (queue *Queue) LastestHeight() uint {
+func (queue *Queue) LatestHeight() uint {
 	return queue.Header.Height
 }
 

@@ -70,8 +70,8 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	if err != nil {
 		return nil, err
 	}
-	if queue.LastestHeight() != latestHeight {
-		return nil, fmt.Errorf("mismatched state height: %d and catchup height: %d", queue.LastestHeight(), latestHeight)
+	if queue.LatestHeight() != latestHeight {
+		return nil, fmt.Errorf("mismatched state height: %d and catchup height: %d", queue.LatestHeight(), latestHeight)
 	}
 	return queue, nil
 }
@@ -81,7 +81,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 	// var history = make(map[uint]map[string]bool)
 
 	for {
-		curHeight := queue.LastestHeight()
+		curHeight := queue.LatestHeight()
 		latestHeight, err := ordGetter.GetLatestBlockHeight()
 		if err != nil {
 			log.Fatalf("Failed to get the latest block height: %v", err)
