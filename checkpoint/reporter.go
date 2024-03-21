@@ -7,10 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"strconv"
+	"time"
+
+	sdk "github.com/RiemaLabs/nubit-da-sdk"
 
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/nubit-da-sdk/constant"
+	"github.com/RiemaLabs/nubit-da-sdk/types"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -34,42 +38,21 @@ func NewCheckpoint(indexID IndexerIdentification, header stateless.Header) Check
 	return content
 }
 
-const (
-	// AWS_S3_REGION = "AWS_REGION"
-	AWS_S3_REGION = "us-west-2"
-	AWS_S3_BUCKET = "nubit-modular-indexer"
-)
-
-// URI s3://arn:aws:s3:us-west-2:905418332373:accesspoint/ap-indexer
-// We will be using this client everywhere in our code
 var awsS3Client *s3.Client
 
-// OBS: "config" is a key word in "github.com/aws/aws-sdk-go-v2/config", cannot be used as argument name here
-func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, checkpoint Checkpoint) {
+func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, checkpoint Checkpoint, region string, bucket string) {
 	// the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:aws.Configconfig.LoadDefaultConfig
 	// creds := credentials.NewStaticCredentialsProvider(your_access_key, your_secret_key, "")
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(AWS_S3_REGION))
-	// 	config.WithSharedCredentialsFiles(
-	// 		[]string{"test/credentials", "data/credentials"},
-	// 	),
-	// 	config.WithSharedConfigFiles(
-	// 		[]string{"test/config", "data/config"},
-	// 	)
-
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
-	// downloader := manager.NewDownloader(awsS3Client)
 
-	mac, err := getMACAddress()
-	if err != nil {
-		log.Fatal(err)
-	}
 	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
-		mac, checkpoint.MetaProtocol, checkpoint.Height, checkpoint.Hash)
+		checkpoint.Name, checkpoint.MetaProtocol, checkpoint.Height, checkpoint.Hash)
 
 	// change format into JSON
 	checkpointJSON, err := json.Marshal(checkpoint)
@@ -89,7 +72,7 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	}
 
 	output, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(AWS_S3_BUCKET),
+		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
 		Body:   bytes.NewReader(checkpointJSON),
 	})
@@ -104,21 +87,84 @@ func UploadCheckpoint(history UploadHistory, indexerID IndexerIdentification, ch
 	}
 }
 
-func getMACAddress() (string, error) {
-	// all interfaces info
-	interfaces, err := net.Interfaces()
+// TODO: upload to DA
+func UploadCheckpointDA(indexerID IndexerIdentification, checkpoint Checkpoint, region string, bucket string) {
+	// change format into JSON
+	checkpointJSON, err := json.Marshal(checkpoint)
 	if err != nil {
-		return "", err
+		log.Printf("Failed to marshal checkpoint to JSON: %v\n", err)
+		return
 	}
 
-	// the first MAC addr of non-vertical interface
-	for _, iface := range interfaces {
-		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 {
-			// filter virtual and loop interfaces
-			// println(iface.HardwareAddr.String())
-			return iface.HardwareAddr.String(), nil
+	ctx := context.Background()
+	sdk.SetNet(constant.TestNet)
+	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
+		sdk.WithRpc("https://test.api.nubit.network:444"),
+		sdk.WithInviteCode("7mkEPWPBBrMr12WKNsL2UALvqYfbox"),
+		sdk.WithPrivateKey("7ae9984540c0a3bb8d5a627010601d4529c276e526e08b136d1c24e5c72195df"))
+	if clientDA == nil {
+		panic("clientDA is nil")
+	}
+
+	ns, err := clientDA.CreateNamespace("test", "Private", "mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru", []string{"mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru", "mnj48QUBZr8YvRXkgTCCCeRLRkq295LAoK"})
+	if err != nil {
+		log.Fatalf("Failed to create namespace: %v\n", err)
+	}
+	fmt.Println("\n\n namespace---:", ns)
+
+	time.Sleep(time.Second * 22)
+	tx, err := clientDA.Client.GetTransaction(ctx, &types.GetTransactionReq{
+		TxID: ns.TxID,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("\n\n transaction:", tx)
+
+	labels := map[string]interface{}{
+		"contentType": "application/json",
+		"customLabel": "value",
+	}
+	upload, err := clientDA.UploadBytes(checkpointJSON, tx.NID, 0, labels)
+	if err != nil {
+		fmt.Println("Failed to upload checkpoint:", err)
+		return
+	}
+	fmt.Println("\n upload:", upload)
+
+	// 获取命名空间列表
+	namespaces, err := clientDA.Client.GetNamespaces(ctx, &types.GetNamespacesReq{Limit: 50, Offset: 0, Filter: struct {
+		Owner string `json:"owner,omitempty"`
+		Admin string `json:"admin,omitempty"`
+	}{
+		Owner: "mpVLaLbmMEeKL8snmQjaXVetUe73ugqRru",
+	}})
+	if err != nil {
+		return
+	}
+
+	time.Sleep(time.Second * 22)
+	var Nss []string
+	if len(namespaces.Namespaces) > 0 {
+		for _, ns := range namespaces.Namespaces {
+			fmt.Println("namespace:", ns.NamespaceID)
+			Nss = append(Nss, ns.NamespaceID)
 		}
 	}
+	fmt.Println("namespace:", Nss)
 
-	return "", fmt.Errorf("no active non-loopback network interface found")
+	// 获取数据
+	datas, err := clientDA.Client.GetDatas(ctx, &types.GetDatasReq{
+		NID:         Nss,
+		BlockNumber: 0,
+	})
+	if err != nil {
+		return
+	}
+	marshal, err := json.Marshal(datas)
+	if err != nil {
+		return
+	}
+	fmt.Println("\n datas:", string(marshal))
 }

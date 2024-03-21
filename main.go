@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/RiemaLabs/indexer-committee/checkpoint"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
@@ -112,16 +113,16 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 		queue.Unlock()
 
 		if arguments.EnableService {
-			// indexerID := checkpoint.IndexerIdentification{
-			// 	URL:          GlobalConfig.Service.URL,
-			// 	Name:         GlobalConfig.Service.Name,
-			// 	Version:      Version,
-			// 	MetaProtocol: GlobalConfig.Service.MetaProtocol,
-			// }
-			// for i := 0; i <= len(queue.States)-1; i++ {
-			// 	c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
-			// 	go checkpoint.UploadCheckpoint(history, indexerID, c)
-			// }
+			indexerID := checkpoint.IndexerIdentification{
+				URL:          GlobalConfig.Service.URL,
+				Name:         GlobalConfig.Service.Name,
+				Version:      Version,
+				MetaProtocol: GlobalConfig.Service.MetaProtocol,
+			}
+			for i := 0; i <= len(queue.States)-1; i++ {
+				c := checkpoint.NewCheckpoint(indexerID, queue.States[i])
+				go checkpoint.UploadCheckpoint(history, indexerID, c)
+			}
 		}
 
 		time.Sleep(interval)
