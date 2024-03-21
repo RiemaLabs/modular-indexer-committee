@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	sdk "github.com/RiemaLabs/nubit-da-sdk"
@@ -51,14 +52,59 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*22)
+	defer cancel() // release resources if the operation completes before the timeout elapses
 
-	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
+	done := make(chan error, 1)
+	go func() {
+		_, err := uploader.Upload(ctx, &s3.PutObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(objectKey),
+			Body:   bytes.NewReader(checkpointJSON),
+		})
+		done <- err
+	}()
+	log.Printf("???\n")
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func DownloadCheckpointByS3(indexerID IndexerIdentification, objectKey string, region, bucket string, timeout time.Duration) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	if err != nil {
+		return err
+	}
+
+	var awsS3Client = s3.NewFromConfig(cfg)
+	downloader := manager.NewDownloader(awsS3Client)
+
+	newFile, err := os.Create("replica.json") // for test. Rename the local downloaded file later.
+	if err != nil {
+		log.Println(err)
+	}
+	defer newFile.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*22)
+	defer cancel() // release resources if the operation completes before the timeout elapses
+
+	numBytes, err := downloader.Download(ctx, newFile, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
-		Body:   bytes.NewReader(checkpointJSON),
 	})
+	if err != nil {
+		log.Printf("Failed to download file, error: %v", err)
+		return err
+	}
+	if numBytes > 0 {
+		log.Println("File downloaded successfully!")
+	} else {
+		log.Println("File download failed!")
+	}
 
 	return err
 }
