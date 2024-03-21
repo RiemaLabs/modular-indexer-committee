@@ -113,8 +113,7 @@ func UploadCheckpointByDA(indexerID IndexerIdentification, checkpoint Checkpoint
 	fmt.Println("\n\n transaction:", tx)
 
 	labels := map[string]interface{}{
-		"content-type": "application/json",
-		"":             "value",
+		"contentType": "application/json",
 	}
 	upload, err := clientDA.UploadBytes(checkpointJSON, tx.NID, 0, labels)
 	if err != nil {
