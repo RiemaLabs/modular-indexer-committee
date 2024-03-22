@@ -112,6 +112,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 		default:
 			curHeight := queue.LatestHeight()
 			latestHeight, err := ordGetter.GetLatestBlockHeight()
+			// if arguments.EnableTest {
+			// 	latestHeight, err = ordGetter.GetLatestBlockHeight(781000)
+			// }
 			if err != nil {
 				log.Fatalf("Failed to get the latest block height: %v", err)
 			}
@@ -212,7 +215,14 @@ func main() {
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
+
+	var ordGetter getter.OrdGetter
+
+	if arguments.EnableTest {
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.LatestBlockHeight)
+	} else {
+		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+	}
 
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
