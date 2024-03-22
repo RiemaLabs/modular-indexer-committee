@@ -16,7 +16,9 @@ type RuntimeArguments struct {
 	EnableStateRootCache bool
 	// EnableTest: Test.
 	EnableTest bool
-
+	// BlockHeight: blockheight.
+	LatestBlockHeight uint
+	// NetWork: Network.
 	NetWork string
 }
 
@@ -59,6 +61,7 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 				log.Println("Test mode cache is disabled.")
 			}
 			log.Println("Network:", arguments.NetWork)
+			log.Println("LatestBlockHeight fixed:", arguments.LatestBlockHeight)
 		},
 	}
 
@@ -67,6 +70,7 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "", true, "Enable this flag to hijack the blockheight to test the service")
 	rootCmd.Flags().StringVarP(&arguments.NetWork, "network", "", constant.TestNet, "Enable this flag to cache State Root")
+	rootCmd.Flags().UintVarP(&arguments.LatestBlockHeight, "blockheight", "b", 781000, "Latest Block Height")
 
 	return rootCmd
 }
