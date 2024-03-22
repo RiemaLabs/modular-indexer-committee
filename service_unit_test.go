@@ -17,7 +17,7 @@ func TestService(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
-	ordGetterTest.LatestBlockHeight = catchupHeight
+	ordGetterTest.LatestBlockHeight = arguments.LatestBlockHeight
 
 	startTime := time.Now()
 	mockService(ordGetterTest, queue, 3) // partially update, some history still remain

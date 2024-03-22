@@ -14,6 +14,7 @@ func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {
 		EnableService:        false,
 		EnableCommittee:      false,
 		EnableStateRootCache: false,
+		EnableTest:           true,
 	}
 
 	// Get the version as a stamp for the checkpoint.
@@ -36,7 +37,8 @@ func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {
 
 	// Use OPI database as the getter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	getter, err := getter.NewOPIOrdGetterTest(&gd)
+	// let blockHeight := parameter from cli input after -test
+	getter, err := getter.NewOPIOrdGetterTest(&gd, arguments.BlockHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)

@@ -10,14 +10,14 @@ type OPIOrdGetterTest struct {
 	BlockHash         map[uint]string
 }
 
-func NewOPIOrdGetterTest(config *DatabaseConfig) (*OPIOrdGetterTest, error) {
+func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOrdGetterTest, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err
 	}
 	getter := OPIOrdGetterTest{
 		db:                db,
-		LatestBlockHeight: 0,
+		LatestBlockHeight: latestBlockHeight,
 		BlockHash:         make(map[uint]string),
 	}
 	return &getter, err
