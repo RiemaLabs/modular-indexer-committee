@@ -1,3 +1,0 @@
-# github.com/RiemaLabs/indexer-committee [github.com/RiemaLabs/indexer-committee.test]
-./test_helper.go:41:59: arguments.BlockHeight undefined (type RuntimeArguments has no field or method BlockHeight)
-FAIL	github.com/RiemaLabs/indexer-committee [build failed]
