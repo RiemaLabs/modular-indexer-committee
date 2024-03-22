@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/RiemaLabs/nubit-da-sdk/constant"
 	"github.com/spf13/cobra"
 )
 
@@ -13,10 +14,12 @@ type RuntimeArguments struct {
 	EnableCommittee bool
 	// EnableStateRootCache: Store StateRoot as Cache.
 	EnableStateRootCache bool
+
+	NetWork string
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
-	return &RuntimeArguments{}
+	return &RuntimeArguments{NetWork: constant.TestNet}
 }
 
 func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
@@ -41,12 +44,14 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 			} else {
 				log.Println("StateRoot cache is disabled.")
 			}
+			log.Println("Network:", arguments.NetWork)
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to provide API service")
 	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee indexer service")
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
+	rootCmd.Flags().StringVarP(&arguments.NetWork, "network", "", constant.TestNet, "Enable this flag to cache State Root")
 
 	return rootCmd
 }
