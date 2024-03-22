@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	sdk "github.com/RiemaLabs/nubit-da-sdk"
@@ -33,8 +34,6 @@ func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, com
 }
 
 func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, region, bucket string, timeout time.Duration) error {
-	// the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:aws.Configconfig.LoadDefaultConfig
-	// creds := credentials.NewStaticCredentialsProvider(your_access_key, your_secret_key, "")
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		return err
@@ -43,10 +42,10 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 	var awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
 
-	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
+	remoteDirectory := "test" // for test. Change the directory later.
+	objectKey := fmt.Sprintf("%s/checkpoint-%s-%s-%s-%s.json", remoteDirectory,
 		c.Name, c.MetaProtocol, c.Height, c.Hash)
 
-	// change format into JSON
 	checkpointJSON, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -54,12 +53,61 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := uploader.Upload(ctx, &s3.PutObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(objectKey),
+			Body:   bytes.NewReader(checkpointJSON),
+		})
+		done <- err
+	}()
 
-	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
+	select {
+	case err := <-done:
+		if err == nil {
+			log.Printf("Checkpoint %s uploaded to S3 successfully!", objectKey)
+		} else {
+			log.Printf("Failed to upload checkpoint, error: %v", err)
+		}
+		return err
+	case <-ctx.Done():
+		log.Println("Upload timeout: operation took longer than expected.")
+		return ctx.Err()
+	}
+}
+
+func DownloadCheckpointByS3(indexerID IndexerIdentification, objectKey string, region, bucket string, timeout time.Duration) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	if err != nil {
+		return err
+	}
+
+	var awsS3Client = s3.NewFromConfig(cfg)
+	downloader := manager.NewDownloader(awsS3Client)
+
+	newFile, err := os.Create("replica.json") // for test. Rename the local downloaded file later.
+	if err != nil {
+		log.Println(err)
+	}
+	defer newFile.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*22)
+	defer cancel() // release resources if the operation completes before the timeout elapses
+
+	numBytes, err := downloader.Download(ctx, newFile, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
-		Body:   bytes.NewReader(checkpointJSON),
 	})
+	if err != nil {
+		log.Printf("Failed to download file, error: %v", err)
+		return err
+	}
+	if numBytes > 0 {
+		log.Println("File downloaded successfully!")
+	} else {
+		log.Println("File download failed!")
+	}
 
 	return err
 }
