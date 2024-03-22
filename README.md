@@ -1,4 +1,4 @@
-# Committee Indexer From Nubit [![Join Nubit Discord Community](https://img.shields.io/discord/916984413944967180?logo=discord&style=flat)](https://discord.gg/5sVBzYa4Sg) [![Follow Nubit On X](https://img.shields.io/twitter/follow/nubit_org)](https://twitter.com/Nubit_org)
+# Committee Indexer [![Join Nubit Discord Community](https://img.shields.io/discord/916984413944967180?logo=discord&style=flat)](https://discord.gg/5sVBzYa4Sg) [![Follow Nubit On X](https://img.shields.io/twitter/follow/nubit_org)](https://twitter.com/Nubit_org)
 
 <!-- <p align='left'>
   <img width='70%' src='./img/logo.png' />
@@ -8,7 +8,7 @@
 Modular Indexer introduces a fully user-verified execution layer for meta-protocols on Bitcoin. Leveraging the immutable and decentralized nature of Bitcoin, the Modular Indexer provides a Turing-complete execution layer capable of running complex logic that cannot be directly executed on Bitcoin due to its script language's limitations.
 
 ## What is Committee Indexer?
-Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access.
+Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its committee indexer for a given meta-protocol.
 
 ## Getting Started
 Modular Indexer is built with Golang. You can run your own modular Indexer by following the procedure below. `Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
@@ -65,7 +65,7 @@ The service section defines the details about your API service that provides acc
 <!-- ## Service API -->
 
 ## Useful Links
-:spider_web: <https://www.nubit.org/#/>  
+:spider_web: <https://www.nubit.org>  
 :octocat: <https://github.com/Wechaty/wechaty>  
 :beetle: <https://github.com/RiemaLabs/indexer-committee/issues>  
 :book: <https://docs.nubit.org/developer-guides/introduction>  
