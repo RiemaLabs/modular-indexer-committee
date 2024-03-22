@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -32,9 +33,7 @@ func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, com
 	return content
 }
 
-func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, region, bucket string, timeout time.Duration) error {
-	// the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:aws.Configconfig.LoadDefaultConfig
-	// creds := credentials.NewStaticCredentialsProvider(your_access_key, your_secret_key, "")
+func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, region, bucket, objectKey string, timeout time.Duration) error {
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		return err
@@ -43,10 +42,6 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 	var awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
 
-	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
-		c.Name, c.MetaProtocol, c.Height, c.Hash)
-
-	// change format into JSON
 	checkpointJSON, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -54,14 +49,52 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := uploader.Upload(ctx, &s3.PutObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(objectKey),
+			Body:   bytes.NewReader(checkpointJSON),
+		})
+		done <- err
+	}()
 
-	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
+	select {
+	case err := <-done:
+		if err == nil {
+			log.Printf("Checkpoint %s uploaded to S3 successfully!", objectKey)
+			return nil
+		} else {
+			return err
+		}
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func DownloadCheckpointByS3(indexerID IndexerIdentification, writer *io.WriterAt, region, bucket, objectKey string, timeout time.Duration) error {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	if err != nil {
+		return err
+	}
+
+	var awsS3Client = s3.NewFromConfig(cfg)
+	downloader := manager.NewDownloader(awsS3Client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel() // release resources if the operation completes before the timeout elapses
+
+	numBytes, err := downloader.Download(ctx, *writer, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
-		Body:   bytes.NewReader(checkpointJSON),
 	})
+	if err != nil {
+		log.Printf("Failed to download file, error: %v\n", err)
+		return err
+	}
+	log.Printf("File with size %d downloaded successfully!\n", numBytes)
 
-	return err
+	return nil
 }
 
 // TODO: Urgent. Move the createNamespace to the main process.

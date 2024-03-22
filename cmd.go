@@ -21,7 +21,7 @@ func NewRuntimeArguments() *RuntimeArguments {
 
 func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use: "Nubit Committee Indexer",
+		Use:   "Nubit Committee Indexer",
 		Short: "Activates the Nubit Committee Indexer with optional services.",
 		Long: `
 		Committee Indexer command initiates the Committee Indexer process, an essential component of the Modular Indexer architecture. This command offers multiple flags to tailor the indexer's functionality according to the user's needs. The indexer operates on a fully user-verified execution layer for meta-protocols on Bitcoin, leveraging Bitcoin's immutable and decentralized nature to provide a Turing-complete execution layer. 
@@ -31,7 +31,7 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 		- "--committee": Enables the committee indexer service, which is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states.
 		- "--cache": Activates the StateRoot cache, improving the efficiency of verkle tree storage and the initialization speed of the indexer. This flag is enabled by default.
 		`,
-		
+
 		Run: func(cmd *cobra.Command, args []string) {
 			if arguments.EnableService {
 				log.Println("Service mode is enabled.")

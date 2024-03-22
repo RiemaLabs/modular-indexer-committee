@@ -166,7 +166,8 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						err := error(nil)
 						timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
 						if GlobalConfig.Report.Method == "s3" {
-							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, timeout)
+							objectKey := fmt.Sprintf("checkpoint-%s-%s-%s-%s.json", c.Name, c.MetaProtocol, c.Height, c.Hash)
+							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, objectKey, timeout)
 						} else if GlobalConfig.Report.Method == "da" {
 							err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
 						}
