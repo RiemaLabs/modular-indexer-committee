@@ -168,7 +168,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						if GlobalConfig.Report.Method == "s3" {
 							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, timeout)
 						} else if GlobalConfig.Report.Method == "da" {
-							err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
+							err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, GlobalConfig.Report.Da.NamespaceID, arguments.NetWork, timeout)
 						}
 						if err != nil {
 							log.Fatalf("Unable to upload the checkpoint because: %v", err)
@@ -211,8 +211,12 @@ func main() {
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
-
+	var ordGetter getter.OrdGetter
+	if arguments.EnableTest {
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.LatestBlockHeight)
+	} else {
+		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
