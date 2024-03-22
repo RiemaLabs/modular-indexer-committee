@@ -14,6 +14,8 @@ type RuntimeArguments struct {
 	EnableCommittee bool
 	// EnableStateRootCache: Store StateRoot as Cache.
 	EnableStateRootCache bool
+	// EnableTest: Test.
+	EnableTest bool
 
 	NetWork string
 }
@@ -51,6 +53,11 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 			} else {
 				log.Println("StateRoot cache is disabled.")
 			}
+			if arguments.EnableTest {
+				log.Println("Test mode is enabled.")
+			} else {
+				log.Println("Test mode cache is disabled.")
+			}
 			log.Println("Network:", arguments.NetWork)
 		},
 	}
@@ -58,6 +65,7 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to provide API service")
 	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee indexer service")
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
+	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "", true, "Enable this flag to hijack the blockheight to test the service")
 	rootCmd.Flags().StringVarP(&arguments.NetWork, "network", "", constant.TestNet, "Enable this flag to cache State Root")
 
 	return rootCmd
