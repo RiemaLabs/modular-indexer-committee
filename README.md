@@ -26,7 +26,7 @@ cp config.example.json config.json
 ``` 
 See [Details](#preparing-configjson) of how to set up your own `config.json`.
 
-### 3.Run with Command Flag
+### 3. Run with Command Flag
 ```Bash
 go run . --service --committee --cache
 ```
