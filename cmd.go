@@ -22,7 +22,6 @@ func NewRuntimeArguments() *RuntimeArguments {
 func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use: "Nubit Committee Indexer",
-		// TODO: Urgent. Add descriptions.
 		Short: "Activates the Nubit Committee Indexer with optional services.",
 		Long: `
 		Committee Indexer command initiates the Committee Indexer process, an essential component of the Modular Indexer architecture. This command offers multiple flags to tailor the indexer's functionality according to the user's needs. The indexer operates on a fully user-verified execution layer for meta-protocols on Bitcoin, leveraging Bitcoin's immutable and decentralized nature to provide a Turing-complete execution layer. 
