@@ -42,7 +42,8 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 	var awsS3Client = s3.NewFromConfig(cfg)
 	uploader := manager.NewUploader(awsS3Client)
 
-	objectKey := fmt.Sprintf("test/checkpoint-%s-%s-%s-%s.json",
+	remoteDirectory := "test" // for test. Change the directory later.
+	objectKey := fmt.Sprintf("%s/checkpoint-%s-%s-%s-%s.json", remoteDirectory,
 		c.Name, c.MetaProtocol, c.Height, c.Hash)
 
 	checkpointJSON, err := json.Marshal(c)
@@ -66,7 +67,7 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 	select {
 	case err := <-done:
 		if err == nil {
-			log.Println("Checkpoint uploaded to S3 successfully!")
+			log.Printf("Checkpoint %s uploaded to S3 successfully!", objectKey)
 		} else {
 			log.Printf("Failed to upload checkpoint, error: %v", err)
 		}
