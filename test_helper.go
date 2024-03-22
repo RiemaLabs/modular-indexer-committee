@@ -36,7 +36,7 @@ func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {
 
 	// Use OPI database as the getter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	getter, err := getter.NewOPIOrdGetterTest(&gd)
+	getter, err := getter.NewOPIOrdGetterTest(&gd, arguments.LatestBlockHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)

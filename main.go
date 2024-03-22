@@ -212,8 +212,12 @@ func main() {
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
-
+	var ordGetter getter.OrdGetter
+	if arguments.EnableTest {
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.LatestBlockHeight)
+	} else {
+		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
