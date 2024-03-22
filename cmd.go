@@ -70,7 +70,11 @@ func (arguments *RuntimeArguments) MakeCmd() *cobra.Command {
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "", true, "Enable this flag to hijack the blockheight to test the service")
 	rootCmd.Flags().StringVarP(&arguments.NetWork, "network", "", constant.TestNet, "Enable this flag to cache State Root")
+<<<<<<< HEAD
 	rootCmd.Flags().UintVarP(&arguments.LatestBlockHeight, "blockheight", "b", 781000, "When -test enabled, you can set LatestBlockHeight as a fixed value you want.")
+=======
+	rootCmd.Flags().UintVarP(&arguments.LatestBlockHeight, "blockheight", "b", 781000, "Latest Block Height")
+>>>>>>> 79b21a840ad617cf6a7baa8b45f129db6fc42f5a
 
 	return rootCmd
 }
