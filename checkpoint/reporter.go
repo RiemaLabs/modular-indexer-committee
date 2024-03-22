@@ -50,7 +50,7 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*22)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel() // release resources if the operation completes before the timeout elapses
 
 	done := make(chan error, 1)
@@ -62,12 +62,17 @@ func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, regio
 		})
 		done <- err
 	}()
-	log.Printf("???\n")
 
 	select {
 	case err := <-done:
+		if err == nil {
+			log.Println("Checkpoint uploaded to S3 successfully!")
+		} else {
+			log.Printf("Failed to upload checkpoint, error: %v", err)
+		}
 		return err
 	case <-ctx.Done():
+		log.Println("Upload timeout: operation took longer than expected.")
 		return ctx.Err()
 	}
 }
