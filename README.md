@@ -28,7 +28,8 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 
 ### 3. Run with Command Flag
 ```Bash
-go run . --service --committee --cache
+go build -o indexer-committee
+./indexer-committee --committee --service -t --blockheight 780010
 ```
 Below are the explanation for each of the command flags.
 - `--service` `(-s)`: Use this flag to activate web service from moduler indexer. When enabled, the moduler indexer will provide web service for incoming query.
@@ -36,6 +37,10 @@ Below are the explanation for each of the command flags.
 - `--committee`: This flag activates the committee indexer functionality. When enabled, the moduler indexer will provide checkpoints to the DA layer.
 
 - `--cache`: By default, the state root cache is enabled, facilitating efficient verkle tree storage. This flag ensures that the application starts with the cache service activated, and will therefore fasten the initialization speed next time.
+
+- `-t` `(--test)`: Enable this flag to activate test mode, allowing the indexer to operate up to a specified block height limit. This mode is useful for development and testing by simulating the indexer's behavior without catching up to the real latest block.
+
+- `--blockheight`: When test mode is enabled with -t, this flag sets a fixed maximum block height limit for the indexer's operations. It allows for focused testing and performance tuning by limiting the range of blocks the indexer processes.
 
 ## Preparing Config.json
 To ensure the Modular Indexer runs smoothly in your environment, it's crucial to properly configure the config.json file.
