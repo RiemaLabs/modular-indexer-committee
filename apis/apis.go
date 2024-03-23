@@ -91,7 +91,7 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 
 	lastIndex := len(queue.History) - 1
 	postState := queue.Header.Root
-	preState, keys, info := stateless.Rollingback(&queue.History[lastIndex])
+	preState, keys, info := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
 
 	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
 	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
