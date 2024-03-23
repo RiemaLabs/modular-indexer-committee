@@ -181,18 +181,13 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 				}
 			}
 
+			log.Printf("Listening for new Bitcoin block, current height: %d\n", latestHeight)
 			time.Sleep(interval)
 		}
 	}
 }
 
-func main() {
-	arguments := NewRuntimeArguments()
-	rootCmd := arguments.MakeCmd()
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatalf("Failed to parse the arguments: %v", err)
-	}
-
+func Execution(arguments *RuntimeArguments) {
 	// Get the version as a stamp for the checkpoint.
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -213,8 +208,12 @@ func main() {
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
-
+	var ordGetter getter.OrdGetter
+	if arguments.EnableTest {
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
+	} else {
+		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
@@ -231,4 +230,12 @@ func main() {
 	}
 
 	serviceStage(ordGetter, arguments, queue, 60*time.Second)
+}
+
+func main() {
+	arguments := NewRuntimeArguments()
+	rootCmd := arguments.MakeCmd()
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatalf("Failed to execute: %v", err)
+	}
 }
