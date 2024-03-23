@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strings"
 	"time"
 
 	sdk "github.com/RiemaLabs/nubit-da-sdk"
 
-	"github.com/RiemaLabs/nubit-da-sdk/constant"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
@@ -93,7 +91,6 @@ func DownloadCheckpointByS3(indexerID IndexerIdentification, writer *io.WriterAt
 }
 
 func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoint, daRPC, pk, inviteCode, namespaceID, network string, timeout time.Duration) error {
-	// change format into JSON
 	checkpointJSON, err := json.Marshal(checkpoint)
 	if err != nil {
 		return err
@@ -101,15 +98,7 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	switch strings.ToLower(network) {
-	case strings.ToLower(constant.TestNet):
-		sdk.SetNet(constant.TestNet)
-	case strings.ToLower(constant.PreAlphaTestNet):
-		sdk.SetNet(constant.PreAlphaTestNet)
-	default:
-		return fmt.Errorf("network error")
-	}
-
+	sdk.SetNet(network)
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
 		sdk.WithRpc(daRPC),
 		sdk.WithInviteCode(inviteCode),

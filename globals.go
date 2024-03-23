@@ -22,6 +22,7 @@ type Config struct {
 			InviteCode  string `json:"inviteCode"`
 			PrivateKey  string `json:"privateKey"`
 			NamespaceID string `json:"namespaceID"`
+			Network string `json:"Network"`
 		} `json:"da"`
 	} `json:"report"`
 	Service struct {
