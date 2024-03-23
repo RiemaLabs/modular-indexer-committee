@@ -54,7 +54,7 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	}
 
 	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to provide API service")
-	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee indexer service")
+	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee service by uploading checkpoint")
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "t", false, "Enable this flag to hijack the blockheight to test the service")
 	rootCmd.Flags().UintVarP(&arguments.TestBlockHeightLimit, "blockheight", "", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want.")

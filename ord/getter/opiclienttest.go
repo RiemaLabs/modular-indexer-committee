@@ -31,7 +31,17 @@ func (opi *OPIOrdGetterTest) GetBlockHash(blockHeight uint) (string, error) {
 	if result, found := opi.BlockHash[blockHeight]; found {
 		return result, nil
 	}
-	return "", nil
+	var blockHash string
+	sql := `
+		SELECT block_hash
+		FROM block_hashes
+		WHERE block_height = $1
+	`
+	err := opi.db.Raw(sql, blockHeight).Scan(&blockHash).Error
+	if err != nil {
+		return "", err
+	}
+	return blockHash, nil
 }
 
 func (opi *OPIOrdGetterTest) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
