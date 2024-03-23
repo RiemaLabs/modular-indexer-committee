@@ -137,8 +137,17 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 	})
 }
 
-func StartService(queue *stateless.Queue) {
+func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool) {
 	r := gin.Default()
+	if !enableDebug {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// TODO: Medium. Add the TRUSTED_PROXIES to our config
+	// trustedProxies := os.Getenv("TRUSTED_PROXIES")
+	// if trustedProxies != "" {
+	//     r.SetTrustedProxies([]string{trustedProxies})
+	// }
 
 	r.GET("/brc20_verifiable_current_balance_of_wallet", func(c *gin.Context) {
 		GetCurrentBalanceOfWallet(c, queue)
@@ -152,9 +161,12 @@ func StartService(queue *stateless.Queue) {
 		GetBlockHeight(c, queue)
 	})
 
-	r.GET("/brc20_verifiable_latest_state_proof", func(c *gin.Context) {
-		GetLatestStateProof(c, queue)
-	})
+	if enableCommittee {
+		r.GET("/brc20_verifiable_latest_state_proof", func(c *gin.Context) {
+			GetLatestStateProof(c, queue)
+		})
+	}
 
+	// TODO: Medium. Allow user to setup port.
 	r.Run(":8080")
 }

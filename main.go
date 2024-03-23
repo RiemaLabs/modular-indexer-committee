@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,10 +14,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/RiemaLabs/indexer-committee/apis"
 	"github.com/RiemaLabs/indexer-committee/checkpoint"
 	"github.com/RiemaLabs/indexer-committee/ord"
 	"github.com/RiemaLabs/indexer-committee/ord/getter"
 	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 )
 
 func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
@@ -105,9 +109,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 	for {
 		select {
 		case <-sigChan:
-			// SIGINT received, stop the catch-up process
-			log.Printf("Saving cache file. Please don't force exit.")
-			stateless.StoreHeader(queue.Header, queue.Header.Height-2000)
+			// TODO: High. Save the latest state is unsound if reorg happened.
+			// log.Printf("Saving cache file. Please don't force exit.")
+			// stateless.StoreHeader(queue.Header, queue.Header.Height-2000)
 			os.Exit(0)
 		default:
 			curHeight := queue.LatestHeight()
@@ -140,7 +144,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 			}
 			queue.Unlock()
 
-			if arguments.EnableService {
+			if arguments.EnableCommittee {
 				latestHistory := stateless.DiffState{
 					Height:       queue.Header.Height,
 					Hash:         queue.Header.Hash,
@@ -163,16 +167,33 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						}
 						commitment := base64.StdEncoding.EncodeToString(i.VerkleCommit[:])
 						c := checkpoint.NewCheckpoint(&indexerID, i.Height, i.Hash, commitment)
-						err := error(nil)
 						timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
-						if GlobalConfig.Report.Method == "s3" {
+						if GlobalConfig.Report.Method == "S3" {
+							log.Printf("Uploading the checkpoint by S3 at height: %s\n", c.Height)
+							cfg, err := config.LoadDefaultConfig(context.Background(),
+								config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(GlobalConfig.Report.S3.AccessKey, GlobalConfig.Report.S3.SecretKey, "")),
+								config.WithRegion(GlobalConfig.Report.S3.Region),
+							)
+							if err != nil {
+								log.Println("Error creating aws config:", err)
+								return
+							}
+							bucket := GlobalConfig.Report.S3.Bucket
 							objectKey := fmt.Sprintf("checkpoint-%s-%s-%s-%s.json", c.Name, c.MetaProtocol, c.Height, c.Hash)
-							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, GlobalConfig.Report.S3.Region, GlobalConfig.Report.S3.Bucket, objectKey, timeout)
-						} else if GlobalConfig.Report.Method == "da" {
+							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, bucket, objectKey, &cfg, timeout)
+							if err != nil {
+								log.Fatalf("Unable to upload the checkpoint by S3 due to: %v", err)
+							} else {
+								log.Printf("Succeed to upload the checkpoint by S3 at height: %s\n", c.Height)
+							}
+						} else if GlobalConfig.Report.Method == "DA" {
+							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
-						}
-						if err != nil {
-							log.Fatalf("Unable to upload the checkpoint because: %v", err)
+							if err != nil {
+								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
+							} else {
+								log.Printf("Succeed to upload the checkpoint by DA at height: %s\n", c.Height)
+							}
 						}
 						history[key] = checkpoint.UploadRecord{
 							Success: true,
@@ -181,18 +202,18 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 				}
 			}
 
+			if arguments.EnableService {
+				log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
+				go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest)
+			}
+
+			log.Printf("Listening for new Bitcoin block, current height: %d\n", latestHeight)
 			time.Sleep(interval)
 		}
 	}
 }
 
-func main() {
-	arguments := NewRuntimeArguments()
-	rootCmd := arguments.MakeCmd()
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatalf("Failed to parse the arguments: %v", err)
-	}
-
+func Execution(arguments *RuntimeArguments) {
 	// Get the version as a stamp for the checkpoint.
 	bi, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -213,8 +234,12 @@ func main() {
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	ordGetter, err := getter.NewOPIBitcoinGetter(&gd)
-
+	var ordGetter getter.OrdGetter
+	if arguments.EnableTest {
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
+	} else {
+		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
 	}
@@ -224,11 +249,19 @@ func main() {
 		log.Fatalf("Failed to get the latest block height: %v", err)
 	}
 
-	queue, err := catchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight-ord.BitcoinConfirmations)
+	queue, err := catchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
 	serviceStage(ordGetter, arguments, queue, 60*time.Second)
+}
+
+func main() {
+	arguments := NewRuntimeArguments()
+	rootCmd := arguments.MakeCmd()
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatalf("Failed to execute: %v", err)
+	}
 }

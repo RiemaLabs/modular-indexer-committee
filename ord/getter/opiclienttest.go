@@ -10,14 +10,14 @@ type OPIOrdGetterTest struct {
 	BlockHash         map[uint]string
 }
 
-func NewOPIOrdGetterTest(config *DatabaseConfig) (*OPIOrdGetterTest, error) {
+func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOrdGetterTest, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err
 	}
 	getter := OPIOrdGetterTest{
 		db:                db,
-		LatestBlockHeight: 0,
+		LatestBlockHeight: latestBlockHeight,
 		BlockHash:         make(map[uint]string),
 	}
 	return &getter, err
@@ -31,7 +31,17 @@ func (opi *OPIOrdGetterTest) GetBlockHash(blockHeight uint) (string, error) {
 	if result, found := opi.BlockHash[blockHeight]; found {
 		return result, nil
 	}
-	return "", nil
+	var blockHash string
+	sql := `
+		SELECT block_hash
+		FROM block_hashes
+		WHERE block_height = $1
+	`
+	err := opi.db.Raw(sql, blockHeight).Scan(&blockHash).Error
+	if err != nil {
+		return "", err
+	}
+	return blockHash, nil
 }
 
 func (opi *OPIOrdGetterTest) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {

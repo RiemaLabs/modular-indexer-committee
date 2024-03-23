@@ -13,10 +13,10 @@ import (
 
 	"github.com/RiemaLabs/nubit-da-sdk/constant"
 	"github.com/RiemaLabs/nubit-da-sdk/types"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go/aws"
 )
 
 func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, commitment string) Checkpoint {
@@ -33,13 +33,8 @@ func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, com
 	return content
 }
 
-func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, region, bucket, objectKey string, timeout time.Duration) error {
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
-	if err != nil {
-		return err
-	}
-
-	var awsS3Client = s3.NewFromConfig(cfg)
+func UploadCheckpointByS3(indexerID *IndexerIdentification, c *Checkpoint, bucket, objectKey string, cfg *aws.Config, timeout time.Duration) error {
+	var awsS3Client = s3.NewFromConfig(*cfg)
 	uploader := manager.NewUploader(awsS3Client)
 
 	checkpointJSON, err := json.Marshal(c)
