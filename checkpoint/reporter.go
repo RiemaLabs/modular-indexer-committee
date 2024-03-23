@@ -93,7 +93,7 @@ func DownloadCheckpointByS3(indexerID IndexerIdentification, writer *io.WriterAt
 func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoint, daRPC, pk, inviteCode, namespaceID, network string, timeout time.Duration) error {
 	checkpointJSON, err := json.Marshal(checkpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to marshal checkpoint to JSON: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -105,7 +105,7 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 		sdk.WithPrivateKey(pk),
 	)
 	if clientDA == nil {
-		return fmt.Errorf("cannot build the Nubit client")
+		return fmt.Errorf("Failed to build the Nubit client")
 	}
 
 	labels := map[string]interface{}{
@@ -113,8 +113,8 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 	}
 	_, err = clientDA.UploadBytes(checkpointJSON, namespaceID, 0, labels)
 	if err != nil {
-		log.Println("Failed to upload checkpoint:", err)
-		return err
+		return fmt.Errorf("Failed to upload checkpoint: %v", err)
 	}
+
 	return nil
 }
