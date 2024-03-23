@@ -15,6 +15,7 @@ type Config struct {
 			Bucket    string `json:"bucket"`
 			Region    string `json:"region"`
 			AccessKey string `json:"accessKey"`
+			SecretKey string `json:"secretKey"`
 		} `json:"s3"`
 		Da struct {
 			RPC         string `json:"rpc"`
