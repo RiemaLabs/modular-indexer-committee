@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	sdk "github.com/RiemaLabs/nubit-da-sdk"
@@ -125,4 +127,20 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 	}
 
 	return nil
+}
+
+func isValidNamespaceID(nID string) bool {
+	if strings.HasPrefix(nID, "0x") {
+		_, err := strconv.ParseUint(nID[2:], 16, 64)
+		if err != nil {
+			return false
+		}
+	} else {
+		_, err := strconv.ParseUint(nID, 10, 64)
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
 }
