@@ -27,8 +27,15 @@ cp config.example.json config.json
 See [Details](#preparing-configjson) of how to set up your own `config.json`.
 
 ### 3. Run with Command Flag
+
 ```Bash
-go build -o indexer-committee
+# Build the Committee Indexer
+go build
+
+# Run the committee indexer
+./indexer-committee --committee --service
+
+# Run the committee indexer in test modee
 ./indexer-committee --committee --service -t --blockheight 780010
 ```
 Below are the explanation for each of the command flags.
