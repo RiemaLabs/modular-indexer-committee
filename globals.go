@@ -18,6 +18,7 @@ type Config struct {
 			SecretKey string `json:"secretKey"`
 		} `json:"s3"`
 		Da struct {
+			Network     string `json:"network"`
 			NamespaceID string `json:"namespaceID"`
 			GasCode     string `json:"gasCode"`
 			PrivateKey  string `json:"privateKey"`
@@ -27,6 +28,7 @@ type Config struct {
 		URL          string `json:"url"`
 		Name         string `json:"name"`
 		MetaProtocol string `json:"metaProtocol"`
+		Version      string `json:"version"`
 	} `json:"service"`
 }
 

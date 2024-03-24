@@ -10,7 +10,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -189,7 +188,7 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							err = checkpoint.UploadCheckpointByDA(&indexerID, &c,
 								GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode,
-								GlobalConfig.Report.Da.NamespaceID, timeout)
+								GlobalConfig.Report.Da.NamespaceID, GlobalConfig.Report.Da.Network, timeout)
 							if err != nil {
 								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
@@ -215,13 +214,6 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func Execution(arguments *RuntimeArguments) {
-	// Get the version as a stamp for the checkpoint.
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		log.Fatalf("Failed to obtain build information.")
-	}
-	Version = bi.Main.Version
-
 	// Get the configuration.
 	configFile, err := os.ReadFile("config.json")
 	if err != nil {
@@ -232,6 +224,8 @@ func Execution(arguments *RuntimeArguments) {
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
 	}
+
+	Version = GlobalConfig.Service.Version
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
