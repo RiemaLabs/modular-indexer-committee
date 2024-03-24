@@ -74,15 +74,25 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 	return nil
 }
 
-func Rollingback(stateDiff *DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
-	rollback := verkle.New()
+func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
 	var keys [][]byte
+	kvMap := make(KeyValueMap)
+	for k, v := range header.KV {
+		kvMap[k] = v
+	}
 
 	for _, elem := range stateDiff.Diff.Elements {
 		keys = append(keys, elem.Key[:])
 		if elem.OldValueExists {
-			rollback.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
+			kvMap[elem.Key] = elem.OldValue
+		} else {
+			delete(kvMap, elem.Key)
 		}
+	}
+
+	rollback := verkle.New()
+	for k, v := range kvMap {
+		rollback.Insert(k[:], v[:], NodeResolveFn)
 	}
 
 	return rollback, keys, stateDiff.Diff.Elements
