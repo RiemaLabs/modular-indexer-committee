@@ -59,3 +59,25 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 	log.Printf("Reorganize the queue by %d blocks succeed!", recovery)
 	log.Printf("Timecost: %s\n", elapsed)
 }
+
+func TestRollingback(t *testing.T) {
+	loadRollingback(uint(779900))
+	loadRollingback(uint(780000))
+}
+
+func loadRollingback(catchupHeight uint) {
+	ordGetterTest, arguments := loadMain()
+	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	lastHistory := queue.History[len(queue.History)-1]
+	preState, _, _ := stateless.Rollingback(queue.Header, lastHistory)
+	preBytes := preState.Commit().Bytes()
+	preCommitment := base64.StdEncoding.EncodeToString(preBytes[:])
+
+	oldBytes := lastHistory.VerkleCommit
+	oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
+
+	if preCommitment != oldCommitment {
+		log.Fatalf("Rollingback the queue by %d blocks failed!", catchupHeight)
+	}
+	log.Printf("Commitment when rollingback at height %d: %s", catchupHeight, preCommitment)
+}

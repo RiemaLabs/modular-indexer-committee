@@ -74,9 +74,12 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 	return nil
 }
 
-func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
+func Rollingback(header *Header, stateDiff DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
 	var keys [][]byte
-	kvMap := header.KV
+	kvMap := make(KeyValueMap)
+	for k, v := range header.KV {
+		kvMap[k] = v
+	}
 
 	for _, elem := range stateDiff.Diff.Elements {
 		keys = append(keys, elem.Key[:])
