@@ -185,6 +185,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 								log.Printf("Succeed to upload the checkpoint by S3 at height: %s\n", c.Height)
 							}
 						} else if GlobalConfig.Report.Method == "DA" {
+							if checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {
+								log.Fatalf("NamespaceID invalid. Please initialize it first.")
+							}
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							err = checkpoint.UploadCheckpointByDA(&indexerID, &c,
 								GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode,
