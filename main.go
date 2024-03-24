@@ -99,7 +99,6 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 }
 
 func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
-
 	// Create a channel to listen for SIGINT (Ctrl+C) signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -188,7 +187,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							}
 						} else if GlobalConfig.Report.Method == "DA" {
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
-							err = checkpoint.UploadCheckpointByDA(&indexerID, &c, GlobalConfig.Report.Da.RPC, GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.InviteCode, timeout)
+							err = checkpoint.UploadCheckpointByDA(&indexerID, &c,
+								GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode,
+								GlobalConfig.Report.Da.NamespaceID, timeout)
 							if err != nil {
 								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {

@@ -18,9 +18,9 @@ type Config struct {
 			SecretKey string `json:"secretKey"`
 		} `json:"s3"`
 		Da struct {
-			RPC        string `json:"rpc"`
-			InviteCode string `json:"inviteCode"`
-			PrivateKey string `json:"privateKey"`
+			NamespaceID string `json:"namespaceID"`
+			GasCode     string `json:"gasCode"`
+			PrivateKey  string `json:"privateKey"`
 		} `json:"da"`
 	} `json:"report"`
 	Service struct {

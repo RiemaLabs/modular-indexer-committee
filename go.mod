@@ -9,8 +9,9 @@ replace (
 
 require (
 	github.com/RiemaLabs/nubit-da-sdk v0.0.0-00010101000000-000000000000
-	github.com/aws/aws-sdk-go v1.51.1
+	github.com/aws/aws-sdk-go-v2 v1.26.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.7
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.8
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.52.1
 	github.com/btcsuite/btcd/btcutil v1.1.5
@@ -27,9 +28,7 @@ require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.26.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.1 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.8 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.15.4 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.4 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.4 // indirect
@@ -65,6 +64,8 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+	github.com/cockroachdb/datadriven v1.0.0 // indirect
+	github.com/cockroachdb/errors v1.8.1 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -76,8 +77,8 @@ require (
 	github.com/decred/dcrd/lru v1.0.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/ethereum/go-ethereum v1.13.14 // indirect
 	github.com/fergusstrange/embedded-postgres v1.10.0 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -94,6 +95,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.0.1 // indirect
+	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect

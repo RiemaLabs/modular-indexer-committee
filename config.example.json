@@ -7,23 +7,23 @@
         "port": "5432"
     },
     "report": {
-        "method": "S3",
-        "timeout": 2000,
+        "method": "DA",
+        "timeout": 15000,
         "s3": {
-            "region": "",
-            "bucket": "",
-            "accessKey": "",
-            "secretKey": ""
+            "region": "YourOwnS3Region",
+            "bucket": "YourOwnS3Bucket",
+            "accessKey": "YourOwnS3AccessKey",
+            "secretKey": "YourOwnS3SecretKey"
         },
         "da": {
-            "rpc": "",
-            "inviteCode": "",
-            "privateKey": ""
+            "namespaceID": "",
+            "gasCode": "YourGasCode",
+            "privateKey": "YourPrivateKey"
         }
     },
     "service": {
-        "url": "",
-        "name": "",
+        "url": "YourCommitteeIndexerServiceURL",
+        "name": "YourCommitteeIndexerName",
         "metaProtocol": "brc-20"
     }
 }
