@@ -16,7 +16,8 @@
             "secretKey": "YourOwnS3SecretKey"
         },
         "da": {
-            "namespaceID": "",
+            "network": "Pre-Alpha Testnet",
+            "namespaceID": "YourOwnNamespace",
             "gasCode": "YourGasCode",
             "privateKey": "YourPrivateKey"
         }
@@ -24,6 +25,7 @@
     "service": {
         "url": "YourCommitteeIndexerServiceURL",
         "name": "YourCommitteeIndexerName",
-        "metaProtocol": "brc-20"
+        "metaProtocol": "brc-20",
+        "version": "v0.1.0-rc0"
     }
 }

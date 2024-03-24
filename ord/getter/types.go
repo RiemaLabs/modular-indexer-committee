@@ -2,6 +2,7 @@ package getter
 
 import "github.com/RiemaLabs/indexer-committee/ord"
 
+// TODO: High. Record Old satpoint- Current satpoint to get OrdTransfer from the Bitcoin block directly.
 type OrdTransfer struct {
 	ID            uint
 	InscriptionID string

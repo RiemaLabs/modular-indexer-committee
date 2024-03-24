@@ -91,23 +91,29 @@ func DownloadCheckpointByS3(indexerID IndexerIdentification, writer *io.WriterAt
 	return nil
 }
 
-func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoint, pk, gasCode, namespaceID string, timeout time.Duration) error {
+func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoint, pk, gasCode, namespaceID, network string, timeout time.Duration) error {
 	// change format into JSON
 	checkpointJSON, err := json.Marshal(checkpoint)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal checkpoint to JSON: %v", err)
+		return fmt.Errorf("failed to marshal checkpoint to JSON: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	sdk.SetNet(constant.PreAlphaTestNet)
+	if network == "Pre-Alpha Testnet" {
+		sdk.SetNet(constant.PreAlphaTestNet)
+	} else if network == "Testnet" {
+		sdk.SetNet(constant.TestNet)
+	} else {
+		return fmt.Errorf("unknown network: %s", network)
+	}
 
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
 		sdk.WithGasCode(gasCode),
 		sdk.WithPrivateKey(pk),
 	)
 	if clientDA == nil {
-		return fmt.Errorf("Failed to build the Nubit client")
+		return fmt.Errorf("failed to build the Nubit client")
 	}
 
 	labels := map[string]interface{}{
@@ -115,7 +121,7 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 	}
 	_, err = clientDA.UploadBytes(checkpointJSON, namespaceID, 0, labels)
 	if err != nil {
-		return fmt.Errorf("Failed to upload checkpoint: %v", err)
+		return fmt.Errorf("failed to upload checkpoint: %v", err)
 	}
 
 	return nil
