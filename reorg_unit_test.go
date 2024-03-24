@@ -69,7 +69,7 @@ func loadRollingback(catchupHeight uint) {
 	ordGetterTest, arguments := loadMain()
 	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	lastHistory := queue.History[len(queue.History)-1]
-	preState, _, _ := stateless.Rollingback(queue.Header, lastHistory)
+	preState, _, _ := stateless.Rollingback(queue.Header, &lastHistory)
 	preBytes := preState.Commit().Bytes()
 	preCommitment := base64.StdEncoding.EncodeToString(preBytes[:])
 
