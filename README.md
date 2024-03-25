@@ -2,8 +2,6 @@
 
 <img src="assets/logo.svg" width="400px" alt="Nubit Logo" />
 
-***Warning!*** *This release is specifically for the Pre-alpha Testnet and may include changes that are not backward compatible in the future.*
-
 ## Background
 The Modular Indexer, which includes Committee Indexer (This Repo) and [Light Indexer](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
 
