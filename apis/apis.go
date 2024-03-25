@@ -45,7 +45,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{
 			Error:  &errStr,
 			Result: nil,
 			Proof:  nil,
@@ -55,7 +55,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	vProof, _, err := verkle.SerializeProof(proofOfKeys)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{
 			Error:  &errStr,
 			Result: nil,
 			Proof:  nil,
@@ -64,7 +64,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	vProofBytes, err := vProof.MarshalJSON()
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{
 			Error:  &errStr,
 			Result: nil,
 			Proof:  nil,
@@ -72,7 +72,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
-	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfWalletResponse{
 		Error:  nil,
 		Result: &result,
 		Proof:  &finalproof,
