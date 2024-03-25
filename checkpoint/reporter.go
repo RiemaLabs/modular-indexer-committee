@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	sdk "github.com/RiemaLabs/nubit-da-sdk"
 	"github.com/RiemaLabs/nubit-da-sdk/constant"
+	"github.com/RiemaLabs/nubit-da-sdk/types"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -125,4 +128,56 @@ func UploadCheckpointByDA(indexerID *IndexerIdentification, checkpoint *Checkpoi
 	}
 
 	return nil
+}
+
+func IsValidNamespaceID(nID string) bool {
+	if strings.HasPrefix(nID, "0x") {
+		_, err := strconv.ParseUint(nID[2:], 16, 64)
+		if err != nil {
+			return false
+		}
+	} else {
+		_, err := strconv.ParseUint(nID, 10, 64)
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
+func CreateNamespace(pk, gasCode, namespaceName, network string) (string, error) {
+	ctx := context.TODO()
+	if network == "Pre-Alpha Testnet" {
+		sdk.SetNet(constant.PreAlphaTestNet)
+	} else if network == "Testnet" {
+		sdk.SetNet(constant.TestNet)
+	} else {
+		return "", fmt.Errorf("unknown network: %s", network)
+	}
+
+	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
+		sdk.WithGasCode(gasCode),
+		sdk.WithPrivateKey(pk),
+	)
+	if clientDA == nil {
+		return "", fmt.Errorf("failed to build the Nubit client")
+	}
+	ns, err := clientDA.CreateNamespace(namespaceName, "Private", "", []string{})
+	if err != nil {
+		return "", err
+	}
+
+	// Wait for the new block.
+	time.Sleep(time.Second * 25)
+
+	tx, err := clientDA.Client.GetTransaction(ctx, &types.GetTransactionReq{
+		TxID: ns.TxID,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return tx.NID, err
 }
