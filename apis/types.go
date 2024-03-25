@@ -28,14 +28,14 @@ type Brc20VerifiableLatestStateProofResult struct {
 	OrdTransfers []OrdTransferJSON `json:"ordTransfer"`
 }
 
-// Brc20VerifiableGetCurrentBalanceOfWallet
+// Brc20VerifiableCurrentBalanceOfWallet
 
-type Brc20VerifiableGetCurrentBalanceOfWalletRequest struct {
+type Brc20VerifiableCurrentBalanceOfWalletRequest struct {
 	Tick   string `json:"tick"`
 	Wallet string `json:"wallet"`
 }
 
-type Brc20VerifiableGetCurrentBalanceOfWalletResponse struct {
+type Brc20VerifiableCurrentBalanceOfWalletResponse struct {
 	Error  *string                              `json:"error"`
 	Result *Brc20VerifiableCurrentBalanceResult `json:"result"`
 	Proof  *string                              `json:"proof"`
