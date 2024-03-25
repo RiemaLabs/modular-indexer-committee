@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/RiemaLabs/indexer-committee/apis"
-	"github.com/RiemaLabs/indexer-committee/checkpoint"
-	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
-	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/modular-indexer-committee/apis"
+	"github.com/RiemaLabs/modular-indexer-committee/checkpoint"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 )

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
 func TestOPI(t *testing.T) {

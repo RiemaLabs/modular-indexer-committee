@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/ethereum/go-verkle"
 
 	uint256 "github.com/holiman/uint256"

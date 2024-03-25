@@ -37,5 +37,7 @@ config.json
 
 # Debug
 __debug*
-indexer-committee
 *.prof
+
+# Binary
+modular-indexer-committee

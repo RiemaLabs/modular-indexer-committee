@@ -9,7 +9,7 @@ import (
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
 
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
 
 func NewHeader(getter *getter.OrdGetter, initState *DiffState) *Header {

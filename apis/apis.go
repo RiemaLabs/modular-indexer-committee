@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	verkle "github.com/ethereum/go-verkle"
 	"github.com/gin-gonic/gin"
 )

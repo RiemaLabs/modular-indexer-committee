@@ -1,14 +1,9 @@
-module github.com/RiemaLabs/indexer-committee
+module github.com/RiemaLabs/modular-indexer-committee
 
 go 1.22.0
 
-replace (
-	github.com/RiemaLabs/indexer-committee => ../indexer-committee
-	github.com/RiemaLabs/nubit-da-sdk => ../nubit-da-sdk
-)
-
 require (
-	github.com/RiemaLabs/nubit-da-sdk v0.0.0-00010101000000-000000000000
+	github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.0
 	github.com/aws/aws-sdk-go-v2 v1.26.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.8
