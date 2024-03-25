@@ -5,16 +5,25 @@
 ***Warning!*** *This release is specifically for the Pre-alpha Testnet and may include changes that are not backward compatible in the future.*
 
 ## Background
-Modular Indexer, as a part of a comprehensive indexing solution, consists of two key components: the Modular Indexer (Committee) and the [Modular Indexer (Light)](https://github.com/RiemaLabs/modular-indexer-light). This architecture introduces a fully user-verified execution layer for meta-protocols on Bitcoin. By leveraging the immutable and decentralized nature of Bitcoin, it provides a Turing-complete execution layer capable of running complex logic beyond the script language's limitations of Bitcoin itself. 
+The Modular Indexer, which includes the Modular Indexer (Committee) and the [Modular Indexer (Light)](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
 
-For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-Verified Execution Layer for Meta-protocols on Bitcoin"](https://eprint.iacr.org/2024/408) and the discussion on [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
+Our innovative approach uses Verkle trees for trusted, decentralized data integrity. Even with a majority of hostile modular-indexer-committees, the Modular Indexer reliably connects Bitcoin with complex applications like BRC-20, propelling the ecosystem forward. 
+
+For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-Verified Execution Layer for Meta-protocols on Bitcoin"](https://eprint.iacr.org/2024/408). Additionally, Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
 
 
-## What is Committee Indexer?
-Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its committee indexer for a given meta-protocol.
+## What is modular-indexer-committee?
+modular-indexer-committee serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the modular-indexer-committee obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its modular-indexer-committee for a given meta-protocol.
 
 ## Getting Started
-Welcome to the Modular Indexer setup. Start by ensuring your machine is equipped for optimal performance: the right CPU[recommanded to be specified] for processing, adequate RAM[recommanded to be specified] for operations, sufficient storage[recommanded to be specified] for speedy data access, and a stable network connection[recommanded to be specified]. 
+Welcome to the Modular Indexer setup. Ensure your machine is equipped for optimal performance with the recommended specifications:
+
+| Metric     | Minimum Recommended | Notes                          |
+|------------|---------------------|--------------------------------|
+| **CPU**    | [CPU Specification] | For efficient processing       |
+| **Memory** | [Memory Specification] | To handle operations effectively |
+| **Disk**   | [Disk Specification] | Adequate storage for speed     |
+| **Bandwidth** | [Bandwidth Specification] | Stable network connection    |
 
 Modular Indexer is built with Golang. You can run your own modular Indexer by following the procedure below. `Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
 
@@ -34,19 +43,19 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 ### 3. Run with Command Flag
 
 ```Bash
-# Build the Committee Indexer
+# Build the modular-indexer-committee
 go build
 
-# Run the committee indexer
+# Run the modular-indexer-committee
 ./indexer-committee --committee --service
 
-# Run the committee indexer in test modee
+# Run the modular-indexer-committee in test modee
 ./indexer-committee --committee --service -t --blockheight 780010
 ```
 Below are the explanation for each of the command flags.
 - `--service` `(-s)`: Use this flag to activate web service from moduler indexer. When enabled, the moduler indexer will provide web service for incoming query.
 
-- `--committee`: This flag activates the committee indexer functionality. When enabled, the moduler indexer will provide checkpoints to the DA layer.
+- `--committee`: This flag activates the modular-indexer-committee functionality. When enabled, the moduler indexer will provide checkpoints to the DA layer.
 
 - `--cache`: By default, the state root cache is enabled, facilitating efficient verkle tree storage. This flag ensures that the application starts with the cache service activated, and will therefore fasten the initialization speed next time.
 
@@ -66,10 +75,10 @@ The database section requires connection details to the OPI database. If you're 
 - "port": The port number on which your database service is listening.
 
 ### Setting Up `report` Configuration
-Define where and how to store the checkpoints generated by your Committee Indexer. The report section currently supports AWS S3 and the Data Availability (DA) layer.
+Define where and how to store the checkpoints generated by your modular-indexer-committee. The report section currently supports AWS S3 and the Data Availability (DA) layer.
 
 - `method`: Choose between `DA` and `S3` for storage method.
-- `timeout`: Timeout setting in milliseconds for operations.
+- `timeout`: Timeout setting in milliseconds for publishing checkpoints.
 
 **S3 Configuration:**
 - `region`: Specify the AWS S3 region for storage.
@@ -78,7 +87,7 @@ Define where and how to store the checkpoints generated by your Committee Indexe
 - `secretKey`: Your AWS secret access key.
 
 **DA Configuration:**
-- `network`: Specify the network (e.g., 'Pre-Alpha Testnet').
+- `network`: Specify the network (current: 'Pre-Alpha Testnet').
 - `namespaceID`: Your designated namespace identifier.
 - `gasCode`: Custom code for managing transaction fees.
 - `privateKey`: Your private key for secure transactions.
@@ -89,7 +98,7 @@ The service section specifies the details of your API service, enabling access t
 - `url`: The URL where your API service is hosted and accessible.
 - `name`: A unique name for your Indexer instance.
 - `metaProtocol`: Specify the meta-protocol served by your Indexer (default 'brc-20').
-- `version`: Specify the version of your Committee Indexer (e.g., 'v0.1.0-rc0').
+- `version`: Specify the version of your modular-indexer-committee (current: 'v0.1.0-rc.0').
 
 <!-- ## Service API -->
 
@@ -101,10 +110,10 @@ The service section specifies the details of your API service, enabling access t
 
 
 ## FAQ
-- **Is there a consensus mechanism among committee indexers?**
-    - No, within the committee indexer, only one honest indexer needs to be available in the network to satisfy the 1-of-N trust assumption, allowing the light indexer to detect checkpoint inconsistencies and thus proceed with the verification process.
-- **How is the set of committee indexers determined?**
-    - Committee indexers must publish checkpoints to the DA Layer for access by other participants. Users can maintain their list of committee indexers. Since the user's light indexer can verify the correctness of checkpoints, attackers can be removed from the committee indexer set upon detection of malicious behavior; the judgment of malicious behavior is not based on a 51% vote but on a challenge-proof mechanism. Even if the vast majority of committee indexers are malicious, if there is one honest committee indexer, the correct checkpoint can be calculated/verified, allowing the service to continue.
+- **Is there a consensus mechanism among modular-indexer-committees?**
+    - No, within the modular-indexer-committee, only one honest indexer needs to be available in the network to satisfy the 1-of-N trust assumption, allowing the light indexer to detect checkpoint inconsistencies and thus proceed with the verification process.
+- **How is the set of modular-indexer-committees determined?**
+    - modular-indexer-committees must publish checkpoints to the DA Layer for access by other participants. Users can maintain their list of modular-indexer-committees. Since the user's light indexer can verify the correctness of checkpoints, attackers can be removed from the modular-indexer-committee set upon detection of malicious behavior; the judgment of malicious behavior is not based on a 51% vote but on a challenge-proof mechanism. Even if the vast majority of modular-indexer-committees are malicious, if there is one honest modular-indexer-committee, the correct checkpoint can be calculated/verified, allowing the service to continue.
 - **Why do users need to verify data through checkpoints instead of looking at the simple majority of the indexer network?**
     - This would lead to Sybil attacks: joining the indexer network is permissionless, without a staking model or proof of work, so the economic cost of setting up an indexer attacker cluster is very low, requiring only the cost of server resources. This allows attackers to achieve a simple majority at a low economic cost; even by introducing historical reputation proof, without a slashing mechanism, attackers can still achieve a 51% attack at a very low cost.
 - **Why are there no attacks like double-spending in the Modular Indexer architecture?**
