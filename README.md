@@ -62,10 +62,10 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 go build
 
 # Run the modular-indexer-committee
-./indexer-committee --committee --service
+./modular-indexer-committee --committee --service
 
 # Run the modular-indexer-committee in test modee
-./indexer-committee --committee --service -t --blockheight 780010
+./modular-indexer-committee --committee --service -t --blockheight 780010
 ```
 Below are the explanation for each of the command flags.
 - `--service` `(-s)`: Use this flag to activate web service from moduler indexer. When enabled, the moduler indexer will provide web service for incoming query.
