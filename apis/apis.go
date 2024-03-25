@@ -2,6 +2,7 @@ package apis
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
@@ -10,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, BRC20VerifiableCurrentBalanceResult) {
+func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceResult) {
 	queue.Lock()
 	defer queue.Unlock()
 
@@ -19,7 +20,7 @@ func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byt
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
-	result := BRC20VerifiableCurrentBalanceResult{
+	result := Brc20VerifiableCurrentBalanceResult{
 		AvailableBalance: availableBalanceStr,
 		OverallBalance:   overallBalanceStr,
 	}
@@ -41,15 +42,40 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	keys := [][]byte{pkScriptKey, availKey, overKey}
 
 	// Generate proof
-	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
-	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
-	vProofBytes, _ := vProof.MarshalJSON()
+	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+
+	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
 	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
-		Error:  "None",
-		Result: result,
-		Proof:  finalproof,
+		Error:  nil,
+		Result: &result,
+		Proof:  &finalproof,
 	})
 }
 
@@ -63,15 +89,40 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 
 	keys := [][]byte{availKey, overKey}
 	// Generate proof
-	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
-	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
-	vProofBytes, _ := vProof.MarshalJSON()
+	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
-	c.JSON(http.StatusOK, Brc20VerifiableGetCurrentBalanceOfWalletResponse{
-		Error:  "None",
-		Result: result,
-		Proof:  finalproof,
+	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
+		Error:  nil,
+		Result: &result,
+		Proof:  &finalproof,
 	})
 }
 
@@ -80,9 +131,7 @@ func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
 	defer queue.Unlock()
 
 	curHeight := queue.LatestHeight()
-	c.JSON(http.StatusOK, gin.H{
-		"latestHeight": curHeight,
-	})
+	c.Data(http.StatusOK, "text/plain", []byte(fmt.Sprintf("%d", curHeight)))
 }
 
 func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
@@ -91,11 +140,39 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 
 	lastIndex := len(queue.History) - 1
 	postState := queue.Header.Root
+	// TODO: High. Use another root to store the preState after the flushing to disk has been done.
 	preState, keys, info := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
 
-	proofOfKeys, _, _, _, _ := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
-	vProof, _, _ := verkle.SerializeProof(proofOfKeys)
-	vProofBytes, _ := vProof.MarshalJSON()
+	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+
+	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
+		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
+			Error:  &errStr,
+			Result: nil,
+			Proof:  nil,
+		})
+	}
+
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
 	keysStr := make([]string, len(keys))
@@ -127,13 +204,18 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 		})
 	}
 
+	res := Brc20VerifiableLatestStateProofResult{
+		Keys:         keysStr,
+		KeyExists:    keyExists,
+		PreValues:    preValuesStr,
+		PostValues:   postValuesStr,
+		OrdTransfers: ordTransfersJSON,
+	}
+
 	c.JSON(http.StatusOK, Brc20VerifiableLatestStateProofResponse{
-		Keys:       keysStr,
-		KeyExists:  keyExists,
-		PreValues:  preValuesStr,
-		PostValues: postValuesStr,
-		Proof:      finalproof,
-		OrdTrans:   ordTransfersJSON, // Assuming ordTransfer is correctly typed and can be directly included
+		Error:  nil,
+		Result: &res,
+		Proof:  &finalproof,
 	})
 }
 
@@ -149,26 +231,26 @@ func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool
 	//     r.SetTrustedProxies([]string{trustedProxies})
 	// }
 
-	r.GET("/brc20_verifiable_current_balance_of_wallet", func(c *gin.Context) {
+	r.GET("/v1/brc20_verifiable/current_balance_of_wallet", func(c *gin.Context) {
 		GetCurrentBalanceOfWallet(c, queue)
 	})
 
-	r.GET("/brc20_verifiable_current_balance_of_pkscript", func(c *gin.Context) {
+	r.GET("/v1/brc20_verifiable/current_balance_of_pkscript", func(c *gin.Context) {
 		GetCurrentBalanceOfPkscript(c, queue)
 	})
 
-	r.GET("/brc20_verifiable_block_height", func(c *gin.Context) {
+	r.GET("/v1/brc20_verifiable/block_height", func(c *gin.Context) {
 		GetBlockHeight(c, queue)
 	})
 
-	r.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
 			"status": "healthy",
 		})
 	})
 
 	if enableCommittee {
-		r.GET("/brc20_verifiable_latest_state_proof", func(c *gin.Context) {
+		r.GET("/v1/brc20_verifiable/latest_state_proof", func(c *gin.Context) {
 			GetLatestStateProof(c, queue)
 		})
 	}
