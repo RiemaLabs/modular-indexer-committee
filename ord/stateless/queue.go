@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	verkle "github.com/ethereum/go-verkle"
 )
 

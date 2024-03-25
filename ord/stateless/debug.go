@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/RiemaLabs/indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
 )
 
 type Record struct {

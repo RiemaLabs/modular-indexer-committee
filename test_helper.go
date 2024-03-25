@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
 
 func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {

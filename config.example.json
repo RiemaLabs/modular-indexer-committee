@@ -17,7 +17,7 @@
         },
         "da": {
             "network": "Pre-Alpha Testnet",
-            "namespaceID": "YourOwnNamespace",
+            "namespaceID": "YourOwnNamespace. Left to empty and follow the instruction to create automatically.",
             "gasCode": "YourGasCode",
             "privateKey": "YourPrivateKey"
         }
@@ -26,6 +26,6 @@
         "url": "YourCommitteeIndexerServiceURL",
         "name": "YourCommitteeIndexerName",
         "metaProtocol": "brc-20",
-        "version": "v0.1.0-rc0"
+        "version": "v0.1.0-rc.0"
     }
 }

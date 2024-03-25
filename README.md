@@ -80,7 +80,7 @@ The service section defines the details about your API service that provides acc
 ## Useful Links
 :spider_web: <https://www.nubit.org>  
 :octocat: <https://github.com/Wechaty/wechaty>  
-:beetle: <https://github.com/RiemaLabs/indexer-committee/issues>  
+:beetle: <https://github.com/RiemaLabs/modular-indexer-committee/issues>  
 :book: <https://docs.nubit.org/developer-guides/introduction>  
 
 

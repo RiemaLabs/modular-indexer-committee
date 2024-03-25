@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/RiemaLabs/indexer-committee/ord"
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
 )
 
 type OrdTransferJSON struct {

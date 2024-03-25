@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/RiemaLabs/indexer-committee/ord/getter"
-	"github.com/RiemaLabs/indexer-committee/ord/stateless"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
 func TestReorg(t *testing.T) {
