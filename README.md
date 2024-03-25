@@ -1,9 +1,7 @@
-# Committee Indexer [![Join Nubit Discord Community](https://img.shields.io/discord/916984413944967180?logo=discord&style=flat)](https://discord.gg/5sVBzYa4Sg) [![Follow Nubit On X](https://img.shields.io/twitter/follow/nubit_org)](https://twitter.com/Nubit_org)
+# Modular Indexer (Committee) [![Join Nubit Discord Community](https://img.shields.io/discord/916984413944967180?logo=discord&style=flat)](https://discord.gg/5sVBzYa4Sg) [![Follow Nubit On X](https://img.shields.io/twitter/follow/nubit_org)](https://twitter.com/Nubit_org)
 
-<!-- <p align='left'>
-  <img width='70%' src='./img/logo.png' />
-</p> -->
-![Logo](img/logo.png)
+<img src="assets/logo.svg" width="400px" alt="Nubit Logo" />
+
 ## Background
 Modular Indexer introduces a fully user-verified execution layer for meta-protocols on Bitcoin. Leveraging the immutable and decentralized nature of Bitcoin, the Modular Indexer provides a Turing-complete execution layer capable of running complex logic that cannot be directly executed on Bitcoin due to its script language's limitations.
 
