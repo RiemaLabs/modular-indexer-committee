@@ -9,7 +9,7 @@ The Modular Indexer, which includes the Modular Indexer (Committee) and the [Mod
 
 Our innovative approach uses Verkle trees for trusted, decentralized data integrity. Even with a majority of hostile modular-indexer-committees, the Modular Indexer reliably connects Bitcoin with complex applications like BRC-20, propelling the ecosystem forward. 
 
-For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-Verified Execution Layer for Meta-protocols on Bitcoin"](https://eprint.iacr.org/2024/408). Additionally, Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
+For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-Verified Execution Layer for Meta-protocols on Bitcoin"](https://eprint.iacr.org/2024/408). Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
 
 
 ## What is modular-indexer-committee?
