@@ -12,6 +12,8 @@ For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-
 Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its committee indexer for a given meta-protocol.
 
 ## Getting Started
+Welcome to the Modular Indexer setup. Start by ensuring your machine is equipped for optimal performance: the right CPU[recommanded to be specified] for processing, adequate RAM[recommanded to be specified] for operations, sufficient storage[recommanded to be specified] for speedy data access, and a stable network connection[recommanded to be specified]. 
+
 Modular Indexer is built with Golang. You can run your own modular Indexer by following the procedure below. `Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
 
 ### 1. Install Dependence
