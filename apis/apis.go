@@ -138,10 +138,10 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 }
 
 func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool) {
-	r := gin.Default()
 	if !enableDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	r := gin.Default()
 
 	// TODO: Medium. Add the TRUSTED_PROXIES to our config
 	// trustedProxies := os.Getenv("TRUSTED_PROXIES")
@@ -159,6 +159,12 @@ func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool
 
 	r.GET("/brc20_verifiable_block_height", func(c *gin.Context) {
 		GetBlockHeight(c, queue)
+	})
+
+	r.GET("/health", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{
+			"status": "healthy",
+		})
 	})
 
 	if enableCommittee {
