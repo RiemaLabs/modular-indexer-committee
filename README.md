@@ -3,7 +3,10 @@
 <img src="assets/logo.svg" width="400px" alt="Nubit Logo" />
 
 ## Background
-Modular Indexer introduces a fully user-verified execution layer for meta-protocols on Bitcoin. Leveraging the immutable and decentralized nature of Bitcoin, the Modular Indexer provides a Turing-complete execution layer capable of running complex logic that cannot be directly executed on Bitcoin due to its script language's limitations.
+Modular Indexer, as a part of a comprehensive indexing solution, consists of two key components: the Modular Indexer (Committee) and the [Modular Indexer (Light)](https://github.com/RiemaLabs/modular-indexer-light). This architecture introduces a fully user-verified execution layer for meta-protocols on Bitcoin. By leveraging the immutable and decentralized nature of Bitcoin, it provides a Turing-complete execution layer capable of running complex logic beyond the script language's limitations of Bitcoin itself. 
+
+For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-Verified Execution Layer for Meta-protocols on Bitcoin"](https://eprint.iacr.org/2024/408) and the discussion on [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
+
 
 ## What is Committee Indexer?
 Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its committee indexer for a given meta-protocol.
