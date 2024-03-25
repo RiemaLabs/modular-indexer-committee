@@ -9,17 +9,17 @@
     "report": {
         "method": "DA",
         "timeout": 15000,
-        "s3": {
-            "region": "YourOwnS3Region",
-            "bucket": "YourOwnS3Bucket",
-            "accessKey": "YourOwnS3AccessKey",
-            "secretKey": "YourOwnS3SecretKey"
-        },
         "da": {
             "network": "Pre-Alpha Testnet",
             "namespaceID": "YourOwnNamespace",
             "gasCode": "YourGasCode",
             "privateKey": "YourPrivateKey"
+        },
+        "s3": {
+            "region": "YourOwnS3Region",
+            "bucket": "YourOwnS3Bucket",
+            "accessKey": "YourOwnS3AccessKey",
+            "secretKey": "YourOwnS3SecretKey"
         }
     },
     "service": {
