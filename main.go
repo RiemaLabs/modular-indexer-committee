@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -226,6 +228,39 @@ func Execution(arguments *RuntimeArguments) {
 	}
 
 	Version = GlobalConfig.Service.Version
+
+	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
+		if !checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {
+			log.Printf("Got invalid Namespace ID from the config.json. Initializing a new namespace.")
+			scanner := bufio.NewScanner(os.Stdin)
+			namespaceName := ""
+			for {
+				fmt.Print("Please enter the namespace name: ")
+				if scanner.Scan() {
+					namespaceName = scanner.Text()
+					if strings.TrimSpace(namespaceName) == "" {
+						fmt.Print("Namespace name couldn't be empty!")
+					} else {
+						break
+					}
+				}
+			}
+			nid, err := checkpoint.CreateNamespace(GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode, namespaceName, GlobalConfig.Report.Da.Network)
+			if err != nil {
+				log.Fatalf("Failed to create namespace due to %v", err)
+			}
+			GlobalConfig.Report.Da.NamespaceID = nid
+			bytes, err := json.Marshal(GlobalConfig)
+			if err != nil {
+				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
+			}
+			err = os.WriteFile("config.json", bytes, 0644)
+			if err != nil {
+				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
+			}
+			fmt.Printf("Succeed to create namespace, ID: %s!", nid)
+		}
+	}
 
 	// Use OPI database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
