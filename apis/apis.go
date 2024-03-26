@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceResult) {
+func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
 	queue.Lock()
 	defer queue.Unlock()
 
@@ -20,7 +20,7 @@ func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byt
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
-	result := Brc20VerifiableCurrentBalanceResult{
+	result := Brc20VerifiableCurrentBalanceOfPkscriptResult{
 		AvailableBalance: availableBalanceStr,
 		OverallBalance:   overallBalanceStr,
 	}
@@ -35,11 +35,11 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
-	pkScriptKey, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
+	_, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
 
 	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
 
-	keys := [][]byte{pkScriptKey, availKey, overKey}
+	keys := [][]byte{availKey, overKey}
 
 	// Generate proof
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
@@ -72,9 +72,15 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
+	resultWallet := Brc20VerifiableCurrentBalanceOfWalletResult{
+		AvailableBalance: result.AvailableBalance,
+		OverallBalance:   result.OverallBalance,
+		Pkscript:         pkScript,
+	}
+
 	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfWalletResponse{
 		Error:  nil,
-		Result: &result,
+		Result: &resultWallet,
 		Proof:  &finalproof,
 	})
 }
