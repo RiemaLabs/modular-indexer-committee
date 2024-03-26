@@ -88,17 +88,6 @@ func DownloadCheckpointByDA(namespaceID, network string, name, metaProtocol, hei
 
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx)).Client
 
-	resCount, err := clientDA.GetTotalDataIDsInNamesapce(ctx, &types.GetTotalDataIDsInNamesapceReq{NID: namespaceID})
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get the count of data in namespace %s, error: %v", namespaceID, err)
-	}
-
-	count := int(resCount.Count)
-	if count == 0 {
-		return nil, 0, fmt.Errorf("the count of data in namespace %s is zero", namespaceID)
-	}
-
 	resDataIDs, err := clientDA.GetDataInNamespace(ctx, &types.GetDataInNamespaceReq{
 		NID:    namespaceID,
 		Limit:  100,
