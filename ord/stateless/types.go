@@ -54,6 +54,15 @@ type Header struct {
 	sync.RWMutex
 }
 
+type LightHeader struct {
+	// Verkle Tree Root
+	Root verkle.VerkleNode
+	// The state is after the execution of Block Height.
+	Height uint
+	// Block Hash.
+	Hash string
+}
+
 type Queue struct {
 	Header  *Header
 	History [ord.BitcoinConfirmations]DiffState
@@ -72,8 +81,6 @@ type KVStorage interface {
 	InsertBytes(key []byte, value []byte)
 
 	GetBytes(key []byte) []byte
-
-	Paging(getter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error
 
 	GetHeight() uint
 }
