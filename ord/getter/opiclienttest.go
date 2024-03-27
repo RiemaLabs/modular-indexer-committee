@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"gorm.io/gorm"
 )
 
@@ -37,29 +38,31 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOr
 	}
 
 	// Parse CSV records into OrdTransfer structs
+	// "id","inscription_id","block_height","old_satpoint","new_satpoint","new_pkscript","new_wallet","sent_as_fee","content","content_type"
 	for _, record := range records[1:] { // Skip header row
-		// "id","pkscript","wallet","tick","overall_balance","available_balance","block_height","event_id"
 		id, _ := strconv.Atoi(record[0])
-		// pkt := record[1]
-		// wallet := record[2]
-		// tick := record[3]
-		// overall_balance := record[4]
-		// available_balance := record[5]
-		blockHeight, _ := strconv.Atoi(record[6])
-		// eventID, _ := strconv.Atoi(record[7])
+		inscriptionID := record[1]
+		blockHeight, _ := strconv.Atoi(record[2])
+		oldSatpoint := record[3]
+		newSatpoint := record[4]
+		newPkscript := ord.Pkscript(record[5])
+		new_wallet := ord.Wallet(record[6])
+		sent_as_fee, _ := strconv.ParseBool(record[7])
+		content := record[8]
+		content_type := record[9]
 
 		// Create OrdTransfer struct
 		ordTransfer := OrdTransfer{
 			ID:            uint(id),
-			InscriptionID: "inscriptionID",
+			InscriptionID: inscriptionID,
 			BlockHeight:   uint(blockHeight),
-			OldSatpoint:   "",
-			NewSatpoint:   "",
-			NewPkscript:   "pkt",
-			NewWallet:     "wallet",
-			SentAsFee:     false,
-			Content:       nil,
-			ContentType:   "",
+			OldSatpoint:   oldSatpoint,
+			NewSatpoint:   newSatpoint,
+			NewPkscript:   newPkscript,
+			NewWallet:     new_wallet,
+			SentAsFee:     bool(sent_as_fee),
+			Content:       []byte(content),
+			ContentType:   content_type,
 		}
 
 		// Append to OrdTransfers slice
