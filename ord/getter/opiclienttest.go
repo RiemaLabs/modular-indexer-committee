@@ -7,11 +7,9 @@ import (
 	"strconv"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
-	"gorm.io/gorm"
 )
 
 type OPIOrdGetterTest struct {
-	db                *gorm.DB
 	LatestBlockHeight uint
 	BlockHash         map[uint]string
 	OrdTransfers      []OrdTransfer
