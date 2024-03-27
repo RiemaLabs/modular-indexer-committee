@@ -31,7 +31,8 @@ Before we stepped into the installation, ensure your machine is equipped with th
 We highly appreciate you running the committee indexer to contribute to the decentralization.
 
 ### 2. Install Dependence
-Modular Indexer is built with Golang. You can run your own modular Indexer by following the procedure below. `Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
+`Committee Indexer` is built with Golang. You can run your own `Committee Indexer` by following the procedure below.
+`Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
 
 Golang is easy to install all dependence. Fetch all required package by simply running.
 ```Bash
