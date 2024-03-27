@@ -11,16 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceResult) {
-	queue.Lock()
-	defer queue.Unlock()
-
+func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
 	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
 	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, ordPkscript)
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
-	result := Brc20VerifiableCurrentBalanceResult{
+	result := Brc20VerifiableCurrentBalanceOfPkscriptResult{
 		AvailableBalance: availableBalanceStr,
 		OverallBalance:   overallBalanceStr,
 	}
@@ -29,17 +26,14 @@ func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byt
 }
 
 func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
-	pkScriptKey, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
+	_, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
 
 	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
 
-	keys := [][]byte{pkScriptKey, availKey, overKey}
+	keys := [][]byte{availKey, overKey}
 
 	// Generate proof
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
@@ -72,17 +66,20 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
+	resultWallet := Brc20VerifiableCurrentBalanceOfWalletResult{
+		AvailableBalance: result.AvailableBalance,
+		OverallBalance:   result.OverallBalance,
+		Pkscript:         pkScript,
+	}
+
 	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfWalletResponse{
 		Error:  nil,
-		Result: &result,
+		Result: &resultWallet,
 		Proof:  &finalproof,
 	})
 }
 
 func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	tick := c.DefaultQuery("tick", "")
 	pkScript := c.DefaultQuery("pkscript", "")
 	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
@@ -127,20 +124,16 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 }
 
 func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	curHeight := queue.LatestHeight()
 	c.Data(http.StatusOK, "text/plain", []byte(fmt.Sprintf("%d", curHeight)))
 }
 
 func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
 
 	lastIndex := len(queue.History) - 1
 	postState := queue.Header.Root
 	// TODO: High. Use another root to store the preState after the flushing to disk has been done.
+	// TODO: Urgent. Rollingback here is unsafe because we don't lock the queue.
 	preState, keys, info := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
 
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)

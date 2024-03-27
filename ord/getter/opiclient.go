@@ -29,7 +29,7 @@ func ConnectOPIDatabase(config *DatabaseConfig) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
-func NewOPIBitcoinGetter(config *DatabaseConfig) (*OPIOrdGetter, error) {
+func NewOPIOrdGetter(config *DatabaseConfig) (*OPIOrdGetter, error) {
 	db, err := ConnectOPIDatabase(config)
 	if err != nil {
 		return nil, err

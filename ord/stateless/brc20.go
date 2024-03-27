@@ -27,7 +27,7 @@ type Dynamic = string
 var AvailableBalancePkscript LocationID = 0x00
 var OverallBalancePkscript LocationID = 0x01
 
-func getTickPkscriptHash(tick string, Pkscript ord.Pkscript, stateID LocationID) []byte {
+func GetTickPkscriptHash(tick string, Pkscript ord.Pkscript, stateID LocationID) []byte {
 	tickBytes := []byte(tick)
 	uniqueBytes := []byte(Pkscript)
 	typeBytes := []byte("static")
@@ -39,7 +39,7 @@ func getTickPkscriptHash(tick string, Pkscript ord.Pkscript, stateID LocationID)
 }
 
 func updateBalance(f func(*uint256.Int) *uint256.Int, state KVStorage, tick string, Pkscript ord.Pkscript, loc LocationID) {
-	key := getTickPkscriptHash(tick, Pkscript, loc)
+	key := GetTickPkscriptHash(tick, Pkscript, loc)
 	value := state.GetUInt256(key)
 	res := f(value)
 	state.InsertUInt256(key, res)
@@ -47,8 +47,8 @@ func updateBalance(f func(*uint256.Int) *uint256.Int, state KVStorage, tick stri
 
 // Available, OverallBalances
 func GetBalances(state KVStorage, tick string, Pkscript ord.Pkscript) ([]byte, []byte, *uint256.Int, *uint256.Int) {
-	key0 := getTickPkscriptHash(tick, Pkscript, AvailableBalancePkscript)
-	key1 := getTickPkscriptHash(tick, Pkscript, OverallBalancePkscript)
+	key0 := GetTickPkscriptHash(tick, Pkscript, AvailableBalancePkscript)
+	key1 := GetTickPkscriptHash(tick, Pkscript, OverallBalancePkscript)
 	value0 := state.GetUInt256(key0)
 	value1 := state.GetUInt256(key1)
 	return key0, key1, value0, value1
@@ -63,7 +63,7 @@ var MaxSupply LocationID = 0x02
 var LimitPerMint LocationID = 0x03
 var Decimals LocationID = 0x04
 
-func getTickHash(tick string, locationID LocationID) []byte {
+func GetTickHash(tick string, locationID LocationID) []byte {
 	tickBytes := []byte(tick)
 	typeBytes := []byte("static")
 	preImg := append(tickBytes, typeBytes...)
@@ -74,11 +74,11 @@ func getTickHash(tick string, locationID LocationID) []byte {
 }
 
 func getTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
-	return getTickHash(tick, Exists), getTickHash(tick, RemainingSupply), getTickHash(tick, MaxSupply), getTickHash(tick, LimitPerMint), getTickHash(tick, Decimals)
+	return GetTickHash(tick, Exists), GetTickHash(tick, RemainingSupply), GetTickHash(tick, MaxSupply), GetTickHash(tick, LimitPerMint), GetTickHash(tick, Decimals)
 }
 
 func updateTickState(f func(*uint256.Int) *uint256.Int, state KVStorage, tick string, loc LocationID) {
-	key := getTickHash(tick, loc)
+	key := GetTickHash(tick, loc)
 	value := state.GetUInt256(key)
 	res := f(value)
 	state.InsertUInt256(key, res)
@@ -89,7 +89,7 @@ func updateTickState(f func(*uint256.Int) *uint256.Int, state KVStorage, tick st
 // Value: []byte (Less than 1534 bytes)
 var WalletLatestPkscript LocationID = 0x00
 
-func getWalletHash(wallet string, locationID LocationID) []byte {
+func GetWalletHash(wallet string, locationID LocationID) []byte {
 	walletBytes := []byte(wallet)
 	typeBytes := []byte("static")
 	preImg := append(walletBytes, typeBytes...)
@@ -100,7 +100,7 @@ func getWalletHash(wallet string, locationID LocationID) []byte {
 }
 
 func updateLatestPkscript(state KVStorage, wallet ord.Wallet, Pkscript ord.Pkscript) {
-	key := getWalletHash(string(wallet), WalletLatestPkscript)
+	key := GetWalletHash(string(wallet), WalletLatestPkscript)
 	value := string(Pkscript)
 	bytes, err := hex.DecodeString(value)
 	if err != nil {
@@ -110,7 +110,7 @@ func updateLatestPkscript(state KVStorage, wallet ord.Wallet, Pkscript ord.Pkscr
 }
 
 func GetLatestPkscript(state KVStorage, wallet string) ([]byte, string) {
-	key := getWalletHash(wallet, WalletLatestPkscript)
+	key := GetWalletHash(wallet, WalletLatestPkscript)
 	value := state.GetBytes(key)
 	return key, hex.EncodeToString(value)
 }
@@ -416,7 +416,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 			}
 			// check if available balance is enough
 			if oldSatpoint == "" {
-				availableBalance := state.GetUInt256(getTickPkscriptHash(tick, newPkscript, AvailableBalancePkscript))
+				availableBalance := state.GetUInt256(GetTickPkscriptHash(tick, newPkscript, AvailableBalancePkscript))
 
 				if availableBalance.Lt(amount) {
 					continue // not enough available balance

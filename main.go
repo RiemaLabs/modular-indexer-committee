@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -20,8 +19,6 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 )
 
 func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
@@ -106,6 +103,11 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 
 	var history = make(map[string]checkpoint.UploadRecord)
 
+	if arguments.EnableService {
+		log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
+		go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest)
+	}
+
 	for {
 		select {
 		case <-sigChan:
@@ -121,15 +123,12 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 			}
 
 			if curHeight < latestHeight {
-				queue.Lock()
 				err := queue.Update(ordGetter, latestHeight)
-				queue.Unlock()
 				if err != nil {
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
 			}
 
-			queue.Lock()
 			reorgHeight, err := queue.CheckForReorg(ordGetter)
 
 			if err != nil {
@@ -142,7 +141,6 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
 			}
-			queue.Unlock()
 
 			if arguments.EnableCommittee {
 				latestHistory := stateless.DiffState{
@@ -170,17 +168,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						timeout := time.Duration(GlobalConfig.Report.Timeout) * time.Millisecond
 						if GlobalConfig.Report.Method == "S3" {
 							log.Printf("Uploading the checkpoint by S3 at height: %s\n", c.Height)
-							cfg, err := config.LoadDefaultConfig(context.Background(),
-								config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(GlobalConfig.Report.S3.AccessKey, GlobalConfig.Report.S3.SecretKey, "")),
-								config.WithRegion(GlobalConfig.Report.S3.Region),
-							)
-							if err != nil {
-								log.Println("Error creating aws config:", err)
-								return
-							}
-							bucket := GlobalConfig.Report.S3.Bucket
-							objectKey := fmt.Sprintf("checkpoint-%s-%s-%s-%s.json", c.Name, c.MetaProtocol, c.Height, c.Hash)
-							err = checkpoint.UploadCheckpointByS3(&indexerID, &c, bucket, objectKey, &cfg, timeout)
+							s3cfg := GlobalConfig.Report.S3
+							err = checkpoint.UploadCheckpointByS3(&c,
+								s3cfg.AccessKey, s3cfg.SecretKey, s3cfg.Region, s3cfg.Bucket, timeout)
 							if err != nil {
 								log.Fatalf("Unable to upload the checkpoint by S3 due to: %v", err)
 							} else {
@@ -188,9 +178,9 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							}
 						} else if GlobalConfig.Report.Method == "DA" {
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
-							err = checkpoint.UploadCheckpointByDA(&indexerID, &c,
-								GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode,
-								GlobalConfig.Report.Da.NamespaceID, GlobalConfig.Report.Da.Network, timeout)
+							dacfg := GlobalConfig.Report.Da
+							err = checkpoint.UploadCheckpointByDA(&c,
+								dacfg.PrivateKey, dacfg.GasCode, dacfg.NamespaceID, dacfg.Network, timeout)
 							if err != nil {
 								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
@@ -203,12 +193,6 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					}
 				}
 			}
-
-			if arguments.EnableService {
-				log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
-				go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest)
-			}
-
 			log.Printf("Listening for new Bitcoin block, current height: %d\n", latestHeight)
 			time.Sleep(interval)
 		}
@@ -268,7 +252,7 @@ func Execution(arguments *RuntimeArguments) {
 	if arguments.EnableTest {
 		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
 	} else {
-		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+		ordGetter, err = getter.NewOPIOrdGetter(&gd)
 	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
