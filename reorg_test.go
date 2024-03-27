@@ -14,7 +14,7 @@ import (
 func TestReorg(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	loadReorg(ordGetterTest, queue, 1)
 
@@ -67,7 +67,7 @@ func TestRollingback(t *testing.T) {
 
 func loadRollingback(catchupHeight uint) {
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	lastHistory := queue.History[len(queue.History)-1]
 	preState, _, _ := stateless.Rollingback(queue.Header, &lastHistory)
 	preBytes := preState.Commit().Bytes()

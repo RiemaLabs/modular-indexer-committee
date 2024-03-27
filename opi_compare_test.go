@@ -18,12 +18,12 @@ func TestOPI(t *testing.T) {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest, arguments := loadMain()
-	queue, err := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
+	queue, err := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest.LatestBlockHeight = latestHeight
-	go serviceStage(ordGetterTest, &arguments, queue, 500*time.Millisecond)
+	go ServiceStage(ordGetterTest, &arguments, queue, 500*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
 			queue.Lock()
