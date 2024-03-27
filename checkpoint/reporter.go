@@ -3,7 +3,6 @@ package checkpoint
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -70,62 +69,6 @@ func UploadCheckpointByDA(checkpoint *Checkpoint, pk, gasCode, namespaceID, netw
 	}
 
 	return nil
-}
-
-func DownloadCheckpointByDA(namespaceID, network string, name, metaProtocol, height, hash string, runtimeOffset int, timeout time.Duration) (*Checkpoint, int, error) {
-	var c Checkpoint
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	if network == "Pre-Alpha Testnet" {
-		sdk.SetNet(constant.PreAlphaTestNet)
-	} else if network == "Testnet" {
-		sdk.SetNet(constant.TestNet)
-	} else {
-		return nil, 0, fmt.Errorf("unknown network: %s", network)
-	}
-
-	clientDA := sdk.NewNubit(sdk.WithCtx(ctx)).Client
-
-	resDataIDs, err := clientDA.GetDataInNamespace(ctx, &types.GetDataInNamespaceReq{
-		NID:    namespaceID,
-		Limit:  100,
-		Offset: runtimeOffset,
-	})
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
-	}
-
-	dataIDs := resDataIDs.DataIDs
-
-	if len(dataIDs) == 0 {
-		return nil, 0, fmt.Errorf("the count of data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
-	}
-
-	for _, dataID := range dataIDs {
-		runtimeOffset += 1
-		datas, err := clientDA.GetData(ctx, &types.GetDataReq{
-			DAID: dataID,
-		})
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to get data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
-		}
-
-		decodeString, err := base64.StdEncoding.DecodeString(datas.RawData)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to parse data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
-		}
-		err = json.Unmarshal(decodeString, &c)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to parse data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
-		}
-		if strings.EqualFold(c.Name, name) && strings.EqualFold(c.MetaProtocol, metaProtocol) && strings.EqualFold(c.Height, height) && strings.EqualFold(c.Hash, hash) {
-			return &c, runtimeOffset, nil
-		}
-	}
-	return nil, 0, fmt.Errorf("failed to parse data with offset %d, in namespace %s, error: %v", runtimeOffset, namespaceID, err)
 }
 
 func IsValidNamespaceID(nID string) bool {
@@ -222,40 +165,4 @@ func UploadCheckpointByS3(c *Checkpoint, accessKey, secretKey, region, bucket st
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-}
-
-func DownloadCheckpointByS3(region, bucket string, name, metaProtocol, height, hash string, timeout time.Duration) (*Checkpoint, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	bytes := make([]byte, 0)
-	writer := manager.NewWriteAtBuffer(bytes)
-
-	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithRegion(region),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create aws config, error: %v", err)
-	}
-	var awsS3Client = s3.NewFromConfig(cfg)
-	downloader := manager.NewDownloader(awsS3Client)
-
-	objectKey := fmt.Sprintf("checkpoint-%s-%s-%s-%s.json", name, metaProtocol, height, hash)
-
-	numBytes, err := downloader.Download(ctx, writer, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(objectKey),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to download file with bytes: %d, error: %v", numBytes, err)
-	}
-
-	var c Checkpoint
-
-	err = json.Unmarshal(bytes, &c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse file, error: %v", err)
-	}
-
-	return &c, nil
 }
