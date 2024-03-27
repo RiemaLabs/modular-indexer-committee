@@ -3,7 +3,7 @@
 <img src="assets/logo.svg" width="400px" alt="Nubit Logo" />
 
 ## Background
-The Modular Indexer, which includes Committee Indexer (This Repo) and [Light Indexer](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
+The Modular Indexer, which includes `Committee Indexer` (This Repo) and [Light Indexer](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
 
 Our innovative approach uses Verkle trees for trusted, decentralized data integrity. Even with a majority of hostile modular-indexer-committees, the Modular Indexer reliably connects Bitcoin with complex applications like BRC-20, propelling the ecosystem forward.
 
@@ -12,8 +12,8 @@ For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-
 Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
 
 
-## What is Modular Indexer (Committee)?
-Modular Indexer (Committee) serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the Modular Indexer (Committee) obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate its Modular Indexer (Committee) for a given meta-protocol.
+## What is `Committee Indexer`?
+`Committee Indexer` serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the `Committee Indexer` obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her `Committee Indexer` for a given meta-protocol.
 
 ## Getting Started
 Welcome to the setup.
