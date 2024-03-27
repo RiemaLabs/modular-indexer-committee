@@ -140,7 +140,7 @@ func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, r
 	return VerifyCurrentBalanceOfPkscript(preRootC, tick, pkscript, respWallet)
 }
 
-func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp Brc20VerifiableLatestStateProofResponse) (*verkle.VerkleNode, error) {
+func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
 	preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
 	preVerkleProof := &verkle.VerkleProof{}
 	preVerkleProof.UnmarshalJSON(preProofBytes)
@@ -182,5 +182,5 @@ func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp Brc2
 	}
 
 	stateless.Exec(preState, ordTransfers, blockHeight)
-	return &preState.Root, nil
+	return preState.Root, nil
 }
