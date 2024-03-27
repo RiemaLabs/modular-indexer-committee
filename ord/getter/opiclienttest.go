@@ -18,7 +18,7 @@ type OPIOrdGetterTest struct {
 
 func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOrdGetterTest, error) {
 	// Open the CSV file
-	file, err := os.Open("./data/785000-getter.csv")
+	file, err := os.Open("./data/782000-ord_transfers.csv")
 	if err != nil {
 		return nil, err
 	}
