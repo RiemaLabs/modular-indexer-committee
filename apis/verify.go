@@ -89,7 +89,7 @@ func ParseStateDiff(Keys [][]byte, PreValues, PostValues [][]byte) *verkle.State
 	return &statediff
 }
 
-func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript string, resp Brc20VerifiableCurrentBalanceOfPkscriptResponse) (bool, error) {
+func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript string, resp *Brc20VerifiableCurrentBalanceOfPkscriptResponse) (bool, error) {
 	availKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.AvailableBalancePkscript)
 	overallKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.OverallBalancePkscript)
 
@@ -127,7 +127,7 @@ func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript strin
 	return true, nil
 }
 
-func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, resp Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
+func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, resp *Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
 	pkscript := resp.Result.Pkscript
 	respWallet := Brc20VerifiableCurrentBalanceOfPkscriptResponse{
 		Error: resp.Error,
@@ -137,10 +137,10 @@ func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, r
 		},
 		Proof: resp.Proof,
 	}
-	return VerifyCurrentBalanceOfPkscript(preRootC, tick, pkscript, respWallet)
+	return VerifyCurrentBalanceOfPkscript(preRootC, tick, pkscript, &respWallet)
 }
 
-func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
+func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
 	preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
 	preVerkleProof := &verkle.VerkleProof{}
 	preVerkleProof.UnmarshalJSON(preProofBytes)
