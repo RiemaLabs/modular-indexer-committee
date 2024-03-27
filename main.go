@@ -118,15 +118,12 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 			}
 
 			if curHeight < latestHeight {
-				queue.Lock()
 				err := queue.Update(ordGetter, latestHeight)
-				queue.Unlock()
 				if err != nil {
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
 			}
 
-			queue.Lock()
 			reorgHeight, err := queue.CheckForReorg(ordGetter)
 
 			if err != nil {
@@ -139,7 +136,6 @@ func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
 			}
-			queue.Unlock()
 
 			if arguments.EnableCommittee {
 				latestHistory := stateless.DiffState{

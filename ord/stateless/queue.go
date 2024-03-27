@@ -46,6 +46,8 @@ func (queue *Queue) Println() {
 }
 
 func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
+	queue.Lock()
+	defer queue.Unlock()
 	curHeight := queue.Header.Height
 	for i := curHeight + 1; i <= latestHeight; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
@@ -99,6 +101,8 @@ func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]b
 }
 
 func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
+	queue.Lock()
+	defer queue.Unlock()
 	curHeight := queue.Header.Height
 	startHeight := queue.StartHeight()
 
@@ -177,6 +181,8 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 }
 
 func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
+	queue.Lock()
+	defer queue.Unlock()
 	// return the height that needs to start reorg
 	for i := 0; i <= len(queue.History)-1; i++ {
 		state := queue.History[i]
