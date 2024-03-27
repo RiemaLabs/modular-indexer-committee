@@ -9,19 +9,19 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestCatchUp(t *testing.T) {
+func TestCatchupStage(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	startTime := time.Now()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	if queue.Header.Height != catchupHeight {
 		log.Println("Queue header not updated correctly")
 	}
 	ordGetterTest.LatestBlockHeight = catchupHeight
 	elapsed := time.Since(startTime)
 	elapsedSeconds := float64(elapsed) / float64(time.Second)
-	averageTime := elapsedSeconds / float64(catchupHeight-stateless.BRC20StartHeight)
-	log.Printf("Successfully Updating From %d To %d", stateless.BRC20StartHeight, catchupHeight)
+	averageTime := elapsedSeconds / float64(ordGetterTest.LatestBlockHeight-stateless.BRC20StartHeight)
+	log.Printf("Successfully Updating From %d To %d", stateless.BRC20StartHeight, ordGetterTest.LatestBlockHeight)
 	log.Printf("Using Time %s, And %f Per Block on Average During CatchUp Stage", elapsed, averageTime)
 
 	// Commitment logging
