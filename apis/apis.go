@@ -12,9 +12,6 @@ import (
 )
 
 func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
 	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, ordPkscript)
 	availableBalanceStr := availableBalance.String()
@@ -29,9 +26,6 @@ func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byt
 }
 
 func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
@@ -86,9 +80,6 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 }
 
 func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	tick := c.DefaultQuery("tick", "")
 	pkScript := c.DefaultQuery("pkscript", "")
 	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
@@ -133,20 +124,16 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 }
 
 func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
-
 	curHeight := queue.LatestHeight()
 	c.Data(http.StatusOK, "text/plain", []byte(fmt.Sprintf("%d", curHeight)))
 }
 
 func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
-	queue.Lock()
-	defer queue.Unlock()
 
 	lastIndex := len(queue.History) - 1
 	postState := queue.Header.Root
 	// TODO: High. Use another root to store the preState after the flushing to disk has been done.
+	// TODO: Urgent. Rollingback here is unsafe because we don't lock the queue.
 	preState, keys, info := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
 
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)

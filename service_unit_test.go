@@ -31,9 +31,7 @@ func mockService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint)
 	curHeight := queue.LatestHeight()
 	latestHeight := curHeight + upHeight
 	if curHeight < latestHeight {
-		queue.Lock()
 		err := queue.Update(getter, latestHeight)
-		queue.Unlock()
 		if err != nil {
 			log.Fatalf("Failed To Update The Queue: %v", err)
 		}

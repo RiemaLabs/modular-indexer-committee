@@ -26,11 +26,9 @@ func TestOPI(t *testing.T) {
 	go serviceStage(ordGetterTest, &arguments, queue, 500*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
-			queue.Lock()
 			queue.Header.VerifyState(&records)
 			log.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
 			ordGetterTest.LatestBlockHeight++
-			queue.Unlock()
 		}
 		if ordGetterTest.LatestBlockHeight >= 781000 {
 			os.Exit(0)
