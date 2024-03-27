@@ -257,7 +257,7 @@ func Execution(arguments *RuntimeArguments) {
 	if arguments.EnableTest {
 		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
 	} else {
-		ordGetter, err = getter.NewOPIBitcoinGetter(&gd)
+		ordGetter, err = getter.NewOPIOrdGetter(&gd)
 	}
 	if err != nil {
 		log.Fatalf("Failed to initial getter from opi database: %v", err)
