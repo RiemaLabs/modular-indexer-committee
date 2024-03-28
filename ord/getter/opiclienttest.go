@@ -16,24 +16,39 @@ type OPIOrdGetterTest struct {
 }
 
 func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOrdGetterTest, error) {
-	// Open the CSV file
-	file, err := os.Open("./data/782000-ord_transfers.csv")
+	// Initialize OPIOrdGetterTest struct
+	getter := OPIOrdGetterTest{
+		LatestBlockHeight: latestBlockHeight,
+		BlockHash:         make(map[uint]string),
+	}
+
+	// read data/*-brc20_block_hashes.csv and populate the BlockHash map in the OPIOrdGetterTest struct
+	file, err := os.Open("./data/782000-brc20_block_hashes.csv")
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-
-	// Parse the CSV file
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
+	for _, record := range records[1:] { // Skip header row
+		blockHeight, _ := strconv.Atoi(record[0])
+		blockHash := record[1]
+		getter.BlockHash[uint(blockHeight)] = blockHash
+	}
 
-	// Initialize OPIOrdGetterTest struct
-	getter := OPIOrdGetterTest{
-		LatestBlockHeight: latestBlockHeight,
-		BlockHash:         make(map[uint]string),
+	// read data/*-ord_transfers.csv and populate the OrdTransfers slice in the OPIOrdGetterTest struct
+	file, err = os.Open("./data/782000-ord_transfers.csv")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	reader = csv.NewReader(file)
+	records, err = reader.ReadAll()
+	if err != nil {
+		return nil, err
 	}
 
 	// Parse CSV records into OrdTransfer structs
