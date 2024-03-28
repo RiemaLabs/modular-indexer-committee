@@ -26,6 +26,6 @@
         "url": "YourCommitteeIndexerServiceURL",
         "name": "YourCommitteeIndexerName",
         "metaProtocol": "brc-20",
-        "version": "v0.1.0-rc.1"
+        "version": "v0.1.0-rc.2"
     }
 }
