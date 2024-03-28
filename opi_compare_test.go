@@ -23,16 +23,20 @@ func Test_OPI(t *testing.T) {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest.LatestBlockHeight = latestHeight
-	go ServiceStage(ordGetterTest, &arguments, queue, 500*time.Millisecond)
+	go ServiceStage(ordGetterTest, &arguments, queue, 50*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
 			queue.Header.VerifyState(&records)
-			log.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
+			// output this line every 100 blocks
+			if ordGetterTest.LatestBlockHeight%100 == 0 {
+				log.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
+			}
 			ordGetterTest.LatestBlockHeight++
 		}
-		if ordGetterTest.LatestBlockHeight >= 781000 {
+		if ordGetterTest.LatestBlockHeight > 780100 {
 			os.Exit(0)
 		}
-		time.Sleep(500 * time.Millisecond)
+		// time.Sleep(500 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
