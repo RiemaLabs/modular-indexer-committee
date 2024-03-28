@@ -3,7 +3,7 @@ module github.com/RiemaLabs/modular-indexer-committee
 go 1.22.0
 
 require (
-	github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.1
+	github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.2
 	github.com/aws/aws-sdk-go-v2 v1.26.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.8
