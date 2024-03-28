@@ -85,7 +85,8 @@ func (opi *OPIOrdGetterTest) GetBlockHash(blockHeight uint) (string, error) {
 func (opi *OPIOrdGetterTest) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
 	var filteredOrdTransfers []OrdTransfer
 	for _, transfer := range opi.OrdTransfers {
-		if transfer.BlockHeight <= blockHeight {
+		// Filter by block height by iterating over OrdTransfers slice
+		if transfer.BlockHeight == blockHeight {
 			filteredOrdTransfers = append(filteredOrdTransfers, transfer)
 		}
 	}
