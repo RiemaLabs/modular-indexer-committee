@@ -9,7 +9,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestCatchupStage(t *testing.T) {
+func Test_CatchupStage(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	startTime := time.Now()
