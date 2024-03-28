@@ -11,10 +11,10 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestReorg(t *testing.T) {
+func Test_Reorg(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	loadReorg(ordGetterTest, queue, 1)
 
@@ -60,14 +60,14 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 	log.Printf("Timecost: %s\n", elapsed)
 }
 
-func TestRollingback(t *testing.T) {
+func Test_Rollingback(t *testing.T) {
 	loadRollingback(uint(779900))
 	loadRollingback(uint(780000))
 }
 
 func loadRollingback(catchupHeight uint) {
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	lastHistory := queue.History[len(queue.History)-1]
 	preState, _, _ := stateless.Rollingback(queue.Header, &lastHistory)
 	preBytes := preState.Commit().Bytes()
