@@ -10,7 +10,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestServiceStage(t *testing.T) {
+func Test_ServiceStage(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)

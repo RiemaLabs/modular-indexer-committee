@@ -11,7 +11,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestOPI(t *testing.T) {
+func Test_OPI(t *testing.T) {
 	var latestHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
 	records, err := stateless.LoadOPIRecords("./data/785000-ordi.csv")
 	if err != nil {
