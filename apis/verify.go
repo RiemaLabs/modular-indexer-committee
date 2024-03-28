@@ -107,7 +107,7 @@ func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript strin
 		return false, err
 	}
 
-	stateDiff := ParseStateDiff([][]byte{availKey, overallKey}, [][]byte{availValue, overallValue}, [][]byte{})
+	stateDiff := ParseStateDiff([][]byte{availKey, overallKey}, [][]byte{availValue, overallValue}, [][]byte{{}, {}})
 
 	proof, err := verkle.DeserializeProof(vProof, *stateDiff)
 	if err != nil {

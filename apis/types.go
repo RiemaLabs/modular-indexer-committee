@@ -20,7 +20,7 @@ type Brc20VerifiableLatestStateProofResult struct {
 	KeyExists    []bool            `json:"keyExists"`
 	PreValues    []string          `json:"preValues"`
 	PostValues   []string          `json:"postValues"`
-	OrdTransfers []OrdTransferJSON `json:"ordTransfer"`
+	OrdTransfers []OrdTransferJSON `json:"ordTransfers"`
 }
 
 // Brc20VerifiableCurrentBalanceOfWallet
@@ -55,9 +55,9 @@ type Brc20VerifiableCurrentBalanceOfPkscriptResult struct {
 }
 
 type Brc20VerifiableCurrentBalanceOfPkscriptResponse struct {
-	Error  *string `json:"error"`
-	Result *Brc20VerifiableCurrentBalanceOfPkscriptResult
-	Proof  *string `json:"proof"`
+	Error  *string                                        `json:"error"`
+	Result *Brc20VerifiableCurrentBalanceOfPkscriptResult `json:"result"`
+	Proof  *string                                        `json:"proof"`
 }
 
 // Brc20VerifiableLatestStateProof
@@ -66,7 +66,7 @@ type Brc20VerifiableLatestStateProofRequest struct {
 }
 
 type Brc20VerifiableLatestStateProofResponse struct {
-	Error  *string `json:"error"`
-	Result *Brc20VerifiableLatestStateProofResult
-	Proof  *string `json:"proof"`
+	Error  *string                                `json:"error"`
+	Result *Brc20VerifiableLatestStateProofResult `json:"result"`
+	Proof  *string                                `json:"proof"`
 }
