@@ -3,7 +3,7 @@
 <img src="assets/logo.svg" width="400px" alt="Nubit Logo" />
 
 ## Background
-The Modular Indexer, which includes `Committee Indexer` (This Repo) and [Light Indexer](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
+The Modular Indexer, which includes [Committee Indexer](##What-is-Committee-Indexer?) and [Light Indexer](https://github.com/RiemaLabs/modular-indexer-light), introduces a fully user-verified execution layer for Bitcoin's meta-protocols. By leveraging the immutable and decentralized characteristics of Bitcoin, it provides a Turing-complete execution layer, going beyond the limitations of Bitcoin's script language.
 
 Our innovative approach uses Verkle trees for trusted, decentralized data integrity. Even with a majority of hostile modular-indexer-committees, the Modular Indexer reliably connects Bitcoin with complex applications like BRC-20, propelling the ecosystem forward.
 
@@ -12,11 +12,10 @@ For a detailed understanding, refer to our paper: ["Modular Indexer: Fully User-
 Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.discourse.group/t/modular-indexer-fully-user-verified-execution-layer-for-meta-protocols-on-bitcoin/598).
 
 
-## What is `Committee Indexer`?
-`Committee Indexer` serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the `Committee Indexer` obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her `Committee Indexer` for a given meta-protocol.
+## What is Committee Indexer?
+Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
 
 ## Getting Started
-Welcome to the setup.
 
 ### 1. Requirements
 Before we stepped into the installation, ensure your machine is equipped with the minimum requirements: (We will optimize the Memory Usage soon)
@@ -31,7 +30,7 @@ Before we stepped into the installation, ensure your machine is equipped with th
 We highly appreciate you running the committee indexer to contribute to the decentralization.
 
 ### 2. Install Dependence
-`Committee Indexer` is built with Golang. You can run your own `Committee Indexer` by following the procedure below.
+Committee indexer is built with Golang. You can run your own one by following the procedure below.
 `Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
 
 Golang is easy to install all dependence. Fetch all required package by simply running.
@@ -57,28 +56,30 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 
 ### 5. Run with Command Flag
 ```Bash
-# Build the modular-indexer-committee
 go build
 
-# Run the modular-indexer-committee
+# Run the committee indexer with providing service
 ./modular-indexer-committee --committee --service
 
-# Run the modular-indexer-committee in test modee
+# Run the committee indexer in test modee
 ./modular-indexer-committee --committee --service -t --blockheight 780010
 ```
 Below are the explanation for each of the command flags.
-- `--service` `(-s)`: Use this flag to activate web service from moduler indexer. When enabled, the moduler indexer will provide web service for incoming query.
+- `--service` `(-s)`: Use this flag to activate web service from committee indexer. When enabled, the committee indexer will provide web service for incoming query.
 
-- `--committee`: This flag activates the modular-indexer-committee functionality. When enabled, the moduler indexer will provide checkpoints to the DA layer.
+- `--committee`: This flag activates the committee functionality. When enabled, the committee indexer will publish checkpoints to the DA layer/S3.
 
 - `--cache`: By default, the state root cache is enabled, facilitating efficient verkle tree storage. This flag ensures that the application starts with the cache service activated, and will therefore fasten the initialization speed next time.
 
-- `--test` `(-t)`: Enable this flag to activate test mode, allowing the indexer to operate up to a specified block height limit. This mode is useful for development and testing by simulating the indexer's behavior without catching up to the real latest block.
+- `--test` `(-t)`: Enable this flag to activate test mode, allowing the committee indexer to operate up to a specified block height limit. This mode is useful for development and testing by simulating the committee indexer's behavior without catching up to the real latest block.
 
-- `--blockheight`: When test mode is enabled with -t, this flag sets a fixed maximum block height limit for the indexer's operations. It allows for focused testing and performance tuning by limiting the range of blocks the indexer processes.
+- `--blockheight`: When test mode is enabled with -t, this flag sets a fixed maximum block height limit for the committee indexer's operations. It allows for focused testing and performance tuning by limiting the range of blocks the committee indexer processes.
+
+### 6. Provide APIs
+https://docs.nubit.org/modular-indexer/nubit-committee-indexer-apis
 
 ## Preparing Config.json
-Proper configuration of config.json is key for the smooth operation of the Modular Indexer.
+Proper configuration of config.json is key for the smooth operation of the Committee Indexer.
 
 ### Setting Up `database` Configuration
 The database section requires connection details to the OPI database. If you're running an OPI full node, ensure to provide the correct details as follows:
@@ -89,7 +90,7 @@ The database section requires connection details to the OPI database. If you're 
 - `port`: The port number on which your database service is listening.
 
 ### Setting Up `report` Configuration
-Define where and how to store the checkpoints generated by your modular-indexer-committee. The report section currently supports AWS S3 and the Data Availability (DA) layer.
+Define where and how to store the checkpoints generated by your committee indexer. The report section currently supports AWS S3 and the Data Availability (DA) layer.
 
 - `method`: Choose between `DA` and `S3` for publishing method.
 - `timeout`: Timeout setting in milliseconds for publishing checkpoints.
@@ -107,27 +108,24 @@ Define where and how to store the checkpoints generated by your modular-indexer-
 - `secretKey`: Your AWS secret access key.
 
 ### Setting Up `service` Configuration
-The service section specifies the details of your API service, enabling access to the Modular Indexer functionalities.
+The service section specifies the details of your API service, enabling access to the Committee Indexer functionalities.
 
 - `url`: The URL where your API service is hosted and accessible.
-- `name`: A unique name for your Indexer instance.
-- `metaProtocol`: Specify the meta-protocol served by your Indexer (default 'brc-20').
-- `version`: Specify the version of your modular-indexer-committee (current: 'v0.1.0-rc.0').
-
-<!-- ## Service API -->
+- `name`: A unique name for your committee indexer instance.
+- `metaProtocol`: Specify the meta-protocol served by your committee indexer (default 'brc-20').
+- `version`: Specify the version of your committee indexer (current: 'v0.1.0-rc.1').
 
 ## Useful Links
-:spider_web: <https://www.nubit.org>  
-:octocat: <https://github.com/Wechaty/wechaty>  
-:beetle: <https://github.com/RiemaLabs/modular-indexer-committee/issues>  
-:book: <https://docs.nubit.org/developer-guides/introduction>  
+:spider_web: <https://www.nubit.org>
+:beetle: <https://github.com/RiemaLabs/modular-indexer-committee/issues>
+:book: <https://docs.nubit.org/developer-guides/introduction>
 
 
 ## FAQ
-- **Is there a consensus mechanism among modular-indexer-committees?**
-    - No, within the modular-indexer-committee, only one honest indexer needs to be available in the network to satisfy the 1-of-N trust assumption, allowing the light indexer to detect checkpoint inconsistencies and thus proceed with the verification process.
-- **How is the set of modular-indexer-committees determined?**
-    - modular-indexer-committees must publish checkpoints to the DA Layer for access by other participants. Users can maintain their list of modular-indexer-committees. Since the user's light indexer can verify the correctness of checkpoints, attackers can be removed from the modular-indexer-committee set upon detection of malicious behavior; the judgment of malicious behavior is not based on a 51% vote but on a challenge-proof mechanism. Even if the vast majority of modular-indexer-committees are malicious, if there is one honest modular-indexer-committee, the correct checkpoint can be calculated/verified, allowing the service to continue.
+- **Is there a consensus mechanism among committee indexers?**
+    - No, within the committee indexer, only one honest committee indexer needs to be available in the network to satisfy the 1-of-N trust assumption, allowing the light indexer to detect checkpoint inconsistencies and thus proceed with the verification process.
+- **How is the set of committee indexers determined?**
+    - committee indexers must publish checkpoints to the DA Layer for access by other participants. Users can maintain their list of committee indexers. Since the user's light indexer can verify the correctness of checkpoints, attackers can be removed from the committee indexer set upon detection of malicious behavior; the judgment of malicious behavior is not based on a 51% vote but on a challenge-proof mechanism. Even if the vast majority of committee indexers are malicious, if there is one honest committee indexer, the correct checkpoint can be calculated/verified, allowing the service to continue.
 - **Why do users need to verify data through checkpoints instead of looking at the simple majority of the indexer network?**
     - This would lead to Sybil attacks: joining the indexer network is permissionless, without a staking model or proof of work, so the economic cost of setting up an indexer attacker cluster is very low, requiring only the cost of server resources. This allows attackers to achieve a simple majority at a low economic cost; even by introducing historical reputation proof, without a slashing mechanism, attackers can still achieve a 51% attack at a very low cost.
 - **Why are there no attacks like double-spending in the Modular Indexer architecture?**
