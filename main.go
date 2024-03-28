@@ -21,7 +21,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
+func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
 	// Fetch the latest block height.
 	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
@@ -96,7 +96,7 @@ func catchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	return queue, nil
 }
 
-func serviceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
+func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
 	// Create a channel to listen for SIGINT (Ctrl+C) signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -263,13 +263,13 @@ func Execution(arguments *RuntimeArguments) {
 		log.Fatalf("Failed to get the latest block height: %v", err)
 	}
 
-	queue, err := catchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight)
+	queue, err := CatchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
-	serviceStage(ordGetter, arguments, queue, 60*time.Second)
+	ServiceStage(ordGetter, arguments, queue, 60*time.Second)
 }
 
 func main() {

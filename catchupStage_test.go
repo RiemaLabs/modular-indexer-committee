@@ -9,11 +9,11 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func TestCatchUp(t *testing.T) {
+func Test_CatchupStage(t *testing.T) {
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain()
 	startTime := time.Now()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	if queue.Header.Height != catchupHeight {
 		log.Println("Queue header not updated correctly")
 	}
