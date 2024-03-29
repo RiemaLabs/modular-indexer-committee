@@ -3,6 +3,7 @@ package apis
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"unsafe"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
@@ -48,7 +49,7 @@ func ParseCommitment(commitment string) (*verkle.Point, error) {
 	return &p, nil
 }
 
-func ParseStateDiff(Keys [][]byte, PreValues, PostValues [][]byte) *verkle.StateDiff {
+func ParseStateDiff(Keys, PreValues, PostValues [][]byte) *verkle.StateDiff {
 	var stemdiff *verkle.StemStateDiff
 	var statediff verkle.StateDiff
 	for i, key := range Keys {
@@ -89,9 +90,14 @@ func ParseStateDiff(Keys [][]byte, PreValues, PostValues [][]byte) *verkle.State
 	return &statediff
 }
 
-func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript string, resp *Brc20VerifiableCurrentBalanceOfPkscriptResponse) (bool, error) {
+func VerifyCurrentBalanceOfPkscript(rootC *verkle.Point, tick, pkscript string, resp *Brc20VerifiableCurrentBalanceOfPkscriptResponse) (bool, error) {
+	if resp.Error != nil {
+		return false, fmt.Errorf("failed to obtain the proof from committee indexer, error: %s", *resp.Error)
+	}
 	availKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.AvailableBalancePkscript)
 	overallKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.OverallBalancePkscript)
+
+	keys := [][]byte{availKey, overallKey}
 
 	availValue, err := ParseBalance(resp.Result.AvailableBalance)
 	if err != nil {
@@ -102,24 +108,26 @@ func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript strin
 		return false, err
 	}
 
+	values := [][]byte{availValue, overallValue}
+
 	vProof, err := ParseProof(*resp.Proof)
 	if err != nil {
 		return false, err
 	}
 
-	stateDiff := ParseStateDiff([][]byte{availKey, overallKey}, [][]byte{availValue, overallValue}, [][]byte{{}, {}})
+	stateDiff := ParseStateDiff(keys, values, [][]byte{{}, {}})
 
-	proof, err := verkle.DeserializeProof(vProof, *stateDiff)
+	preProof, err := verkle.DeserializeProof(vProof, *stateDiff)
 	if err != nil {
 		return false, err
 	}
 
-	preRoot, err := verkle.PreStateTreeFromProof(proof, preRootC)
+	preRoot, err := verkle.PreStateTreeFromProof(preProof, rootC)
 	if err != nil {
 		return false, err
 	}
 
-	err = verkle.VerifyVerkleProofWithPreState(proof, preRoot)
+	err = verkle.VerifyVerkleProofWithPreState(preProof, preRoot)
 	if err != nil {
 		return false, err
 	}
@@ -140,27 +148,50 @@ func VerifyCurrentBalanceOfWallet(rootC *verkle.Point, tick, wallet string, resp
 	return VerifyCurrentBalanceOfPkscript(rootC, tick, pkscript, &respWallet)
 }
 
-func GenerateCorrectPostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
-	preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
-	preVerkleProof := &verkle.VerkleProof{}
-	preVerkleProof.UnmarshalJSON(preProofBytes)
-
-	preProof, err := verkle.DeserializeProof(preVerkleProof, nil)
-	if nil != err {
-		return nil, err
+func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
+	if resp.Error != nil {
+		return nil, fmt.Errorf("failed to generate the post root at block height %d from committee indexer, error: %s", blockHeight, *resp.Error)
 	}
 
-	parentTree, err := verkle.PreStateTreeFromProof(preProof, rootC)
-	if nil != err {
-		return nil, err
+	var preRoot verkle.VerkleNode
+	if resp.Proof != nil {
+		preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
+		preVerkleProof := &verkle.VerkleProof{}
+		preVerkleProof.UnmarshalJSON(preProofBytes)
+
+		stateDiff := make([]verkle.StemStateDiff, 0)
+		for _, s := range resp.Result.StateDiff {
+			bytes, err := base64.StdEncoding.DecodeString(s)
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate the post root at block height %d from committee indexer, error: %s", blockHeight, *resp.Error)
+			}
+			var sd verkle.StemStateDiff
+			err = sd.UnmarshalJSON(bytes)
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate the post root at block height %d from committee indexer, error: %s", blockHeight, *resp.Error)
+			}
+			stateDiff = append(stateDiff, sd)
+		}
+
+		preProof, err := verkle.DeserializeProof(preVerkleProof, stateDiff)
+		if err != nil {
+			return nil, err
+		}
+		preRoot, err = verkle.PreStateTreeFromProof(preProof, rootC)
+		if err != nil {
+			return nil, err
+		}
+		if err := verkle.VerifyVerkleProofWithPreState(preProof, preRoot); err != nil {
+			return nil, err
+		}
+	} else {
+		preRoot = verkle.NewStatelessInternal(0, rootC)
 	}
 
-	if err := verkle.VerifyVerkleProofWithPreState(preProof, parentTree); err != nil {
-		return nil, err
-	}
+	preRoot.Commit()
 
-	preState := &stateless.LightHeader{
-		Root:   parentTree,
+	preHeader := &stateless.LightHeader{
+		Root:   preRoot,
 		Height: blockHeight - 1,
 		Hash:   "",
 	}
@@ -181,6 +212,6 @@ func GenerateCorrectPostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20V
 		})
 	}
 
-	stateless.Exec(preState, ordTransfers, blockHeight)
-	return preState.Root, nil
+	stateless.Exec(preHeader, ordTransfers, blockHeight)
+	return preHeader.Root, nil
 }

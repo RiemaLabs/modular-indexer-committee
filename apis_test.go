@@ -3,7 +3,6 @@ package main
 import (
 	"io"
 	"log"
-	"os"
 	"testing"
 
 	"encoding/json"
@@ -16,14 +15,17 @@ import (
 )
 
 func TestAPI_GetLatestStateProof(t *testing.T) {
-	loadGetLatestStateProof(uint(779000), t)
-	// loadGetLatestStateProof(uint(780000), t)
+	loadGetLatestStateProof(uint(779980), t)
+}
+
+func TestAPI_GetLatestStateProof_ZeroTransfers(t *testing.T) {
+	// There is no transaction at block 779940.
+	loadGetLatestStateProof(uint(779940), t)
 }
 
 func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
-	// go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Set gin as test mode
 	gin.SetMode(gin.TestMode)
@@ -51,6 +53,25 @@ func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal("[TestVerifyCurrentBalanceOfPkscript]", err)
+	}
+
+	// Get result
+	var res apis.Brc20VerifiableLatestStateProofResponse
+	if err := json.Unmarshal(body, &res); err != nil {
+		log.Fatal("[TestVerifyCurrentBalanceOfPkscript]", err)
+	}
+
+	lastIndex := len(queue.History) - 1
+	preState, _ := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
+
+	_, err = apis.GeneratePostRoot(preState.Commit(), queue.LatestHeight(), &res)
+	if err != nil {
+		log.Fatal("With error: ", err)
+	}
 }
 
 func TestAPI_VerifyCurrentBalanceOfPkscript(t *testing.T) {
@@ -59,7 +80,7 @@ func TestAPI_VerifyCurrentBalanceOfPkscript(t *testing.T) {
 
 func loadVerifyCurrentBalanceOfPkscript(tick string, pkScript string, catchupHeight uint, t *testing.T) {
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Get current balance from api
 	// Set gin as test mode
@@ -117,7 +138,7 @@ func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
 
 func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight uint, t *testing.T) {
 	ordGetterTest, arguments := loadMain()
-	queue, _ := catchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Get current balance from api
 	// Set gin as test mode
@@ -162,12 +183,9 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 
 	log.Println("[res]: ", res.Result.OverallBalance)
 
-	lastHistory := queue.History[len(queue.History)-1]
-	preState, _, _ := stateless.Rollingback(queue.Header, &lastHistory)
-	_, err = apis.VerifyCurrentBalanceOfWallet(preState.Commit(), tick, wallet, &res)
+	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.Commit(), tick, wallet, &res)
 	if err != nil {
 		// log.Fatalf("[TestVerifyCurrentBalanceOfWallet] verify not right. At tick %s, wallet %s, height %d", tick, wallet, catchupHeight)
 		log.Fatal("With error: ", err)
 	}
-	os.Exit(0)
 }

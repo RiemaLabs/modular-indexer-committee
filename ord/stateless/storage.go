@@ -19,12 +19,12 @@ const fileSuffix = ".dat"
 func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 	curHeight := initHeight
 	myHeader := Header{
-		Root:   verkle.New(),
-		Height: curHeight,
-		Hash:   "",
-		KV:     make(KeyValueMap),
-		Diff:   DiffList{},
-		TempKV: KeyValueMap{},
+		Root:           verkle.New(),
+		Height:         curHeight,
+		Hash:           "",
+		KV:             make(KeyValueMap),
+		Access:         AccessList{},
+		IntermediateKV: KeyValueMap{},
 	}
 	if enableStateRootCache {
 		files, err := os.ReadDir(cachePath)
@@ -121,7 +121,7 @@ func StoreKV(header *Header) error {
 	return nil
 }
 
-func StoreDiff(diff *DiffList, height uint) error {
+func StoreDiff(diff *AccessList, height uint) error {
 	fileName := filepath.Join(cachePath, fmt.Sprintf("%d.csv", height))
 	file, err := os.Create(fileName)
 	if err != nil {
