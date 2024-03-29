@@ -35,8 +35,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 
 	keys := [][]byte{availKey, overKey}
 
-	// Generate proof
-	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	proof, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
 		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{
@@ -44,9 +43,10 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 
-	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	vProof, _, err := verkle.SerializeProof(proof)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
 		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{
@@ -54,6 +54,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 	vProofBytes, err := vProof.MarshalJSON()
 	if err != nil {
@@ -63,6 +64,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
@@ -94,6 +96,7 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 	vProof, _, err := verkle.SerializeProof(proofOfKeys)
 	if err != nil {
@@ -103,6 +106,7 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 
 	vProofBytes, err := vProof.MarshalJSON()
@@ -113,6 +117,7 @@ func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
@@ -134,7 +139,20 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 	postState := queue.Header.Root
 	// TODO: High. Use another root to store the preState after the flushing to disk has been done.
 	// TODO: Urgent. Rollingback here is unsafe because we don't lock the queue.
-	preState, keys, info := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
+	preState, keys := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
+
+	if len(keys) == 0 {
+		res := Brc20VerifiableLatestStateProofResult{
+			StateDiff:    make([]string, 0),
+			OrdTransfers: make([]OrdTransferJSON, 0),
+		}
+		c.JSON(http.StatusOK, Brc20VerifiableLatestStateProofResponse{
+			Error:  nil,
+			Result: &res,
+			Proof:  nil,
+		})
+		return
+	}
 
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
 	if err != nil {
@@ -144,9 +162,10 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 
-	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	vProof, stateDiff, err := verkle.SerializeProof(proofOfKeys)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
 		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
@@ -154,6 +173,7 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 
 	vProofBytes, err := vProof.MarshalJSON()
@@ -164,20 +184,24 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 			Result: nil,
 			Proof:  nil,
 		})
+		return
 	}
 
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
-	keysStr := make([]string, len(keys))
-	keyExists := make([]bool, len(info))
-	preValuesStr := make([]string, len(info))
-	postValuesStr := make([]string, len(info))
-
-	for i, elem := range info {
-		keysStr[i] = base64.StdEncoding.EncodeToString(elem.Key[:])
-		keyExists[i] = elem.OldValueExists
-		preValuesStr[i] = base64.StdEncoding.EncodeToString(elem.OldValue[:])
-		postValuesStr[i] = base64.StdEncoding.EncodeToString(elem.NewValue[:])
+	stateDiffExport := make([]string, 0)
+	for _, sd := range stateDiff {
+		bytes, err := sd.MarshalJSON()
+		if err != nil {
+			errStr := fmt.Sprintf("Failed to encode stateDiff due to %v", err)
+			c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
+				Error:  &errStr,
+				Result: nil,
+				Proof:  nil,
+			})
+		}
+		str := base64.StdEncoding.EncodeToString(bytes)
+		stateDiffExport = append(stateDiffExport, str)
 	}
 
 	ordTransfers := queue.Header.OrdTrans
@@ -198,10 +222,7 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 	}
 
 	res := Brc20VerifiableLatestStateProofResult{
-		Keys:         keysStr,
-		KeyExists:    keyExists,
-		PreValues:    preValuesStr,
-		PostValues:   postValuesStr,
+		StateDiff:    stateDiffExport,
 		OrdTransfers: ordTransfersJSON,
 	}
 

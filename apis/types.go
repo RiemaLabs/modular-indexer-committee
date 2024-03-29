@@ -16,10 +16,7 @@ type OrdTransferJSON struct {
 }
 
 type Brc20VerifiableLatestStateProofResult struct {
-	Keys         []string          `json:"keys"`
-	KeyExists    []bool            `json:"keyExists"`
-	PreValues    []string          `json:"preValues"`
-	PostValues   []string          `json:"postValues"`
+	StateDiff    []string          `json:"stateDiff"`
 	OrdTransfers []OrdTransferJSON `json:"ordTransfers"`
 }
 

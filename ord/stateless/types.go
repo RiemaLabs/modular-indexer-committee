@@ -18,7 +18,7 @@ type TripleElement struct {
 	OldValueExists bool
 }
 
-type DiffList struct {
+type AccessList struct {
 	Elements []TripleElement
 }
 
@@ -29,7 +29,7 @@ type DiffState struct {
 	// ipa.CompressedSize
 	VerkleCommit [32]byte
 
-	Diff DiffList
+	Access AccessList
 }
 
 type KeyValueMap = map[[verkle.KeySize]byte][ValueSize]byte
@@ -45,11 +45,13 @@ type Header struct {
 	Height uint
 	// Block Hash.
 	Hash string
-	Diff DiffList
-
-	// Temporary Key Values for fast access. It shall be consistent with the Diff.
-	TempKV   KeyValueMap
+	// Ord Transfers at Height and Hash.
 	OrdTrans []getter.OrdTransfer
+
+	// All values being accessed at this height.
+	Access AccessList
+	// The key-value map during the execution of the block.
+	IntermediateKV KeyValueMap
 
 	sync.RWMutex
 }

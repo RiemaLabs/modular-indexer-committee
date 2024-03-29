@@ -12,11 +12,17 @@ func (h *LightHeader) insert(key []byte, value []byte, nodeResolverFn verkle.Nod
 }
 
 func (h *LightHeader) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
-	body, err := h.Root.Get(key, nodeResolverFn)
+	oldValue, err := h.Root.Get(key, nodeResolverFn)
 	if err != nil {
-		panic(err)
+		if err.Error() == "trying to access a node that is missing from the stateless view" {
+			// stateless view doesn't include values that first read then write.
+			res := defaultValue()
+			return res[:]
+		} else {
+			panic(err)
+		}
 	}
-	return body
+	return oldValue
 }
 
 func (h *LightHeader) InsertUInt256(key []byte, value *uint256.Int) {

@@ -147,7 +147,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					Height:       queue.Header.Height,
 					Hash:         queue.Header.Hash,
 					VerkleCommit: queue.Header.Root.Commit().Bytes(),
-					Diff:         stateless.DiffList{},
+					Access:       stateless.AccessList{},
 				}
 				hs := make([]*stateless.DiffState, 0)
 				for _, i := range queue.History {

@@ -14,12 +14,12 @@ import (
 
 func NewHeader(getter *getter.OrdGetter, initState *DiffState) *Header {
 	myHeader := Header{
-		Root:   verkle.New(),
-		Height: initState.Height,
-		Hash:   initState.Hash,
-		KV:     make(KeyValueMap),
-		Diff:   DiffList{},
-		TempKV: KeyValueMap{},
+		Root:           verkle.New(),
+		Height:         initState.Height,
+		Hash:           initState.Hash,
+		KV:             make(KeyValueMap),
+		Access:         AccessList{},
+		IntermediateKV: KeyValueMap{},
 	}
 	return &myHeader
 }
@@ -37,51 +37,83 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	if err != nil {
 		panic(err)
 	}
-	oldExists := len(oldValue) > 0
+	oldValueExists := len(oldValue) > 0
 
 	var keyArray [verkle.KeySize]byte
 	copy(keyArray[:], key)
 
 	var oldValueArray [ValueSize]byte
-	if oldExists {
+	if oldValueExists {
 		copy(oldValueArray[:], oldValue)
 	}
 
 	var newValueArray [ValueSize]byte
 	copy(newValueArray[:], value)
 
-	diffExists := false
-	for i, ele := range h.Diff.Elements {
+	// TODO: Medium. Optimize the access to Key-Value to be faster.
+	exists := false
+	for i, ele := range h.Access.Elements {
 		if bytes.Equal(keyArray[:], ele.Key[:]) {
-			h.Diff.Elements[i].NewValue = newValueArray
-			diffExists = true
+			h.Access.Elements[i].NewValue = newValueArray
+			exists = true
 			break
 		}
 	}
-	if !diffExists {
-		h.Diff.Elements = append(h.Diff.Elements, TripleElement{
+	if !exists {
+		h.Access.Elements = append(h.Access.Elements, TripleElement{
 			Key:            keyArray,
 			OldValue:       oldValueArray,
 			NewValue:       newValueArray,
-			OldValueExists: oldExists,
+			OldValueExists: oldValueExists,
 		})
 	}
 
-	h.TempKV[[verkle.KeySize]byte(key)] = [ValueSize]byte(value)
+	h.IntermediateKV[[verkle.KeySize]byte(key)] = [ValueSize]byte(value)
 }
 
 func (h *Header) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
 	if len(key) != verkle.KeySize {
 		panic(fmt.Errorf("the length the key to insert bytes must be %d, current is: %d", verkle.KeySize, len(key)))
 	}
-	if res, found := h.TempKV[[verkle.KeySize]byte(key)]; found {
-		return res[:]
-	}
-	bytes, err := h.Root.Get(key, nodeResolverFn)
+
+	key32 := [verkle.KeySize]byte(key)
+
+	oldValue, err := h.Root.Get(key, nodeResolverFn)
 	if err != nil {
 		panic(err)
 	}
-	return bytes
+	oldValueExists := len(oldValue) > 0
+
+	var res [ValueSize]byte
+	var found bool
+
+	if res, found = h.IntermediateKV[key32]; found {
+		// The value has been updated during the execution.
+	} else {
+		if oldValueExists {
+			res = [ValueSize]byte(oldValue)
+		} else {
+			res = defaultValue()
+		}
+	}
+
+	// Record access
+	exists := false
+	for _, ele := range h.Access.Elements {
+		if bytes.Equal(key, ele.Key[:]) {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		h.Access.Elements = append(h.Access.Elements, TripleElement{
+			Key:            key32,
+			OldValue:       res,
+			NewValue:       res,
+			OldValueExists: oldValueExists,
+		})
+	}
+	return res[:]
 }
 
 func (h *Header) InsertUInt256(key []byte, value *uint256.Int) {
@@ -93,9 +125,6 @@ func (h *Header) InsertUInt256(key []byte, value *uint256.Int) {
 func (h *Header) GetUInt256(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
 	value := h.get(key, NodeResolveFn)
-	if len(value) == 0 {
-		return res
-	}
 	return res.SetBytes(value)
 }
 
@@ -142,13 +171,13 @@ func (h *Header) GetBytes(key []byte) []byte {
 }
 
 func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
-	for key, value := range h.TempKV {
+	for key, value := range h.IntermediateKV {
 		h.KV[key] = value
 		h.Root.Insert(key[:], value[:], nodeResolverFn)
 	}
 
-	h.Diff = DiffList{}
-	h.TempKV = KeyValueMap{}
+	h.Access = AccessList{}
+	h.IntermediateKV = KeyValueMap{}
 	// Update height and hash
 	h.Height++
 	if queryHash {
@@ -201,15 +230,16 @@ func Deserialize(buffer *bytes.Buffer, height uint, nodeResolverFn verkle.NodeRe
 			return nil, nil
 		}
 	}
+	// The call of Commit is necessary to refresh the root commit.
 	root.Commit()
 
 	myHeader := Header{
-		Root:   root,
-		KV:     kv,
-		Height: height,
-		Hash:   "",
-		Diff:   DiffList{},
-		TempKV: KeyValueMap{},
+		Root:           root,
+		KV:             kv,
+		Height:         height,
+		Hash:           "",
+		Access:         AccessList{},
+		IntermediateKV: KeyValueMap{},
 	}
 	return &myHeader, nil
 }
