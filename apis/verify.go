@@ -127,7 +127,7 @@ func VerifyCurrentBalanceOfPkscript(preRootC *verkle.Point, tick, pkscript strin
 	return true, nil
 }
 
-func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, resp *Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
+func VerifyCurrentBalanceOfWallet(rootC *verkle.Point, tick, wallet string, resp *Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
 	pkscript := resp.Result.Pkscript
 	respWallet := Brc20VerifiableCurrentBalanceOfPkscriptResponse{
 		Error: resp.Error,
@@ -137,7 +137,7 @@ func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, r
 		},
 		Proof: resp.Proof,
 	}
-	return VerifyCurrentBalanceOfPkscript(preRootC, tick, pkscript, &respWallet)
+	return VerifyCurrentBalanceOfPkscript(rootC, tick, pkscript, &respWallet)
 }
 
 func GenerateCorrectPostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
