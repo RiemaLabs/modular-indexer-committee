@@ -3,7 +3,7 @@ name: Backend CI/CD
 on:
   push:
     branches:
-      - cicd
+      - main
   pull_request:
     branches:
       - main
