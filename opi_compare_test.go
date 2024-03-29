@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -33,8 +32,9 @@ func Test_OPI(t *testing.T) {
 			}
 			ordGetterTest.LatestBlockHeight++
 		}
-		if ordGetterTest.LatestBlockHeight > 780100 {
-			os.Exit(0)
+		if ordGetterTest.LatestBlockHeight > 781000 {
+			t.Log("Test_OPI completed successfully")
+			t.SkipNow()
 		}
 		// time.Sleep(500 * time.Millisecond)
 		time.Sleep(50 * time.Millisecond)
