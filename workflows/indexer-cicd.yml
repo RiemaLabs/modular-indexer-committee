@@ -21,8 +21,8 @@ jobs:
         with:
           go-version: 1.22
 
-      # - name: Run Unit Tests
-      #   run: go test -v ./...
+      - name: Run Unit Tests
+        run: chmod +x unitTest.sh && source unitTest.sh
 
       - name: Check Chinese Comments
-        run: ./CJKCharCheck.sh
+        run: chmod +x CJKCharCheck.sh && ./CJKCharCheck.sh

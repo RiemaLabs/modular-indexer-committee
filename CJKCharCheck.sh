@@ -14,3 +14,5 @@ timestamp=$(date +"%Y%m%d-%H%M%S")
 output_file="cjk_${timestamp}.log"
 cp ${tmp_file} ${output_file}
 rm ${tmp_file}
+
+cat ${output_file}
