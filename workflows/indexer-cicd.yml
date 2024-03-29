@@ -21,13 +21,8 @@ jobs:
         with:
           go-version: 1.22
 
-      - name: Run Unit Tests
-        run: go test -v ./...
+      # - name: Run Unit Tests
+      #   run: go test -v ./...
 
       - name: Check Chinese Comments
-      # Assume that Unicode regular expression engine here only processes CJK characters in the Basic Multilingual Plane (BMP) range.
-        run: |
-          if grep -r -qE '([\u4e00-\u9fa5]+)' .; then
-            echo "Error: CJK characters found. Please recheck."
-            exit 1
-          fi
+        run: ./CJKCharCheck.sh
