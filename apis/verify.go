@@ -140,7 +140,7 @@ func VerifyCurrentBalanceOfWallet(preRootC *verkle.Point, tick, wallet string, r
 	return VerifyCurrentBalanceOfPkscript(preRootC, tick, pkscript, &respWallet)
 }
 
-func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
+func GenerateCorrectPostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
 	preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
 	preVerkleProof := &verkle.VerkleProof{}
 	preVerkleProof.UnmarshalJSON(preProofBytes)
@@ -150,7 +150,7 @@ func GenerateCorrectPostRoot(preRootC *verkle.Point, blockHeight uint, resp *Brc
 		return nil, err
 	}
 
-	parentTree, err := verkle.PreStateTreeFromProof(preProof, preRootC)
+	parentTree, err := verkle.PreStateTreeFromProof(preProof, rootC)
 	if nil != err {
 		return nil, err
 	}
