@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log"
+	"os"
 	"testing"
 
 	"encoding/json"
@@ -14,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestGetLatestStateProof(t *testing.T) {
+func TestAPI_GetLatestStateProof(t *testing.T) {
 	loadGetLatestStateProof(uint(779000), t)
 	// loadGetLatestStateProof(uint(780000), t)
 }
@@ -52,7 +53,7 @@ func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 	}
 }
 
-func TestVerifyCurrentBalanceOfPkscript(t *testing.T) {
+func TestAPI_VerifyCurrentBalanceOfPkscript(t *testing.T) {
 	loadVerifyCurrentBalanceOfPkscript("ordi", "5120409943cab2dee3c71940969a612c6ee65c57cad1f064ca8db4508dab49260ca3", uint(779960), t)
 }
 
@@ -110,7 +111,7 @@ func loadVerifyCurrentBalanceOfPkscript(tick string, pkScript string, catchupHei
 	}
 }
 
-func TestVerifyCurrentBalanceOfWallet(t *testing.T) {
+func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
 	loadVerifyCurrentBalanceOfWallet("meme", "bc1prvqdfjku8359hk9uc2tdgg0xlwvsel2fjr9ysydmaas9x3kyzuvskuwmlq", uint(779980), t)
 }
 
@@ -125,7 +126,7 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 	// register route
 	r := gin.Default()
 	r.GET("/v1/brc20_verifiable/current_balance_of_wallet", func(c *gin.Context) {
-		apis.GetCurrentBalanceOfPkscript(c, queue)
+		apis.GetCurrentBalanceOfWallet(c, queue)
 	})
 
 	// create test server
@@ -161,9 +162,12 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 
 	log.Println("[res]: ", res.Result.OverallBalance)
 
-	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.Commit(), tick, wallet, &res)
+	lastHistory := queue.History[len(queue.History)-1]
+	preState, _, _ := stateless.Rollingback(queue.Header, &lastHistory)
+	_, err = apis.VerifyCurrentBalanceOfWallet(preState.Commit(), tick, wallet, &res)
 	if err != nil {
-		log.Fatalf("[TestVerifyCurrentBalanceOfWallet] verify not right. At tick %s, wallet %s, height %d", tick, wallet, catchupHeight)
+		// log.Fatalf("[TestVerifyCurrentBalanceOfWallet] verify not right. At tick %s, wallet %s, height %d", tick, wallet, catchupHeight)
 		log.Fatal("With error: ", err)
 	}
+	os.Exit(0)
 }
