@@ -22,7 +22,8 @@ jobs:
           go-version: 1.22
 
       - name: Run Unit Tests
-        run: chmod +x unitTest.sh && source unitTest.sh
+        run: go test -v -run ./...
 
       - name: Check Chinese Comments
-        run: chmod +x CJKCharCheck.sh && ./CJKCharCheck.sh
+        run: find . -type f -exec file {} + | grep text | cut -d: -f1 | xargs perl -Mopen=locale -ne 'print "$ARGV:$.\t$_" if /[\x{4e00}-\x{9fa5}\x{20000}-\x{2a6df}\x{2a700}-\x{2b73f}\x{2b740}-\x{2b81f}\x{2b820}-\x{2ceaf}\x{2ceb0}-\x{2ebef}\x{2ebf0}-\x{2fbff}]/' 
+
