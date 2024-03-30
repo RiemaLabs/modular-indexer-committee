@@ -113,3 +113,13 @@ func decodeBitcoinWallet(s string) []byte {
 func encodeBitcoinWallet(b []byte) string {
 	return base58.Encode(b)
 }
+
+func defaultValue() [ValueSize]byte {
+	// TODO: Medium. Optimize style.
+	return [ValueSize]byte{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+	}
+}

@@ -11,9 +11,9 @@ import (
 )
 
 func (state DiffState) Copy() DiffState {
-	newElements := make([]TripleElement, len(state.Diff.Elements))
+	newElements := make([]TripleElement, len(state.Access.Elements))
 
-	for i, elem := range state.Diff.Elements {
+	for i, elem := range state.Access.Elements {
 		newElements[i] = TripleElement{
 			Key:      elem.Key,
 			OldValue: elem.OldValue,
@@ -21,11 +21,11 @@ func (state DiffState) Copy() DiffState {
 		}
 	}
 
-	newDiff := DiffList{Elements: newElements}
+	newDiff := AccessList{Elements: newElements}
 	return DiffState{
 		Height:       state.Height,
 		Hash:         state.Hash,
-		Diff:         newDiff,
+		Access:       newDiff,
 		VerkleCommit: state.VerkleCommit,
 	}
 }
@@ -63,7 +63,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		newDiffState := DiffState{
 			Height:       i - 1,
 			Hash:         hash,
-			Diff:         queue.Header.Diff,
+			Access:       queue.Header.Access,
 			VerkleCommit: queue.Header.Root.Commit().Bytes(),
 		}
 		copy(queue.History[:], queue.History[1:])
@@ -76,14 +76,14 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 	return nil
 }
 
-func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]byte, []TripleElement) {
+func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]byte) {
 	var keys [][]byte
 	kvMap := make(KeyValueMap)
 	for k, v := range header.KV {
 		kvMap[k] = v
 	}
 
-	for _, elem := range stateDiff.Diff.Elements {
+	for _, elem := range stateDiff.Access.Elements {
 		keys = append(keys, elem.Key[:])
 		if elem.OldValueExists {
 			kvMap[elem.Key] = elem.OldValue
@@ -96,8 +96,10 @@ func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]b
 	for k, v := range kvMap {
 		rollback.Insert(k[:], v[:], NodeResolveFn)
 	}
+	// The call of Commit is necessary to refresh the root commit.
+	rollback.Commit()
 
-	return rollback, keys, stateDiff.Diff.Elements
+	return rollback, keys
 }
 
 func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
@@ -125,7 +127,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 		// newBytes := queue.Header.Root.Commit().Bytes()
 		// n := base64.StdEncoding.EncodeToString(newBytes[:])
 
-		for _, elem := range pastState.Diff.Elements {
+		for _, elem := range pastState.Access.Elements {
 			if elem.OldValueExists {
 				queue.Header.KV[elem.Key] = elem.OldValue
 			} else {
@@ -143,13 +145,13 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 			panic(fmt.Sprintf("Recovery the header failed! The commitment is different: %s and %s", n, o))
 		}
 		newHeader := Header{
-			Root:     newRoot,
-			KV:       queue.Header.KV,
-			Height:   i,
-			Hash:     pastState.Hash,
-			Diff:     DiffList{},
-			TempKV:   KeyValueMap{},
-			OrdTrans: queue.Header.OrdTrans,
+			Root:           newRoot,
+			KV:             queue.Header.KV,
+			Height:         i,
+			Hash:           pastState.Hash,
+			Access:         AccessList{},
+			IntermediateKV: KeyValueMap{},
+			OrdTrans:       queue.Header.OrdTrans,
 		}
 		queue.Header = &newHeader
 	}
@@ -170,7 +172,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 		queue.History[index] = DiffState{
 			Height:       i - 1,
 			Hash:         hash,
-			Diff:         queue.Header.Diff,
+			Access:       queue.Header.Access,
 			VerkleCommit: queue.Header.Root.Commit().Bytes(),
 		}
 		queue.Header.OrdTrans = ordTransfer
@@ -219,11 +221,13 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 		stateList[i-startHeight] = DiffState{
 			Height:       i - 1,
 			Hash:         hash,
-			Diff:         header.Diff,
+			Access:       header.Access,
 			VerkleCommit: header.Root.Commit().Bytes(),
 		}
 		header.Paging(getter, true, NodeResolveFn)
 	}
+	// The call of Commit is necessary to refresh the root commit.
+	header.Root.Commit()
 	queue := Queue{
 		Header:  header,
 		History: stateList,
