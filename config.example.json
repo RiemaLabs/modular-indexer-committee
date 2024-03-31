@@ -12,7 +12,7 @@
         "da": {
             "network": "Pre-Alpha Testnet",
             "namespaceID": "YourOwnNamespace. Left to empty and follow the instruction to create automatically.",
-            "gasCode": "YourGasCode",
+            "gasCoupon": "YourGasCoupon",
             "privateKey": "YourPrivateKey"
         },
         "s3": {

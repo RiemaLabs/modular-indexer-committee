@@ -35,7 +35,7 @@ func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, com
 	return content
 }
 
-func UploadCheckpointByDA(checkpoint *Checkpoint, pk, gasCode, namespaceID, network string, timeout time.Duration) error {
+func UploadCheckpointByDA(checkpoint *Checkpoint, pk, gasCoupon, namespaceID, network string, timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -48,7 +48,7 @@ func UploadCheckpointByDA(checkpoint *Checkpoint, pk, gasCode, namespaceID, netw
 	}
 
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
-		sdk.WithGasCode(gasCode),
+		sdk.WithGasCode(gasCoupon),
 		sdk.WithPrivateKey(pk),
 	)
 	if clientDA == nil {
@@ -87,7 +87,7 @@ func IsValidNamespaceID(nID string) bool {
 	return true
 }
 
-func CreateNamespace(pk, gasCode, namespaceName, network string) (string, error) {
+func CreateNamespace(pk, gasCoupon, namespaceName, network string) (string, error) {
 	ctx := context.TODO()
 	if network == "Pre-Alpha Testnet" {
 		sdk.SetNet(constant.PreAlphaTestNet)
@@ -98,7 +98,7 @@ func CreateNamespace(pk, gasCode, namespaceName, network string) (string, error)
 	}
 
 	clientDA := sdk.NewNubit(sdk.WithCtx(ctx),
-		sdk.WithGasCode(gasCode),
+		sdk.WithGasCode(gasCoupon),
 		sdk.WithPrivateKey(pk),
 	)
 	if clientDA == nil {
