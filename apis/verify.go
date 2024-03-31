@@ -202,7 +202,7 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 		ordTransfers = append(ordTransfers, getter.OrdTransfer{
 			ID:            tran.ID,
 			InscriptionID: tran.InscriptionID,
-			OldSatpoint:   tran.NewSatpoint,
+			OldSatpoint:   tran.OldSatpoint,
 			NewSatpoint:   tran.NewSatpoint,
 			NewPkscript:   tran.NewPkscript,
 			NewWallet:     tran.NewWallet,

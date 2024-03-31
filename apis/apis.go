@@ -212,7 +212,8 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 		ordTransfersJSON = append(ordTransfersJSON, OrdTransferJSON{
 			ID:            ordTransfer.ID,
 			InscriptionID: ordTransfer.InscriptionID,
-			NewSatpoint:   ordTransfer.OldSatpoint, // Assuming you want to map OldSatpoint to NewSatpoint
+			OldSatpoint:   ordTransfer.OldSatpoint,
+			NewSatpoint:   ordTransfer.NewSatpoint,
 			NewPkscript:   ordTransfer.NewPkscript,
 			NewWallet:     ordTransfer.NewWallet,
 			SentAsFee:     ordTransfer.SentAsFee,

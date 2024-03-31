@@ -113,7 +113,6 @@ The service section specifies the details of your API service, enabling access t
 - `url`: The URL where your API service is hosted and accessible.
 - `name`: A unique name for your committee indexer instance.
 - `metaProtocol`: Specify the meta-protocol served by your committee indexer (default 'brc-20').
-- `version`: Specify the version of your committee indexer (no need to modify it).
 
 ## Useful Links
 :spider_web: <https://www.nubit.org>
