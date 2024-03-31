@@ -200,6 +200,10 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func Execution(arguments *RuntimeArguments) {
+
+	// TODO: High. Get the version from Git Tag.
+	Version = "v0.1.0-rc.3"
+
 	// Get the configuration.
 	configFile, err := os.ReadFile("config.json")
 	if err != nil {
@@ -210,8 +214,6 @@ func Execution(arguments *RuntimeArguments) {
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
 	}
-
-	Version = GlobalConfig.Service.Version
 
 	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
 		if !checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {

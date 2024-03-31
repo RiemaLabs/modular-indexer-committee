@@ -28,7 +28,6 @@ type Config struct {
 		URL          string `json:"url"`
 		Name         string `json:"name"`
 		MetaProtocol string `json:"metaProtocol"`
-		Version      string `json:"version"`
 	} `json:"service"`
 }
 
