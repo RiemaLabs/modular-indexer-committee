@@ -1,0 +1,30 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - verified/cicd
+
+jobs:
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
+
+      - name: Run Unit Tests
+        run: go test -v -run ./...
+
+      - name: Check Chinese Comments
+        run: |
+          find . -type f -exec file {} + \
+          | grep -vE '.*\.csv:|.*\.log:' \
+          | grep text \
+          | cut -d: -f1 \
+          | xargs perl -Mopen=locale -ne 'print "$ARGV:$.\t$_" if /[\x{4e00}-\x{9fa5}\x{3400}-\x{4DBF}\x{20000}-\x{2A6DF}\x{2A700}-\x{2B73F}\x{2B740}-\x{2B81F}\x{2B820}-\x{2CEAF}\x{2CEB0}-\x{2EBEF}\x{30000}-\x{3134F}\x{F900}-\x{FAFF}\x{2F800}-\x{2FA1F}]/'
