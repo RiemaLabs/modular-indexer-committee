@@ -20,7 +20,7 @@ type Config struct {
 		Da struct {
 			Network     string `json:"network"`
 			NamespaceID string `json:"namespaceID"`
-			GasCode     string `json:"gasCode"`
+			GasCoupon   string `json:"gasCoupon"`
 			PrivateKey  string `json:"privateKey"`
 		} `json:"da"`
 	} `json:"report"`
@@ -28,7 +28,6 @@ type Config struct {
 		URL          string `json:"url"`
 		Name         string `json:"name"`
 		MetaProtocol string `json:"metaProtocol"`
-		Version      string `json:"version"`
 	} `json:"service"`
 }
 

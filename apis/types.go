@@ -7,6 +7,7 @@ import (
 type OrdTransferJSON struct {
 	ID            uint         `json:"ID"`
 	InscriptionID string       `json:"inscriptionID"`
+	OldSatpoint   string       `json:"oldSatpoint"`
 	NewSatpoint   string       `json:"newSatpoint"`
 	NewPkscript   ord.Pkscript `json:"newPkscript"`
 	NewWallet     ord.Wallet   `json:"newWallet"`

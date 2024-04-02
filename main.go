@@ -180,7 +180,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							dacfg := GlobalConfig.Report.Da
 							err = checkpoint.UploadCheckpointByDA(&c,
-								dacfg.PrivateKey, dacfg.GasCode, dacfg.NamespaceID, dacfg.Network, timeout)
+								dacfg.PrivateKey, dacfg.GasCoupon, dacfg.NamespaceID, dacfg.Network, timeout)
 							if err != nil {
 								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
@@ -200,6 +200,10 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func Execution(arguments *RuntimeArguments) {
+
+	// TODO: High. Get the version from Git Tag.
+	Version = "v0.1.0-rc.3"
+
 	// Get the configuration.
 	configFile, err := os.ReadFile("config.json")
 	if err != nil {
@@ -210,8 +214,6 @@ func Execution(arguments *RuntimeArguments) {
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
 	}
-
-	Version = GlobalConfig.Service.Version
 
 	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
 		if !checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {
@@ -229,7 +231,7 @@ func Execution(arguments *RuntimeArguments) {
 					}
 				}
 			}
-			nid, err := checkpoint.CreateNamespace(GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCode, namespaceName, GlobalConfig.Report.Da.Network)
+			nid, err := checkpoint.CreateNamespace(GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCoupon, namespaceName, GlobalConfig.Report.Da.Network)
 			if err != nil {
 				log.Fatalf("Failed to create namespace due to %v", err)
 			}
