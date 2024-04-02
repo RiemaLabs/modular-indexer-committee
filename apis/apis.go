@@ -11,18 +11,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
+func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([][]byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
 	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
 	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, ordPkscript)
+	decimalsKey, decimalValue := stateless.GetDecimals(queue.Header, tick)
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
+	decimalStr := decimalValue.String()
 
 	result := Brc20VerifiableCurrentBalanceOfPkscriptResult{
 		AvailableBalance: availableBalanceStr,
 		OverallBalance:   overallBalanceStr,
+		Decimals:         decimalStr,
 	}
 
-	return availKey, overKey, result
+	keys := [][]byte{availKey, overKey, decimalsKey}
+
+	return keys, result
 }
 
 func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
@@ -31,9 +36,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 
 	_, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
 
-	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
-
-	keys := [][]byte{availKey, overKey}
+	keys, result := GetAllBalances(queue, tick, pkScript)
 
 	proof, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
 	if err != nil {
@@ -71,6 +74,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	resultWallet := Brc20VerifiableCurrentBalanceOfWalletResult{
 		AvailableBalance: result.AvailableBalance,
 		OverallBalance:   result.OverallBalance,
+		Decimals:         result.Decimals,
 		Pkscript:         pkScript,
 	}
 
@@ -84,9 +88,8 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	pkScript := c.DefaultQuery("pkscript", "")
-	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
+	keys, result := GetAllBalances(queue, tick, pkScript)
 
-	keys := [][]byte{availKey, overKey}
 	// Generate proof
 	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
 	if err != nil {

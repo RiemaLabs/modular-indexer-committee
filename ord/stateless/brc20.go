@@ -73,6 +73,12 @@ func GetTickHash(tick string, locationID LocationID) []byte {
 	return append(resHash[:verkle.StemSize], locationID)
 }
 
+func GetDecimals(state KVStorage, tick string) ([]byte, *uint256.Int) {
+	key := GetTickHash(tick, Decimals)
+	value := state.GetUInt256(key)
+	return key, value
+}
+
 func getTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
 	return GetTickHash(tick, Exists), GetTickHash(tick, RemainingSupply), GetTickHash(tick, MaxSupply), GetTickHash(tick, LimitPerMint), GetTickHash(tick, Decimals)
 }

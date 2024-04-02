@@ -13,8 +13,8 @@ import (
 	"github.com/holiman/uint256"
 )
 
-func ParseBalance(balance string) ([]byte, error) {
-	value, err := uint256.FromDecimal(balance)
+func ParseUInt256(v string) ([]byte, error) {
+	value, err := uint256.FromDecimal(v)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -96,26 +96,32 @@ func VerifyCurrentBalanceOfPkscript(rootC *verkle.Point, tick, pkscript string, 
 	}
 	availKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.AvailableBalancePkscript)
 	overallKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.OverallBalancePkscript)
+	decimalKey := stateless.GetTickHash(tick, stateless.Decimals)
 
-	keys := [][]byte{availKey, overallKey}
+	keys := [][]byte{availKey, overallKey, decimalKey}
 
-	availValue, err := ParseBalance(resp.Result.AvailableBalance)
+	availValue, err := ParseUInt256(resp.Result.AvailableBalance)
 	if err != nil {
 		return false, err
 	}
-	overallValue, err := ParseBalance(resp.Result.OverallBalance)
+	overallValue, err := ParseUInt256(resp.Result.OverallBalance)
+	if err != nil {
+		return false, err
+	}
+	decimalValue, err := ParseUInt256(resp.Result.Decimals)
 	if err != nil {
 		return false, err
 	}
 
-	values := [][]byte{availValue, overallValue}
+	values := [][]byte{availValue, overallValue, decimalValue}
 
 	vProof, err := ParseProof(*resp.Proof)
 	if err != nil {
 		return false, err
 	}
 
-	stateDiff := ParseStateDiff(keys, values, [][]byte{{}, {}})
+	postValues := [][]byte{{}, {}, {}}
+	stateDiff := ParseStateDiff(keys, values, postValues)
 
 	preProof, err := verkle.DeserializeProof(vProof, *stateDiff)
 	if err != nil {
@@ -142,6 +148,7 @@ func VerifyCurrentBalanceOfWallet(rootC *verkle.Point, tick, wallet string, resp
 		Result: &Brc20VerifiableCurrentBalanceOfPkscriptResult{
 			AvailableBalance: resp.Result.AvailableBalance,
 			OverallBalance:   resp.Result.OverallBalance,
+			Decimals:         resp.Result.Decimals,
 		},
 		Proof: resp.Proof,
 	}

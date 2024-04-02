@@ -31,6 +31,7 @@ type Brc20VerifiableCurrentBalanceOfWalletRequest struct {
 type Brc20VerifiableCurrentBalanceOfWalletResult struct {
 	AvailableBalance string `json:"availableBalance"`
 	OverallBalance   string `json:"overallBalance"`
+	Decimals         string `json:"decimals"`
 	Pkscript         string `json:"pkscript"`
 }
 
@@ -50,6 +51,7 @@ type Brc20VerifiableCurrentBalanceOfPkscriptRequest struct {
 type Brc20VerifiableCurrentBalanceOfPkscriptResult struct {
 	AvailableBalance string `json:"availableBalance"`
 	OverallBalance   string `json:"overallBalance"`
+	Decimals         string `json:"decimals"`
 }
 
 type Brc20VerifiableCurrentBalanceOfPkscriptResponse struct {
