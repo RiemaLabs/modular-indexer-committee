@@ -68,6 +68,7 @@ type LightHeader struct {
 type Queue struct {
 	Header  *Header
 	History [ord.BitcoinConfirmations]DiffState
+	Proof   *verkle.Proof
 	sync.RWMutex
 }
 
