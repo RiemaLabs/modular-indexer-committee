@@ -18,6 +18,9 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Read Config
+        run: echo "${{ secrets.CONFIG_JSON }}" > config.json
+        
       - name: Run Unit Tests
         run: go test -v -run ./...
 
