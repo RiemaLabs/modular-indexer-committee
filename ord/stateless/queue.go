@@ -73,7 +73,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		copy(queue.History[:], queue.History[1:])
 		queue.History[len(queue.History)-1] = newDiffState
 
-		proof := generateProofFromUpdate(queue.Header, &newDiffState)
+		proof, _ := generateProofFromUpdate(queue.Header, &newDiffState)
 		queue.Proof = proof
 
 		queue.Header.OrdTrans = ordTransfer
@@ -242,7 +242,7 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 	return &queue, nil
 }
 
-func generateProofFromUpdate(header *Header, stateDiff *DiffState) *verkle.Proof {
+func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proof, error) {
 	var keys [][]byte
 	kvMap := make(KeyValueMap)
 	for _, elem := range stateDiff.Access.Elements {
@@ -252,12 +252,13 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) *verkle.Proof
 
 	if len(keys) == 0 {
 		log.Printf("no key provided for proof")
+		return nil, nil
 	}
 
 	preroot := header.Root
 	pe, es, poas, err := verkle.GetCommitmentsForMultiproof(preroot, keys, NodeResolveFn)
 	if err != nil {
-		fmt.Errorf("error getting pre-state proof data: %w", err)
+		return nil, fmt.Errorf("error getting pre-state proof data: %w", err)
 	}
 
 	postvals := make([][]byte, len(keys))
@@ -270,14 +271,15 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) *verkle.Proof
 		}
 	}
 
-	cfg := verkle.GetConfig()
+	// cfg := verkle.GetConfig()
+	conf, err := ipa.NewIPASettings()
 	tr := common.NewTranscript("vt")
-	mpArg, err := ipa.CreateMultiProof(tr, cfg.conf, pe.Cis, pe.Fis, pe.Zis)
+	mpArg, err := ipa.CreateMultiProof(tr, conf, pe.Cis, pe.Fis, pe.Zis)
 	if err != nil {
-		fmt.Errorf("creating multiproof: %w", err)
+		return nil, fmt.Errorf("creating multiproof: %w", err)
 	}
 
-	// Copy from verkle-go
+	// Copied from verkle-go
 	// It's wheel-reinvention time again 🎉: reimplement a basic
 	// feature that should be part of the stdlib.
 	// "But golang is a high-productivity language!!!" 🤪
@@ -304,5 +306,5 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) *verkle.Proof
 		PreValues:  pe.Vals,
 		PostValues: postvals,
 	}
-	return proof
+	return proof, nil
 }

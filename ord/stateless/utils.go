@@ -1,11 +1,18 @@
 package stateless
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"strings"
 	"unicode"
 
 	base58 "github.com/btcsuite/btcd/btcutil/base58"
+	"github.com/crate-crypto/go-ipa/bandersnatch/fp"
+	"github.com/crate-crypto/go-ipa/banderwagon"
+	"github.com/crate-crypto/go-ipa/common"
+	"github.com/crate-crypto/go-ipa/ipa"
 	"github.com/ethereum/go-verkle"
 
 	uint256 "github.com/holiman/uint256"
@@ -128,4 +135,75 @@ func bytesTo32Bytes(b []byte) [32]byte {
 	var newArray [32]byte
 	copy(newArray[:], b[:])
 	return newArray
+}
+
+func generateRandomPoints(numPoints uint64) []banderwagon.Element {
+	seed := "eth_verkle_oct_2021"
+
+	points := []banderwagon.Element{}
+
+	var increment uint64 = 0
+
+	for uint64(len(points)) != numPoints {
+
+		digest := sha256.New()
+		digest.Write([]byte(seed))
+
+		b := make([]byte, 8)
+		binary.BigEndian.PutUint64(b, increment)
+		digest.Write(b)
+
+		hash := digest.Sum(nil)
+
+		var x fp.Element
+		x.SetBytes(hash)
+
+		increment++
+
+		x_as_bytes := x.Bytes()
+		var point_found banderwagon.Element
+		err := point_found.SetBytes(x_as_bytes[:])
+		if err != nil {
+			// This point is not in the correct subgroup or on the curve
+			continue
+		}
+		points = append(points, point_found)
+
+	}
+
+	return points
+}
+
+func computeNumRounds(vectorSize uint32) uint32 {
+	// Check if this number is 0
+	// zero is not a valid input to this function for our usecase
+	if vectorSize == 0 {
+		panic("zero is not a valid input")
+	}
+
+	// See: https://stackoverflow.com/a/600306
+	isPow2 := (vectorSize & (vectorSize - 1)) == 0
+
+	if !isPow2 {
+		panic("non power of 2 numbers are not valid inputs")
+	}
+
+	res := math.Log2(float64(vectorSize))
+
+	return uint32(res)
+}
+
+func getNewIPASettings() (*ipa.IPAConfig, error) {
+	srs := generateRandomPoints(common.VectorLength)
+	precompMSM, err := banderwagon.NewPrecompMSM(srs)
+	if err != nil {
+		return nil, fmt.Errorf("creating precomputed MSM: %s", err)
+	}
+	return &ipa.IPAConfig{
+		SRS:                srs,
+		Q:                  banderwagon.Generator,
+		PrecompMSM:         precompMSM,
+		PrecomputedWeights: ipa.NewPrecomputedWeights(),
+		numRounds:          computeNumRounds(common.VectorLength),
+	}, nil
 }
