@@ -20,8 +20,8 @@ func Test_CatchupStage(t *testing.T) {
 	ordGetterTest.LatestBlockHeight = catchupHeight
 	elapsed := time.Since(startTime)
 	elapsedSeconds := float64(elapsed) / float64(time.Second)
-	averageTime := elapsedSeconds / float64(catchupHeight-stateless.BRC20StartHeight)
-	log.Printf("Successfully Updating From %d To %d", stateless.BRC20StartHeight, catchupHeight)
+	averageTime := elapsedSeconds / float64(ordGetterTest.LatestBlockHeight-stateless.BRC20StartHeight)
+	log.Printf("Successfully Updating From %d To %d", stateless.BRC20StartHeight, ordGetterTest.LatestBlockHeight)
 	log.Printf("Using Time %s, And %f Per Block on Average During CatchUp Stage", elapsed, averageTime)
 
 	// Commitment logging

@@ -1,0 +1,28 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
+
+      - name: Run Unit Tests
+        run: chmod +x unitTest.sh && source unitTest.sh
+
+      - name: Check Chinese Comments
+        run: chmod +x CJKCharCheck.sh && ./CJKCharCheck.sh

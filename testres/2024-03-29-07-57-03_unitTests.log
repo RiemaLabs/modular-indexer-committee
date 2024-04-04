@@ -1,0 +1,212 @@
+=== RUN   Test_CatchupStage
+2024/03/29 07:57:05 Fast catchup to the lateset block height! From 779831 to 780000 
+2024/03/29 07:57:06 Successfully Updating From 779832 To 780000
+2024/03/29 07:57:06 Using Time 1.357766981s, And 0.008082 Per Block on Average During CatchUp Stage
+2024/03/29 07:57:06 Header's Commitment Is bmB150x8DcRbWdieQlbLPbZ4AwQY7Yxj/YyjdYxA0lc=
+--- PASS: Test_CatchupStage (1.57s)
+PASS
+ok  	github.com/RiemaLabs/modular-indexer-committee	1.622s
+=== RUN   Test_ServiceStage
+2024/03/29 07:57:08 Fast catchup to the lateset block height! From 779831 to 780000 
+2024/03/29 07:57:09 Header's Commitment Is IVQCLnP+hY4njPOqmPdi8b4V8ejes1lfXVRX73pkpjQ=
+2024/03/29 07:57:09 Using Time 46.972531ms
+2024/03/29 07:57:09 Header's Commitment Is E/WY++J2pYL7SsPqtYOtb/4ekFs/vFsxarrtjGwR6cI=
+2024/03/29 07:57:09 Using Time 146.46839ms
+--- PASS: Test_ServiceStage (1.80s)
+PASS
+ok  	github.com/RiemaLabs/modular-indexer-committee	1.856s
+=== RUN   Test_Reorg
+2024/03/29 07:57:11 Fast catchup to the lateset block height! From 779831 to 780000 
+2024/03/29 07:57:13 Commitment at height 779994: Er/zpT0EBAIUNp2fSadJ4Ss2cpcvSGk4yNJSezWw0+s=
+2024/03/29 07:57:13 Commitment at height 779995: NDiRwDmTQSG/fKM3EvCL3klw6Ws52dLE9rpmOrndq+8=
+2024/03/29 07:57:13 Commitment at height 779996: AWKYzBV2AHeQzDWOvU3fDahVQ9BK9bVlXYaR/AhbOUo=
+2024/03/29 07:57:13 Commitment at height 779997: WepvTLK9+acJ6JuVNV6DBLg7PoMIHcbIavNzoez/eUE=
+2024/03/29 07:57:13 Commitment at height 779998: PJY+5ysC5mDf+W7QijRCdNiWjl5dG/DUPKoREblD/P8=
+2024/03/29 07:57:13 Commitment at height 779999: Zrb3mlelx6NWUFh5RjY/sqQ5ip1ctq8IByDcj6qB4NE=
+2024/03/29 07:57:13 Commitment at height 780000: bmB150x8DcRbWdieQlbLPbZ4AwQY7Yxj/YyjdYxA0lc=
+2024/03/29 07:57:13 Reorganize the queue by 1 blocks succeed!
+2024/03/29 07:57:13 Timecost: 160.032824ms
+2024/03/29 07:57:13 Header's Commitment Is acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:13 Commitment at height 780004: U/F++5CMSr02P0L2FKosG6SWBrS9rWLGPxcYcnlgrPQ=
+2024/03/29 07:57:13 Commitment at height 780005: U0/pon6nAwXj8Ut4Pv+Rf6nCfJPizmwj3gsJ5DLJiVc=
+2024/03/29 07:57:13 Commitment at height 780006: MdKbaeoNdyjQR/Gp8zcpBaG708w15CQmZdQ6yjyugek=
+2024/03/29 07:57:13 Commitment at height 780007: Bd/2Ikhr+g3VpHY8woYA14g6xrufK7T5jQkWtRZW06Y=
+2024/03/29 07:57:13 Commitment at height 780008: LNpQHv/XBGVYLDPfm8c5C9Q05TDQ3bLK0XYSQeVfjLY=
+2024/03/29 07:57:13 Commitment at height 780009: BC8I4kkt2NUMoAxAfAWI03ZLgbhIjix2zcmWvHEiJHQ=
+2024/03/29 07:57:13 Commitment at height 780010: acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:13 Reorganize the queue by 2 blocks succeed!
+2024/03/29 07:57:13 Timecost: 505.804583ms
+2024/03/29 07:57:14 Commitment at height 780004: U/F++5CMSr02P0L2FKosG6SWBrS9rWLGPxcYcnlgrPQ=
+2024/03/29 07:57:14 Commitment at height 780005: U0/pon6nAwXj8Ut4Pv+Rf6nCfJPizmwj3gsJ5DLJiVc=
+2024/03/29 07:57:14 Commitment at height 780006: MdKbaeoNdyjQR/Gp8zcpBaG708w15CQmZdQ6yjyugek=
+2024/03/29 07:57:14 Commitment at height 780007: Bd/2Ikhr+g3VpHY8woYA14g6xrufK7T5jQkWtRZW06Y=
+2024/03/29 07:57:14 Commitment at height 780008: LNpQHv/XBGVYLDPfm8c5C9Q05TDQ3bLK0XYSQeVfjLY=
+2024/03/29 07:57:14 Commitment at height 780009: BC8I4kkt2NUMoAxAfAWI03ZLgbhIjix2zcmWvHEiJHQ=
+2024/03/29 07:57:14 Commitment at height 780010: acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:14 Reorganize the queue by 3 blocks succeed!
+2024/03/29 07:57:14 Timecost: 645.519673ms
+2024/03/29 07:57:15 Commitment at height 780004: U/F++5CMSr02P0L2FKosG6SWBrS9rWLGPxcYcnlgrPQ=
+2024/03/29 07:57:15 Commitment at height 780005: U0/pon6nAwXj8Ut4Pv+Rf6nCfJPizmwj3gsJ5DLJiVc=
+2024/03/29 07:57:15 Commitment at height 780006: MdKbaeoNdyjQR/Gp8zcpBaG708w15CQmZdQ6yjyugek=
+2024/03/29 07:57:15 Commitment at height 780007: Bd/2Ikhr+g3VpHY8woYA14g6xrufK7T5jQkWtRZW06Y=
+2024/03/29 07:57:15 Commitment at height 780008: LNpQHv/XBGVYLDPfm8c5C9Q05TDQ3bLK0XYSQeVfjLY=
+2024/03/29 07:57:15 Commitment at height 780009: BC8I4kkt2NUMoAxAfAWI03ZLgbhIjix2zcmWvHEiJHQ=
+2024/03/29 07:57:15 Commitment at height 780010: acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:15 Reorganize the queue by 4 blocks succeed!
+2024/03/29 07:57:15 Timecost: 926.377788ms
+2024/03/29 07:57:16 Commitment at height 780004: U/F++5CMSr02P0L2FKosG6SWBrS9rWLGPxcYcnlgrPQ=
+2024/03/29 07:57:16 Commitment at height 780005: U0/pon6nAwXj8Ut4Pv+Rf6nCfJPizmwj3gsJ5DLJiVc=
+2024/03/29 07:57:16 Commitment at height 780006: MdKbaeoNdyjQR/Gp8zcpBaG708w15CQmZdQ6yjyugek=
+2024/03/29 07:57:16 Commitment at height 780007: Bd/2Ikhr+g3VpHY8woYA14g6xrufK7T5jQkWtRZW06Y=
+2024/03/29 07:57:16 Commitment at height 780008: LNpQHv/XBGVYLDPfm8c5C9Q05TDQ3bLK0XYSQeVfjLY=
+2024/03/29 07:57:16 Commitment at height 780009: BC8I4kkt2NUMoAxAfAWI03ZLgbhIjix2zcmWvHEiJHQ=
+2024/03/29 07:57:16 Commitment at height 780010: acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:16 Reorganize the queue by 5 blocks succeed!
+2024/03/29 07:57:16 Timecost: 1.082575922s
+2024/03/29 07:57:17 Commitment at height 780004: U/F++5CMSr02P0L2FKosG6SWBrS9rWLGPxcYcnlgrPQ=
+2024/03/29 07:57:17 Commitment at height 780005: U0/pon6nAwXj8Ut4Pv+Rf6nCfJPizmwj3gsJ5DLJiVc=
+2024/03/29 07:57:17 Commitment at height 780006: MdKbaeoNdyjQR/Gp8zcpBaG708w15CQmZdQ6yjyugek=
+2024/03/29 07:57:17 Commitment at height 780007: Bd/2Ikhr+g3VpHY8woYA14g6xrufK7T5jQkWtRZW06Y=
+2024/03/29 07:57:17 Commitment at height 780008: LNpQHv/XBGVYLDPfm8c5C9Q05TDQ3bLK0XYSQeVfjLY=
+2024/03/29 07:57:17 Commitment at height 780009: BC8I4kkt2NUMoAxAfAWI03ZLgbhIjix2zcmWvHEiJHQ=
+2024/03/29 07:57:17 Commitment at height 780010: acY91xRIs8p5ejjjlWLmCnlm33gGK2Jnit2s3/ibu0E=
+2024/03/29 07:57:17 Reorganize the queue by 6 blocks succeed!
+2024/03/29 07:57:17 Timecost: 1.301899294s
+--- PASS: Test_Reorg (6.31s)
+PASS
+ok  	github.com/RiemaLabs/modular-indexer-committee	6.394s
+=== RUN   Test_OPI
+2024/03/29 07:57:20 Fast catchup to the lateset block height! From 779831 to 779838 
+2024/03/29 07:57:21 Listening for new Bitcoin block, current height: 779840
+2024/03/29 07:57:22 Listening for new Bitcoin block, current height: 779850
+2024/03/29 07:57:22 Listening for new Bitcoin block, current height: 779860
+2024/03/29 07:57:23 Listening for new Bitcoin block, current height: 779870
+2024/03/29 07:57:23 Listening for new Bitcoin block, current height: 779880
+2024/03/29 07:57:24 Listening for new Bitcoin block, current height: 779890
+2024/03/29 07:57:24 Listening for new Bitcoin block, current height: 779900
+2024/03/29 07:57:24 Block: 779900 is verfied!
+2024/03/29 07:57:25 Listening for new Bitcoin block, current height: 779910
+2024/03/29 07:57:25 Listening for new Bitcoin block, current height: 779920
+2024/03/29 07:57:26 Listening for new Bitcoin block, current height: 779930
+2024/03/29 07:57:26 Listening for new Bitcoin block, current height: 779940
+2024/03/29 07:57:27 Listening for new Bitcoin block, current height: 779950
+2024/03/29 07:57:27 Listening for new Bitcoin block, current height: 779960
+2024/03/29 07:57:28 Listening for new Bitcoin block, current height: 779970
+2024/03/29 07:57:29 Listening for new Bitcoin block, current height: 779980
+2024/03/29 07:57:29 Listening for new Bitcoin block, current height: 779990
+2024/03/29 07:57:30 Listening for new Bitcoin block, current height: 780000
+2024/03/29 07:57:30 Block: 780000 is verfied!
+2024/03/29 07:57:30 Listening for new Bitcoin block, current height: 780010
+2024/03/29 07:57:31 Listening for new Bitcoin block, current height: 780020
+2024/03/29 07:57:32 Listening for new Bitcoin block, current height: 780030
+2024/03/29 07:57:33 Listening for new Bitcoin block, current height: 780040
+2024/03/29 07:57:33 Listening for new Bitcoin block, current height: 780050
+2024/03/29 07:57:34 Listening for new Bitcoin block, current height: 780060
+2024/03/29 07:57:34 Listening for new Bitcoin block, current height: 780070
+2024/03/29 07:57:35 Listening for new Bitcoin block, current height: 780080
+2024/03/29 07:57:35 Listening for new Bitcoin block, current height: 780090
+2024/03/29 07:57:36 Listening for new Bitcoin block, current height: 780100
+2024/03/29 07:57:36 Block: 780100 is verfied!
+2024/03/29 07:57:37 Listening for new Bitcoin block, current height: 780110
+2024/03/29 07:57:37 Listening for new Bitcoin block, current height: 780120
+2024/03/29 07:57:38 Listening for new Bitcoin block, current height: 780130
+2024/03/29 07:57:38 Listening for new Bitcoin block, current height: 780140
+2024/03/29 07:57:39 Listening for new Bitcoin block, current height: 780150
+2024/03/29 07:57:39 Listening for new Bitcoin block, current height: 780160
+2024/03/29 07:57:40 Listening for new Bitcoin block, current height: 780170
+2024/03/29 07:57:40 Listening for new Bitcoin block, current height: 780180
+2024/03/29 07:57:41 Listening for new Bitcoin block, current height: 780190
+2024/03/29 07:57:41 Listening for new Bitcoin block, current height: 780200
+2024/03/29 07:57:41 Block: 780200 is verfied!
+2024/03/29 07:57:42 Listening for new Bitcoin block, current height: 780210
+2024/03/29 07:57:42 Listening for new Bitcoin block, current height: 780220
+2024/03/29 07:57:43 Listening for new Bitcoin block, current height: 780230
+2024/03/29 07:57:43 Listening for new Bitcoin block, current height: 780240
+2024/03/29 07:57:44 Listening for new Bitcoin block, current height: 780250
+2024/03/29 07:57:44 Listening for new Bitcoin block, current height: 780260
+2024/03/29 07:57:45 Listening for new Bitcoin block, current height: 780270
+2024/03/29 07:57:45 Listening for new Bitcoin block, current height: 780280
+2024/03/29 07:57:46 Listening for new Bitcoin block, current height: 780290
+2024/03/29 07:57:46 Listening for new Bitcoin block, current height: 780300
+2024/03/29 07:57:46 Block: 780300 is verfied!
+2024/03/29 07:57:47 Listening for new Bitcoin block, current height: 780310
+2024/03/29 07:57:47 Listening for new Bitcoin block, current height: 780320
+2024/03/29 07:57:48 Listening for new Bitcoin block, current height: 780330
+2024/03/29 07:57:49 Listening for new Bitcoin block, current height: 780340
+2024/03/29 07:57:49 Listening for new Bitcoin block, current height: 780350
+2024/03/29 07:57:50 Listening for new Bitcoin block, current height: 780360
+2024/03/29 07:57:50 Listening for new Bitcoin block, current height: 780370
+2024/03/29 07:57:51 Listening for new Bitcoin block, current height: 780380
+2024/03/29 07:57:51 Listening for new Bitcoin block, current height: 780390
+2024/03/29 07:57:52 Listening for new Bitcoin block, current height: 780400
+2024/03/29 07:57:52 Block: 780400 is verfied!
+2024/03/29 07:57:52 Listening for new Bitcoin block, current height: 780410
+2024/03/29 07:57:53 Listening for new Bitcoin block, current height: 780420
+2024/03/29 07:57:53 Listening for new Bitcoin block, current height: 780430
+2024/03/29 07:57:54 Listening for new Bitcoin block, current height: 780440
+2024/03/29 07:57:54 Listening for new Bitcoin block, current height: 780450
+2024/03/29 07:57:55 Listening for new Bitcoin block, current height: 780460
+2024/03/29 07:57:55 Listening for new Bitcoin block, current height: 780470
+2024/03/29 07:57:56 Listening for new Bitcoin block, current height: 780480
+2024/03/29 07:57:56 Listening for new Bitcoin block, current height: 780490
+2024/03/29 07:57:57 Listening for new Bitcoin block, current height: 780500
+2024/03/29 07:57:57 Block: 780500 is verfied!
+2024/03/29 07:57:57 Listening for new Bitcoin block, current height: 780510
+2024/03/29 07:57:58 Listening for new Bitcoin block, current height: 780520
+2024/03/29 07:57:58 Listening for new Bitcoin block, current height: 780530
+2024/03/29 07:57:59 Listening for new Bitcoin block, current height: 780540
+2024/03/29 07:57:59 Listening for new Bitcoin block, current height: 780550
+2024/03/29 07:58:00 Listening for new Bitcoin block, current height: 780560
+2024/03/29 07:58:01 Listening for new Bitcoin block, current height: 780570
+2024/03/29 07:58:01 Listening for new Bitcoin block, current height: 780580
+2024/03/29 07:58:02 Listening for new Bitcoin block, current height: 780590
+2024/03/29 07:58:02 Listening for new Bitcoin block, current height: 780600
+2024/03/29 07:58:02 Block: 780600 is verfied!
+2024/03/29 07:58:03 Listening for new Bitcoin block, current height: 780610
+2024/03/29 07:58:03 Listening for new Bitcoin block, current height: 780620
+2024/03/29 07:58:04 Listening for new Bitcoin block, current height: 780630
+2024/03/29 07:58:04 Listening for new Bitcoin block, current height: 780640
+2024/03/29 07:58:05 Listening for new Bitcoin block, current height: 780650
+2024/03/29 07:58:05 Listening for new Bitcoin block, current height: 780660
+2024/03/29 07:58:06 Listening for new Bitcoin block, current height: 780670
+2024/03/29 07:58:07 Listening for new Bitcoin block, current height: 780680
+2024/03/29 07:58:07 Listening for new Bitcoin block, current height: 780690
+2024/03/29 07:58:08 Listening for new Bitcoin block, current height: 780700
+2024/03/29 07:58:08 Block: 780700 is verfied!
+2024/03/29 07:58:08 Listening for new Bitcoin block, current height: 780710
+2024/03/29 07:58:09 Listening for new Bitcoin block, current height: 780720
+2024/03/29 07:58:09 Listening for new Bitcoin block, current height: 780730
+2024/03/29 07:58:10 Listening for new Bitcoin block, current height: 780740
+2024/03/29 07:58:10 Listening for new Bitcoin block, current height: 780750
+2024/03/29 07:58:11 Listening for new Bitcoin block, current height: 780760
+2024/03/29 07:58:12 Listening for new Bitcoin block, current height: 780770
+2024/03/29 07:58:12 Listening for new Bitcoin block, current height: 780780
+2024/03/29 07:58:13 Listening for new Bitcoin block, current height: 780790
+2024/03/29 07:58:13 Listening for new Bitcoin block, current height: 780800
+2024/03/29 07:58:13 Block: 780800 is verfied!
+2024/03/29 07:58:14 Listening for new Bitcoin block, current height: 780810
+2024/03/29 07:58:14 Listening for new Bitcoin block, current height: 780820
+2024/03/29 07:58:15 Listening for new Bitcoin block, current height: 780830
+2024/03/29 07:58:15 Listening for new Bitcoin block, current height: 780840
+2024/03/29 07:58:16 Listening for new Bitcoin block, current height: 780850
+2024/03/29 07:58:16 Listening for new Bitcoin block, current height: 780860
+2024/03/29 07:58:17 Listening for new Bitcoin block, current height: 780870
+2024/03/29 07:58:17 Listening for new Bitcoin block, current height: 780880
+2024/03/29 07:58:18 Listening for new Bitcoin block, current height: 780890
+2024/03/29 07:58:18 Listening for new Bitcoin block, current height: 780900
+2024/03/29 07:58:18 Block: 780900 is verfied!
+2024/03/29 07:58:19 Listening for new Bitcoin block, current height: 780910
+2024/03/29 07:58:19 Listening for new Bitcoin block, current height: 780920
+2024/03/29 07:58:20 Listening for new Bitcoin block, current height: 780930
+2024/03/29 07:58:20 Listening for new Bitcoin block, current height: 780940
+2024/03/29 07:58:21 Listening for new Bitcoin block, current height: 780950
+2024/03/29 07:58:21 Listening for new Bitcoin block, current height: 780960
+2024/03/29 07:58:22 Listening for new Bitcoin block, current height: 780970
+2024/03/29 07:58:23 Listening for new Bitcoin block, current height: 780980
+2024/03/29 07:58:23 Listening for new Bitcoin block, current height: 780990
+2024/03/29 07:58:24 Listening for new Bitcoin block, current height: 781000
+2024/03/29 07:58:24 Block: 781000 is verfied!
+    opi_compare_test.go:36: Test_OPI completed successfully
+--- SKIP: Test_OPI (63.80s)
+PASS
+ok  	github.com/RiemaLabs/modular-indexer-committee	63.871s
