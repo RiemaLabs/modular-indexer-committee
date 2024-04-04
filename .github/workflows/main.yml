@@ -3,7 +3,7 @@ name: Backend CI/CD
 on:
   push:
     branches:
-      - verified/cicd
+      - main
 
 jobs:
   unit-tests:
