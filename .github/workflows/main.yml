@@ -19,12 +19,12 @@ jobs:
           go-version: 1.22
 
       - name: Read Config
-        run: echo "${{ secrets.CONFIG_JSON }}" > config.json
+        run: echo "${{ secrets.CONFIG_JSON }}" > config.json && cat config.json
         
       - name: Run Unit Tests
         run: go test -v -run ./...
 
-      - name: Check Chinese Contents
+      - name: Lint CJK Chars
         run: |
           find . -type f -exec file {} + \
           | grep -vE '.*\.csv:|.*\.log:' \
