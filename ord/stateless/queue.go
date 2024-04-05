@@ -9,8 +9,9 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
-	ipa "github.com/crate-crypto/go-ipa"
+	goipa "github.com/crate-crypto/go-ipa"
 	"github.com/crate-crypto/go-ipa/common"
+	"github.com/crate-crypto/go-ipa/ipa"
 	verkle "github.com/ethereum/go-verkle"
 )
 
@@ -273,8 +274,11 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 
 	// cfg := verkle.GetConfig()
 	conf, err := ipa.NewIPASettings()
+	if err != nil {
+		return nil, fmt.Errorf("creating multiproof: %w", err)
+	}
 	tr := common.NewTranscript("vt")
-	mpArg, err := ipa.CreateMultiProof(tr, conf, pe.Cis, pe.Fis, pe.Zis)
+	mpArg, err := goipa.CreateMultiProof(tr, conf, pe.Cis, pe.Fis, pe.Zis)
 	if err != nil {
 		return nil, fmt.Errorf("creating multiproof: %w", err)
 	}
