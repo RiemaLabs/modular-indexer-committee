@@ -75,7 +75,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		queue.History[len(queue.History)-1] = newDiffState
 
 		proof, _ := generateProofFromUpdate(queue.Header, &newDiffState)
-		queue.Proof = proof
+		queue.LastStateProof = proof
 
 		queue.Header.OrdTrans = ordTransfer
 		// header.Height ++
