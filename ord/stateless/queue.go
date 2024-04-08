@@ -1,12 +1,17 @@
 package stateless
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"log"
+	"sort"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
+	goipa "github.com/crate-crypto/go-ipa"
+	"github.com/crate-crypto/go-ipa/common"
+	"github.com/crate-crypto/go-ipa/ipa"
 	verkle "github.com/ethereum/go-verkle"
 )
 
@@ -68,6 +73,9 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		}
 		copy(queue.History[:], queue.History[1:])
 		queue.History[len(queue.History)-1] = newDiffState
+
+		proof, _ := generateProofFromUpdate(queue.Header, &newDiffState)
+		queue.LastStateProof = proof
 
 		queue.Header.OrdTrans = ordTransfer
 		// header.Height ++
@@ -233,4 +241,74 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 		History: stateList,
 	}
 	return &queue, nil
+}
+
+func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proof, error) {
+	var keys [][]byte
+	kvMap := make(KeyValueMap)
+	for _, elem := range stateDiff.Access.Elements {
+		keys = append(keys, elem.Key[:])
+		kvMap[elem.Key] = elem.NewValue
+	}
+
+	if len(keys) == 0 {
+		log.Printf("no key provided for proof")
+		return nil, nil
+	}
+
+	preroot := header.Root
+	pe, es, poas, err := verkle.GetCommitmentsForMultiproof(preroot, keys, NodeResolveFn)
+	if err != nil {
+		return nil, fmt.Errorf("error getting pre-state proof data: %w", err)
+	}
+
+	postvals := make([][]byte, len(keys))
+	// keys were sorted already in the above GetcommitmentsForMultiproof.
+	// Set the post values, if they are untouched, leave them `nil`
+	for i := range keys {
+		val := kvMap[bytesTo32Bytes(keys[i])]
+		if !bytes.Equal(pe.Vals[i], val[:]) {
+			postvals[i] = val[:]
+		}
+	}
+
+	// cfg := verkle.GetConfig()
+	conf, err := ipa.NewIPASettings()
+	if err != nil {
+		return nil, fmt.Errorf("creating multiproof: %w", err)
+	}
+	tr := common.NewTranscript("vt")
+	mpArg, err := goipa.CreateMultiProof(tr, conf, pe.Cis, pe.Fis, pe.Zis)
+	if err != nil {
+		return nil, fmt.Errorf("creating multiproof: %w", err)
+	}
+
+	// Copied from verkle-go
+	// It's wheel-reinvention time again 🎉: reimplement a basic
+	// feature that should be part of the stdlib.
+	// "But golang is a high-productivity language!!!" 🤪
+	// len()-1, because the root is already present in the
+	// parent block, so we don't keep it in the proof.
+	paths := make([]string, 0, len(pe.ByPath)-1)
+	for path := range pe.ByPath {
+		if len(path) > 0 {
+			paths = append(paths, path)
+		}
+	}
+	sort.Strings(paths)
+	cis := make([]*verkle.Point, len(pe.ByPath)-1)
+	for i, path := range paths {
+		cis[i] = pe.ByPath[path]
+	}
+
+	proof := &verkle.Proof{
+		Multipoint: mpArg,
+		Cs:         cis,
+		ExtStatus:  es,
+		PoaStems:   poas,
+		Keys:       keys,
+		PreValues:  pe.Vals,
+		PostValues: postvals,
+	}
+	return proof, nil
 }

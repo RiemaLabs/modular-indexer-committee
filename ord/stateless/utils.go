@@ -123,3 +123,9 @@ func defaultValue() [ValueSize]byte {
 		0, 0, 0, 0, 0, 0, 0, 0,
 	}
 }
+
+func bytesTo32Bytes(b []byte) [32]byte {
+	var newArray [32]byte
+	copy(newArray[:], b[:])
+	return newArray
+}
