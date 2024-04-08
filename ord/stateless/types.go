@@ -76,6 +76,10 @@ type KVStorage interface {
 
 	get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte
 
+	InsertInscriptionID(key []byte, value string)
+
+	GetInscriptionID(key []byte) string
+
 	InsertUInt256(key []byte, value *uint256.Int)
 
 	GetUInt256(key []byte) *uint256.Int

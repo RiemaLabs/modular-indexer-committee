@@ -26,7 +26,7 @@ func Test_OPI(t *testing.T) {
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
 			queue.Header.VerifyState(&records)
-			log.Printf("Block: %d is verfied!\n", ordGetterTest.LatestBlockHeight)
+			log.Printf("Block: %d is verified!\n", ordGetterTest.LatestBlockHeight)
 			ordGetterTest.LatestBlockHeight++
 		}
 		if ordGetterTest.LatestBlockHeight >= 780000 {
