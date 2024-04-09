@@ -63,7 +63,7 @@ var MaxSupply LocationID = 0x02
 var LimitPerMint LocationID = 0x03
 var Decimals LocationID = 0x04
 var IsSelfMint LocationID = 0x05
-var InscriptionID LocationID = 0x06 // inscription should take 2 slots, next should start with 08
+var InscriptionID LocationID = 0x06 // InscriptionID should take 2 slots, next should start with 08
 
 func GetTickHash(tick string, locationID LocationID) []byte {
 	tickBytes := []byte(tick)
