@@ -14,6 +14,9 @@ import (
 // The first block height of the brc-20 protocol.
 const BRC20StartHeight uint = 779832
 
+// Start Height of the Self-Mint
+const SelfMintEnableHeight uint = 837090
+
 var NodeResolveFn verkle.NodeResolverFn = nil
 
 func isPositiveNumber(s string, doStrip bool) bool {
