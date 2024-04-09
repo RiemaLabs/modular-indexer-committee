@@ -14,7 +14,7 @@ type OrdTransfer struct {
 	SentAsFee     bool
 	Content       []byte
 	ContentType   string
-	ParentID	  string
+	ParentID      string
 }
 
 type OrdGetter interface {
