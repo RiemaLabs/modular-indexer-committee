@@ -213,6 +213,7 @@ func (queue *Queue) CheckForReorg(getter getter.OrdGetter) (uint, error) {
 
 func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHeight uint) (*Queue, error) {
 	var stateList [ord.BitcoinConfirmations]DiffState
+	var proof *verkle.Proof
 	for i := startHeight; i <= startHeight+ord.BitcoinConfirmations-1; i++ {
 		ordTransfer, err := getter.GetOrdTransfers(i)
 		if err != nil {
@@ -232,18 +233,25 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 			Access:       header.Access,
 			VerkleCommit: header.Root.Commit().Bytes(),
 		}
+		if i == startHeight+ord.BitcoinConfirmations-1 {
+			proof, _ = generateProofFromUpdate(header, &stateList[i-startHeight])
+		}
 		header.Paging(getter, true, NodeResolveFn)
 	}
 	// The call of Commit is necessary to refresh the root commit.
 	header.Root.Commit()
 	queue := Queue{
-		Header:  header,
-		History: stateList,
+		Header:         header,
+		History:        stateList,
+		LastStateProof: proof,
 	}
 	return &queue, nil
 }
 
 func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proof, error) {
+	if len(stateDiff.Access.Elements) == 0 {
+		log.Printf("len(stateDiff.Access.Elements) == 0")
+	}
 	var keys [][]byte
 	kvMap := make(KeyValueMap)
 	for _, elem := range stateDiff.Access.Elements {
@@ -311,4 +319,54 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 		PostValues: postvals,
 	}
 	return proof, nil
+}
+
+func (queue *Queue) VerifyProof() bool {
+	if queue.LastStateProof == nil {
+		log.Println("queue.LastStateProof == nil")
+	}
+	vProof, _, err := verkle.SerializeProof(queue.LastStateProof)
+	if err != nil {
+		log.Println("[VerifyProof]: verkle.SerializeProof(queue.LastStateProof) failed")
+		return false
+	}
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		return false
+	}
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+	return finalproof == queue.RollingbackProof()
+}
+func (queue *Queue) RollingbackProof() string {
+	// copy most code from apis.GetLatestStateProof
+	// and then return the finalproof
+	lastIndex := len(queue.History) - 1
+	postState := queue.Header.Root
+	preState, keys := Rollingback(queue.Header, &queue.History[lastIndex])
+
+	if len(keys) == 0 {
+		log.Println("[RollingbackProof]: len(keys) == 0")
+		return ""
+	}
+
+	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, NodeResolveFn)
+	if err != nil {
+		log.Printf("Failed to generate proof due to %v", err)
+		return ""
+	}
+
+	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	if err != nil {
+		log.Printf("Failed to serialize proof due to %v", err)
+		return ""
+	}
+
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		log.Printf("Failed to marshal the proof to JSON due to %v", err)
+		return ""
+	}
+
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+	return finalproof
 }
