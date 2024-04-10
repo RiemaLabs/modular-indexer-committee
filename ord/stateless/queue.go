@@ -74,7 +74,10 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		copy(queue.History[:], queue.History[1:])
 		queue.History[len(queue.History)-1] = newDiffState
 
-		proof, _ := generateProofFromUpdate(queue.Header, &newDiffState)
+		proof, err := generateProofFromUpdate(queue.Header, &newDiffState)
+		if err != nil {
+			return err
+		}
 		queue.LastStateProof = proof
 
 		queue.Header.OrdTrans = ordTransfer
@@ -336,6 +339,7 @@ func (queue *Queue) VerifyProof() bool {
 		return false
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+	log.Println("VerifyProof finalproof:", finalproof)
 	return finalproof == queue.RollingbackProof()
 }
 func (queue *Queue) RollingbackProof() string {
