@@ -324,6 +324,7 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 func (queue *Queue) VerifyProof() bool {
 	if queue.LastStateProof == nil {
 		log.Println("queue.LastStateProof == nil")
+		return true
 	}
 	vProof, _, err := verkle.SerializeProof(queue.LastStateProof)
 	if err != nil {
