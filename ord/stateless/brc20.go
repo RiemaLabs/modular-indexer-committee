@@ -62,6 +62,8 @@ var RemainingSupply LocationID = 0x01
 var MaxSupply LocationID = 0x02
 var LimitPerMint LocationID = 0x03
 var Decimals LocationID = 0x04
+var IsSelfMint LocationID = 0x05
+var InscriptionID LocationID = 0x06 // inscription should take 2 slots, next should start with 08
 
 func GetTickHash(tick string, locationID LocationID) []byte {
 	tickBytes := []byte(tick)
@@ -73,8 +75,8 @@ func GetTickHash(tick string, locationID LocationID) []byte {
 	return append(resHash[:verkle.StemSize], locationID)
 }
 
-func getTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte) {
-	return GetTickHash(tick, Exists), GetTickHash(tick, RemainingSupply), GetTickHash(tick, MaxSupply), GetTickHash(tick, LimitPerMint), GetTickHash(tick, Decimals)
+func getTickStatus(tick string) ([]byte, []byte, []byte, []byte, []byte, []byte, []byte) {
+	return GetTickHash(tick, Exists), GetTickHash(tick, RemainingSupply), GetTickHash(tick, MaxSupply), GetTickHash(tick, LimitPerMint), GetTickHash(tick, Decimals), GetTickHash(tick, InscriptionID), GetTickHash(tick, IsSelfMint)
 }
 
 func updateTickState(f func(*uint256.Int) *uint256.Int, state KVStorage, tick string, loc LocationID) {
@@ -175,13 +177,22 @@ func isUsedOrInvalid(state KVStorage, inscriptionID string) bool {
 	return !transferInscribeCount.Eq(uint256.NewInt(1)) || !transferTransferCount.Eq(uint256.NewInt(0))
 }
 
-func deployInscribe(state KVStorage, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int) {
-	keyExists, keyRemainingSupply, keyMaxSupply, keyLimitPerMint, keyDecimals := getTickStatus(tick)
+func deployInscribe(state KVStorage, inscriptionID string, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int, isSelfMint string) {
+	keyExists, keyRemainingSupply, keyMaxSupply, keyLimitPerMint, keyDecimals, keyInscriptionID, keyIsSelfMint := getTickStatus(tick)
 	state.InsertUInt256(keyExists, uint256.NewInt(1))
 	state.InsertUInt256(keyRemainingSupply, maxSupply)
 	state.InsertUInt256(keyMaxSupply, maxSupply)
 	state.InsertUInt256(keyDecimals, decimals)
 	state.InsertUInt256(keyLimitPerMint, limitPerMint)
+
+	if isSelfMint == "true" {
+		state.InsertUInt256(keyIsSelfMint, uint256.NewInt(1))
+	} else {
+		state.InsertUInt256(keyIsSelfMint, uint256.NewInt(0))
+	}
+
+	// state.InsertBytes(keyInscriptionID, inscriptionIDBytes)
+	state.InsertInscriptionID(keyInscriptionID, inscriptionID)
 }
 
 func mintInscribe(state KVStorage, newPkscript ord.Pkscript, newWallet ord.Wallet, tick string, amount *uint256.Int) {
@@ -264,8 +275,8 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 		return
 	}
 	for _, ot := range ots {
-		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content, contentType :=
-			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType
+		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content, contentType, parentID :=
+			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType, ot.ParentID
 		var js map[string]string
 		json.Unmarshal(content, &js)
 		if sentAsFee && oldSatpoint == "" {
@@ -291,7 +302,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 		}
 		tick = strings.ToLower(tick)
 		// NOTATION1 different to BRC20
-		if len(tick) != 4 {
+		if len(tick) != 4 && len(tick) != 5 {
 			continue // invalid tick
 		}
 
@@ -304,7 +315,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 			if !ok {
 				continue // invalid inscription
 			}
-			keyExists, _, _, _, _ := getTickStatus(tick)
+			keyExists, _, _, _, _, _, _ := getTickStatus(tick)
 			tickExists := state.GetUInt256(keyExists)
 			if !tickExists.Eq(uint256.NewInt(0)) {
 				continue // already deployed
@@ -353,7 +364,29 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 					}
 				}
 			}
-			deployInscribe(state, tick, maxSupply, decimals, limitPerMint)
+			isSelfMint := "false"
+			if len(tick) == 5 {
+				if blockHeight < SelfMintEnableHeight {
+					continue // self-mint not enabled yet
+				}
+				if _, ok := js["self_mint"]; !ok {
+					continue // invalid inscription
+				}
+				if js["self_mint"] != "true" {
+					continue // invalid inscription
+				}
+				isSelfMint = "true"
+				if maxSupply.IsZero() {
+					maxSupply = upperLimit
+					if limitPerMint.IsZero() {
+						limitPerMint = upperLimit
+					}
+				}
+			} // this is a self-mint token
+			if maxSupply.IsZero() {
+				continue // invalid max supply
+			}
+			deployInscribe(state, inscriptionID, tick, maxSupply, decimals, limitPerMint, isSelfMint)
 		}
 
 		// handle mint
@@ -362,7 +395,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 			if !ok {
 				continue // invalid inscription
 			}
-			keyExists, keyRemainingSupply, _, keyLimitPerMint, keyDecimals := getTickStatus(tick)
+			keyExists, keyRemainingSupply, _, keyLimitPerMint, keyDecimals, keyInscriptionID, keyIsSelfMint := getTickStatus(tick)
 			tickExists := state.GetUInt256(keyExists)
 			if tickExists.Eq(uint256.NewInt(0)) {
 				continue // not deployed
@@ -389,6 +422,14 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 			if amount.Gt(remainingSupply) {
 				amount.Set(remainingSupply) // mint remaining token
 			}
+			isSelfMint := state.GetUInt256(keyIsSelfMint)
+			parentIDBytes := state.GetBytes(keyInscriptionID)
+			tickParentID := hex.EncodeToString(parentIDBytes)
+			if isSelfMint.Eq(uint256.NewInt(1)) {
+				if tickParentID != parentID {
+					continue
+				}
+			}
 			mintInscribe(state, newPkscript, newWallet, tick, amount)
 		}
 
@@ -398,7 +439,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 			if !ok {
 				continue // invalid inscription
 			}
-			keyExists, _, _, _, keyDecimals := getTickStatus(tick)
+			keyExists, _, _, _, keyDecimals, _, _ := getTickStatus(tick)
 			tickExists := state.GetUInt256(keyExists)
 			if tickExists.Eq(uint256.NewInt(0)) {
 				continue // not deployed

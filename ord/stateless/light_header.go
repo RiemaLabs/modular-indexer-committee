@@ -1,6 +1,7 @@
 package stateless
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/ethereum/go-verkle"
@@ -23,6 +24,48 @@ func (h *LightHeader) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []by
 		}
 	}
 	return oldValue
+}
+
+func (h *LightHeader) InsertInscriptionID(key []byte, value string) {
+	// The first slot contains the first 32 bytes of the InscriptionID
+	firstKey := make([]byte, verkle.KeySize)
+	copy(firstKey, key)
+
+	valueLen := verkle.LeafValueSize * 2 // 64
+	transactionID, err := hex.DecodeString(value[:valueLen])
+	if err != nil {
+		panic(err)
+	}
+	h.InsertBytes(firstKey, transactionID)
+
+	// The second slot contains the output index of the InscriptionID
+	secondKey := make([]byte, verkle.KeySize)
+	copy(secondKey, key)
+	secondKey[verkle.StemSize] = firstKey[verkle.StemSize] + byte(1)
+
+	outputIndex := value[valueLen+1:]
+	outputIndexUint256, err := uint256.FromDecimal(outputIndex)
+	if err != nil {
+		panic(err)
+	}
+	h.InsertUInt256(secondKey, outputIndexUint256)
+}
+
+func (h *LightHeader) GetInscriptionID(key []byte) string {
+	// The first Key
+	firstKey := make([]byte, verkle.KeySize)
+	copy(firstKey, key)
+	transactionIDBytes := h.GetBytes(firstKey)
+	transactionID := hex.EncodeToString(transactionIDBytes)
+
+	// The second Key
+	secondKey := make([]byte, verkle.KeySize)
+	copy(secondKey, key)
+	secondKey[verkle.StemSize] = firstKey[verkle.StemSize] + byte(1)
+	outputIndexUint256 := h.GetUInt256(secondKey)
+	outputIndex := outputIndexUint256.Dec()
+
+	return transactionID + "i" + outputIndex
 }
 
 func (h *LightHeader) InsertUInt256(key []byte, value *uint256.Int) {
