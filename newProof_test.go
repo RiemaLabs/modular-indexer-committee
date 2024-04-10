@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"testing"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
+	"github.com/ethereum/go-verkle"
 )
 
 func Test_NewProof(t *testing.T) {
@@ -21,7 +23,7 @@ func Test_NewProof(t *testing.T) {
 	go ServiceStage(ordGetterTest, &arguments, queue, 10*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
-			if queue.VerifyProof() {
+			if VerifyProof(queue) {
 				log.Printf("Block: %d is verified!\n", ordGetterTest.LatestBlockHeight)
 			} else {
 				log.Printf("Block: %d cannot pass verification!\n", ordGetterTest.LatestBlockHeight)
@@ -33,4 +35,57 @@ func Test_NewProof(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+func VerifyProof(queue *stateless.Queue) bool {
+	if queue.LastStateProof == nil {
+		log.Println("queue.LastStateProof == nil")
+		return true
+	}
+	vProof, _, err := verkle.SerializeProof(queue.LastStateProof)
+	if err != nil {
+		log.Println("[VerifyProof]: verkle.SerializeProof(queue.LastStateProof) failed")
+		return false
+	}
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		return false
+	}
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+	log.Println("VerifyProof finalproof:", finalproof)
+	return finalproof == RollingbackProof(queue)
+}
+
+func RollingbackProof(queue *stateless.Queue) string {
+	// copy most code from apis.GetLatestStateProof
+	// and then return the finalproof
+	lastIndex := len(queue.History) - 1
+	postState := queue.Header.Root
+	preState, keys := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
+
+	if len(keys) == 0 {
+		log.Println("[RollingbackProof]: len(keys) == 0")
+		return ""
+	}
+
+	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
+	if err != nil {
+		log.Printf("Failed to generate proof due to %v", err)
+		return ""
+	}
+
+	vProof, _, err := verkle.SerializeProof(proofOfKeys)
+	if err != nil {
+		log.Printf("Failed to serialize proof due to %v", err)
+		return ""
+	}
+
+	vProofBytes, err := vProof.MarshalJSON()
+	if err != nil {
+		log.Printf("Failed to marshal the proof to JSON due to %v", err)
+		return ""
+	}
+
+	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
+	return finalproof
 }

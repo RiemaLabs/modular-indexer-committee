@@ -78,7 +78,9 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		if err != nil {
 			return err
 		}
-		queue.LastStateProof = proof
+		if proof != nil {
+			queue.LastStateProof = proof
+		}
 
 		queue.Header.OrdTrans = ordTransfer
 		// header.Height ++
@@ -322,56 +324,4 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 		PostValues: postvals,
 	}
 	return proof, nil
-}
-
-func (queue *Queue) VerifyProof() bool {
-	if queue.LastStateProof == nil {
-		log.Println("queue.LastStateProof == nil")
-		return true
-	}
-	vProof, _, err := verkle.SerializeProof(queue.LastStateProof)
-	if err != nil {
-		log.Println("[VerifyProof]: verkle.SerializeProof(queue.LastStateProof) failed")
-		return false
-	}
-	vProofBytes, err := vProof.MarshalJSON()
-	if err != nil {
-		return false
-	}
-	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
-	log.Println("VerifyProof finalproof:", finalproof)
-	return finalproof == queue.RollingbackProof()
-}
-func (queue *Queue) RollingbackProof() string {
-	// copy most code from apis.GetLatestStateProof
-	// and then return the finalproof
-	lastIndex := len(queue.History) - 1
-	postState := queue.Header.Root
-	preState, keys := Rollingback(queue.Header, &queue.History[lastIndex])
-
-	if len(keys) == 0 {
-		log.Println("[RollingbackProof]: len(keys) == 0")
-		return ""
-	}
-
-	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, NodeResolveFn)
-	if err != nil {
-		log.Printf("Failed to generate proof due to %v", err)
-		return ""
-	}
-
-	vProof, _, err := verkle.SerializeProof(proofOfKeys)
-	if err != nil {
-		log.Printf("Failed to serialize proof due to %v", err)
-		return ""
-	}
-
-	vProofBytes, err := vProof.MarshalJSON()
-	if err != nil {
-		log.Printf("Failed to marshal the proof to JSON due to %v", err)
-		return ""
-	}
-
-	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
-	return finalproof
 }
