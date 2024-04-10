@@ -56,13 +56,13 @@ func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("[TestVerifyCurrentBalanceOfPkscript]", err)
+		log.Fatal("[TestGetLatestStateProof]", err)
 	}
 
 	// Get result
 	var res apis.Brc20VerifiableLatestStateProofResponse
 	if err := json.Unmarshal(body, &res); err != nil {
-		log.Fatal("[TestVerifyCurrentBalanceOfPkscript]", err)
+		log.Fatal("[TestGetLatestStateProof]", err)
 	}
 
 	lastIndex := len(queue.History) - 1
