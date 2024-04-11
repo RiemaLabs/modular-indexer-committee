@@ -78,9 +78,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		if err != nil {
 			return err
 		}
-		if proof != nil {
-			queue.LastStateProof = proof
-		}
+		queue.LastStateProof = proof
 
 		queue.Header.OrdTrans = ordTransfer
 		// header.Height ++
