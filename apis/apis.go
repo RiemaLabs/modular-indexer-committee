@@ -4,10 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	verkle "github.com/ethereum/go-verkle"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -245,6 +247,13 @@ func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool
 	// if trustedProxies != "" {
 	//     r.SetTrustedProxies([]string{trustedProxies})
 	// }
+	r.Use(gin.Recovery(), gin.Logger(), cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"POST", "GET"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	r.GET("/v1/brc20_verifiable/current_balance_of_wallet", func(c *gin.Context) {
 		GetCurrentBalanceOfWallet(c, queue)
