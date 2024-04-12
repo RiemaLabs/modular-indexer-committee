@@ -4,10 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	verkle "github.com/ethereum/go-verkle"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -239,6 +241,14 @@ func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.Default()
+
+	r.Use(gin.Recovery(), gin.Logger(), cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"POST", "GET"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// TODO: Medium. Add the TRUSTED_PROXIES to our config
 	// trustedProxies := os.Getenv("TRUSTED_PROXIES")
