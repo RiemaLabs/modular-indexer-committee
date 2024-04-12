@@ -5,6 +5,7 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
+	"github.com/crate-crypto/go-ipa/ipa"
 	verkle "github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
 )
@@ -86,4 +87,8 @@ type KVStorage interface {
 	GetBytes(key []byte) []byte
 
 	GetHeight() uint
+}
+
+type IPAConfig struct {
+	Conf *ipa.IPAConfig
 }

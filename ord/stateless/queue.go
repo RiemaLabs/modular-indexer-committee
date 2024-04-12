@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"sync"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
@@ -13,6 +14,11 @@ import (
 	"github.com/crate-crypto/go-ipa/common"
 	"github.com/crate-crypto/go-ipa/ipa"
 	verkle "github.com/ethereum/go-verkle"
+)
+
+var (
+	onceCfg sync.Once
+	cfg     *IPAConfig
 )
 
 func (state DiffState) Copy() DiffState {
@@ -78,6 +84,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		if err != nil {
 			return err
 		}
+		log.Println("[generateProofFromUpdate] proof: ", proof)
 		queue.LastStateProof = proof
 
 		queue.Header.OrdTrans = ordTransfer
@@ -283,13 +290,9 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 		}
 	}
 
-	// cfg := verkle.GetConfig()
-	conf, err := ipa.NewIPASettings()
-	if err != nil {
-		return nil, fmt.Errorf("creating multiproof: %w", err)
-	}
+	cfg := GetConfig()
 	tr := common.NewTranscript("vt")
-	mpArg, err := goipa.CreateMultiProof(tr, conf, pe.Cis, pe.Fis, pe.Zis)
+	mpArg, err := goipa.CreateMultiProof(tr, cfg.Conf, pe.Cis, pe.Fis, pe.Zis)
 	if err != nil {
 		return nil, fmt.Errorf("creating multiproof: %w", err)
 	}
@@ -322,4 +325,16 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 		PostValues: postvals,
 	}
 	return proof, nil
+}
+
+func GetConfig() *IPAConfig {
+	onceCfg.Do(func() {
+		conf, err := ipa.NewIPASettings()
+		if err != nil {
+			log.Panicln("[error getting IPA settings]: ", err)
+			panic(err)
+		}
+		cfg = &IPAConfig{Conf: conf}
+	})
+	return cfg
 }
