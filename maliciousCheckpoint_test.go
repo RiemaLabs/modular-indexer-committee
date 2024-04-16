@@ -2,10 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,7 +12,6 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/apis"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
-	"github.com/gin-gonic/gin"
 )
 
 type BlockVerifyData struct {
@@ -61,49 +57,8 @@ func changeLastTransactionAmount(ordTransfers []getter.OrdTransfer) []getter.Ord
 	return ordTransfers
 }
 
-func getCorrectProofResp(catchupHeight uint, t *testing.T) apis.Brc20VerifiableLatestStateProofResponse {
-	ordGetterTest, arguments := loadMain()
-	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
-
-	// Set gin as test mode
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.GET("/v1/brc20_verifiable/latest_state_proof", func(c *gin.Context) {
-		apis.GetLatestStateProof(c, queue)
-	})
-
-	// create test server
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	req, err := http.NewRequest("GET", ts.URL+"/v1/brc20_verifiable/latest_state_proof", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	// check status code
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal("[TestGetLatestStateProof]", err)
-	}
-
-	// Get result
-	var res apis.Brc20VerifiableLatestStateProofResponse
-	if err := json.Unmarshal(body, &res); err != nil {
-		log.Fatal("[TestGetLatestStateProof]", err)
-	}
-
-	return res
+func getCorrectProofResp() apis.Brc20VerifiableLatestStateProofResponse {
+	// TODO Get correct proof from header and ordTransfer
 }
 
 func verifyMaliciousCheckpoint(ordGetter getter.OrdGetter, arguments *RuntimeArguments, t *testing.T) []BlockVerifyData {
@@ -145,10 +100,8 @@ func verifyMaliciousCheckpoint(ordGetter getter.OrdGetter, arguments *RuntimeArg
 					KV:             header.KV,
 					Access:         header.Access,
 				}
-				headerDuplicate.Lock()
 				stateless.Exec(&headerDuplicate, duplicatedOrdTransfer, i)
 				headerDuplicate.Paging(ordGetter, false, stateless.NodeResolveFn)
-				headerDuplicate.Unlock()
 				duplicatedCommit := headerDuplicate.Root.Commit()
 
 				// Get omitted commit
@@ -161,10 +114,8 @@ func verifyMaliciousCheckpoint(ordGetter getter.OrdGetter, arguments *RuntimeArg
 					KV:             header.KV,
 					Access:         header.Access,
 				}
-				headerOmitted.Lock()
 				stateless.Exec(&headerOmitted, omittedOrdTransfer, i)
 				headerOmitted.Paging(ordGetter, false, stateless.NodeResolveFn)
-				headerOmitted.Unlock()
 				omittedCommit := headerOmitted.Root.Commit()
 
 				// Get changed commit
@@ -177,21 +128,17 @@ func verifyMaliciousCheckpoint(ordGetter getter.OrdGetter, arguments *RuntimeArg
 					KV:             header.KV,
 					Access:         header.Access,
 				}
-				headerChanged.Lock()
 				stateless.Exec(&headerChanged, changedLastTransactionAmount, i)
 				headerChanged.Paging(ordGetter, false, stateless.NodeResolveFn)
-				headerChanged.Unlock()
 				changedCommit := headerChanged.Root.Commit()
 
 				// Get correct commit
-				header.Lock()
 				stateless.Exec(header, ordTransfer, i)
 				header.Paging(ordGetter, false, stateless.NodeResolveFn)
-				header.Unlock()
 				correctCommit := header.Root.Commit()
 
-				// Get correct proof
-				proof := getCorrectProofResp(i, t)
+				// TODO Get correct proof
+				proof := getCorrectProofResp()
 
 				// Verify the correct commit
 				startTime := time.Now()
