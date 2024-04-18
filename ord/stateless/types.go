@@ -16,6 +16,7 @@ type TripleElement struct {
 	OldValue       [ValueSize]byte
 	NewValue       [ValueSize]byte
 	OldValueExists bool
+	NewValueExists bool
 }
 
 type AccessList struct {
@@ -76,6 +77,8 @@ type KVStorage interface {
 	insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn)
 
 	get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte
+
+	delete(key [][]byte, nodeResolverFn verkle.NodeResolverFn)
 
 	InsertInscriptionID(key []byte, value string)
 

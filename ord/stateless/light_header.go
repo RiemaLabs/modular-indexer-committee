@@ -26,6 +26,10 @@ func (h *LightHeader) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []by
 	return oldValue
 }
 
+func (h *LightHeader) delete(keys [][]byte, nodeResolverFn verkle.NodeResolverFn) []byte {
+	// TODO RIE-136: implement delete method in LightHeader - difficult to implement due to the inner bug of verkle
+}
+
 func (h *LightHeader) InsertInscriptionID(key []byte, value string) {
 	// The first slot contains the first 32 bytes of the InscriptionID
 	firstKey := make([]byte, verkle.KeySize)

@@ -171,10 +171,22 @@ func getEventCounts(state KVStorage, inscriptionID string) (*uint256.Int, *uint2
 	return value0, value1
 }
 
+func deleteInscriptionID(state KVStorage, inscriptionID string) {
+	// TODO RIE-136: Delete k-v pairs of the inscriptionID
+}
+
+func markInscriptionIDUsed(state KVStorage, inscriptionID string) {
+	// TODO RIE-136: Mark the inscriptionID as used
+}
+
+func getInscriptionIDUsed(state KVStorage, inscriptionID string) bool {
+	// TODO RIE-136: Get the inscriptionID used status
+}
+
 // BRC-20 Computation
 func isUsedOrInvalid(state KVStorage, inscriptionID string) bool {
 	transferInscribeCount, transferTransferCount := getEventCounts(state, inscriptionID)
-	return !transferInscribeCount.Eq(uint256.NewInt(1)) || !transferTransferCount.Eq(uint256.NewInt(0))
+	return !transferInscribeCount.Eq(uint256.NewInt(1)) || !transferTransferCount.Eq(uint256.NewInt(0)) || getInscriptionIDUsed(state, inscriptionID)
 }
 
 func deployInscribe(state KVStorage, inscriptionID string, tick string, maxSupply *uint256.Int, decimals *uint256.Int, limitPerMint *uint256.Int, isSelfMint string) {
@@ -218,13 +230,16 @@ func transferInscribe(state KVStorage, inscriptionID string, sourcePkscript ord.
 	updateBalance(f_sub, state, tick, sourcePkscript, AvailableBalancePkscript)
 	updateLatestPkscript(state, sourceWallet, sourcePkscript)
 
-	// store transfer-inscribe event
-	updateWalletAndPkscript(state, inscriptionID, sourceWallet, sourcePkscript)
+	// If the inscriptionID is not used, store the transfer-inscribe event
+	if !getInscriptionIDUsed(state, inscriptionID) {
+		// store transfer-inscribe event
+		updateWalletAndPkscript(state, inscriptionID, sourceWallet, sourcePkscript)
 
-	// update transfer-inscribe event count
-	key := getEventHash(inscriptionID, TransferInscribeCount)
-	newEventCount := uint256.NewInt(0).Add(state.GetUInt256(key), uint256.NewInt(1))
-	state.InsertUInt256(key, newEventCount)
+		// update transfer-inscribe event count
+		key := getEventHash(inscriptionID, TransferInscribeCount)
+		newEventCount := uint256.NewInt(0).Add(state.GetUInt256(key), uint256.NewInt(1))
+		state.InsertUInt256(key, newEventCount)
+	}
 }
 
 func transferTransferSpendToFee(state KVStorage, inscriptionID string, tick string, amount *uint256.Int) {
@@ -235,10 +250,9 @@ func transferTransferSpendToFee(state KVStorage, inscriptionID string, tick stri
 	updateBalance(f_add, state, tick, sourcePkscript, AvailableBalancePkscript)
 	updateLatestPkscript(state, sourceWallet, sourcePkscript)
 
-	// update transfer-transfer event count
-	key := getEventHash(inscriptionID, TransferTransferCount)
-	newEventCount := uint256.NewInt(0).Add(state.GetUInt256(key), uint256.NewInt(1))
-	state.InsertUInt256(key, newEventCount)
+	// TODO RIE-136: Delete inscriptionID k-v pairs and mark as used
+	deleteInscriptionID(state, inscriptionID)
+	markInscriptionIDUsed(state, inscriptionID)
 }
 
 func transferTransferNormal(state KVStorage, inscriptionID string, spentPkscript ord.Pkscript, spentWallet ord.Wallet, tick string, amount *uint256.Int) {
@@ -258,10 +272,9 @@ func transferTransferNormal(state KVStorage, inscriptionID string, spentPkscript
 	updateLatestPkscript(state, sourceWallet, sourcePkscript)
 	updateLatestPkscript(state, spentWallet, spentPkscript)
 
-	// update transfer-transfer event count
-	key := getEventHash(inscriptionID, TransferTransferCount)
-	newEventCount := uint256.NewInt(0).Add(state.GetUInt256(key), uint256.NewInt(1))
-	state.InsertUInt256(key, newEventCount)
+	// TODO RIE-136: Delete inscriptionID k-v pairs and mark as used
+	deleteInscriptionID(state, inscriptionID)
+	markInscriptionIDUsed(state, inscriptionID)
 }
 
 // TODO: High. Include burn logic.

@@ -66,6 +66,7 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 			OldValue:       oldValueArray,
 			NewValue:       newValueArray,
 			OldValueExists: oldValueExists,
+			NewValueExists: true,
 		})
 	}
 
@@ -112,9 +113,50 @@ func (h *Header) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
 			OldValue:       res,
 			NewValue:       res,
 			OldValueExists: oldValueExists,
+			NewValueExists: true,
 		})
 	}
 	return res[:]
+}
+
+// TODO RIE-136: implement delete method in Header
+func (h *Header) delete(keys [][]byte, nodeResolverFn verkle.NodeResolverFn) {
+	for _, key := range keys {
+		oldValueExists := true
+		if len(key) != verkle.KeySize {
+			panic(fmt.Errorf("the length the key to delete bytes must be %d, current is: %d", verkle.KeySize, len(key)))
+		}
+		oldValueArray, ok := h.KV[[verkle.KeySize]byte(key)]
+		if !ok {
+			oldValueExists = false
+		}
+		delete(h.KV, [verkle.KeySize]byte(key))
+
+		exists := false
+		for _, ele := range h.Access.Elements {
+			if bytes.Equal(key, ele.Key[:]) {
+				exists = true
+				break
+			}
+		}
+		var newValueArray [ValueSize]byte
+		if !exists && oldValueExists {
+			h.Access.Elements = append(h.Access.Elements, TripleElement{
+				Key:            [32]byte(key),
+				OldValue:       oldValueArray,
+				NewValue:       newValueArray,
+				OldValueExists: true,
+				NewValueExists: false,
+			})
+		}
+
+		delete(h.IntermediateKV, [verkle.KeySize]byte(key))
+	}
+
+	h.Root = verkle.New()
+	for k, v := range h.KV {
+		h.Root.Insert(k[:], v[:], nodeResolverFn)
+	}
 }
 
 func (h *Header) InsertInscriptionID(key []byte, value string) {
