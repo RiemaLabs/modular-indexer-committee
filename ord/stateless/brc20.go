@@ -10,6 +10,7 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	"github.com/ethereum/go-verkle"
 
 	uint256 "github.com/holiman/uint256"
@@ -130,6 +131,9 @@ var TransferInscribeSourceWallet LocationID = 0x2
 // Value: []byte (Less than 1534 bytes)
 var TransferInscribeSourcePkscript LocationID = 0x5
 
+// Value: [32]byte if used, otherwise null
+var InscriptionIDUsed LocationID = 0x6
+
 func getEventHash(inscriptionID string, locationID LocationID) []byte {
 	inscribeBytes := []byte(inscriptionID)
 	typeBytes := []byte("static")
@@ -173,14 +177,25 @@ func getEventCounts(state KVStorage, inscriptionID string) (*uint256.Int, *uint2
 
 func deleteInscriptionID(state KVStorage, inscriptionID string) {
 	// TODO RIE-136: Delete k-v pairs of the inscriptionID
+	key0 := getEventHash(inscriptionID, TransferInscribeCount)
+	key1 := getEventHash(inscriptionID, TransferTransferCount)
+	walletKey := getEventHash(inscriptionID, TransferInscribeSourceWallet)
+	PkscriptKey := getEventHash(inscriptionID, TransferInscribeSourcePkscript)
+	state.delete([][]byte{key0, key1, walletKey, PkscriptKey}, nil)
 }
 
 func markInscriptionIDUsed(state KVStorage, inscriptionID string) {
 	// TODO RIE-136: Mark the inscriptionID as used
+	InscriptionIDUsedKey := getEventHash(inscriptionID, InscriptionIDUsed)
+	var value [32]byte
+	state.insert(InscriptionIDUsedKey, value[:], stateless.NodeResolveFn)
 }
 
 func getInscriptionIDUsed(state KVStorage, inscriptionID string) bool {
 	// TODO RIE-136: Get the inscriptionID used status
+	InscriptionIDUsedKey := getEventHash(inscriptionID, InscriptionIDUsed)
+	value := state.get(InscriptionIDUsedKey, stateless.NodeResolveFn)
+	return len(value) != 0
 }
 
 // BRC-20 Computation
