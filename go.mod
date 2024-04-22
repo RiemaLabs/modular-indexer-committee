@@ -13,6 +13,7 @@ require (
 	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233
 	github.com/ethereum/go-verkle v0.1.1-0.20240119133216-f8289fc59149
 	github.com/gin-contrib/cors v1.7.1
+	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/holiman/uint256 v1.2.4
 	github.com/spf13/cobra v1.8.0
