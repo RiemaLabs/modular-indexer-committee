@@ -10,9 +10,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.52.1
 	github.com/btcsuite/btcd/btcutil v1.1.5
+	github.com/cockroachdb/pebble v1.1.0
 	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233
 	github.com/ethereum/go-verkle v0.1.1-0.20240119133216-f8289fc59149
 	github.com/gin-contrib/cors v1.7.1
+	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/holiman/uint256 v1.2.4
 	github.com/spf13/cobra v1.8.0
@@ -22,7 +24,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/siphash v1.0.1 // indirect
@@ -64,10 +65,8 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
-	github.com/cockroachdb/datadriven v1.0.3-0.20230413201302-be42291fc80f // indirect
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
-	github.com/cockroachdb/pebble v1.1.0 // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect

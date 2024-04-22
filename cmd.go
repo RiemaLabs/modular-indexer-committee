@@ -12,6 +12,7 @@ type RuntimeArguments struct {
 	EnableStateRootCache bool
 	EnableTest           bool
 	TestBlockHeightLimit uint
+	EnablePprof          bool
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -58,5 +59,6 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "t", false, "Enable this flag to hijack the blockheight to test the service")
 	rootCmd.Flags().UintVarP(&arguments.TestBlockHeightLimit, "blockheight", "", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want.")
+	rootCmd.Flags().BoolVar(&arguments.EnablePprof, "pprof", false, "Enable the pprof HTTP handler (at `/debug/pprof/`)")
 	return rootCmd
 }

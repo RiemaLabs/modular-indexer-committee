@@ -105,7 +105,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 
 	if arguments.EnableService {
 		log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
-		go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest)
+		go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest, arguments.EnablePprof)
 	}
 
 	for {

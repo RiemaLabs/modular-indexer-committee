@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ethereum/go-verkle"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/pprof"
+	"github.com/gin-gonic/gin"
+
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
-	verkle "github.com/ethereum/go-verkle"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 )
 
 func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
@@ -236,7 +238,7 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 	})
 }
 
-func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool) {
+func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePprof bool) {
 	if !enableDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -255,6 +257,10 @@ func StartService(queue *stateless.Queue, enableCommittee bool, enableDebug bool
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	if enablePprof {
+		pprof.Register(r)
+	}
 
 	r.GET("/v1/brc20_verifiable/current_balance_of_wallet", func(c *gin.Context) {
 		GetCurrentBalanceOfWallet(c, queue)
