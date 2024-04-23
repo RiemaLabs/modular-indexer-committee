@@ -42,6 +42,7 @@ func TestTree_Insert(t *testing.T) {
 	}
 }
 
+// Get tree.insert(k1, v1).insert(k2, v2).commit()
 func TestTree_InsertUnflushed(t *testing.T) {
 
 	key1 := bytes.Repeat([]byte("a"), 32)
@@ -63,6 +64,7 @@ func TestTree_InsertUnflushed(t *testing.T) {
 	log.Println(*commitUnflushed)
 }
 
+// Get tree.insert(k1, v1).flush().insert(k2, v2).commit(), and find it's different with the above commit
 func TestTree_InsertFlushed(t *testing.T) {
 	key1 := bytes.Repeat([]byte("a"), 32)
 	val1 := bytes.Repeat([]byte("a"), 32)
