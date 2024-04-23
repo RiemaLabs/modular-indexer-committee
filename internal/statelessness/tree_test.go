@@ -92,11 +92,10 @@ func TestTree_InsertFlushed(t *testing.T) {
 	log.Println(*commitFlushed)
 }
 
-// Get the memory usage of previous method
+// Get the memory usage of previous method, cost 7667 MiB when size = 1000000
 func TestTree_MemoryUnflushed(t *testing.T) {
 	root := verkle.New()
-	kvMap := make(stateless.KeyValueMap)
-	size := 100000
+	size := 1000000
 	for _ = range size {
 		randomKey := make([]byte, 32)
 		randomVal := make([]byte, 32)
@@ -110,11 +109,6 @@ func TestTree_MemoryUnflushed(t *testing.T) {
 			panic(err)
 		}
 		root.Insert(randomKey, randomVal, stateless.NodeResolveFn)
-		var key [32]byte
-		var val [32]byte
-		copy(key[:], randomKey)
-		copy(val[:], randomVal)
-		kvMap[key] = val
 	}
 
 	var m runtime.MemStats
@@ -123,13 +117,13 @@ func TestTree_MemoryUnflushed(t *testing.T) {
 	fmt.Printf("Used memory = %v MiB", m.Alloc/1024/1024)
 }
 
-// Get memory usage of statelessness.tree with flushed method
+// Get memory usage of statelessness.tree with flushed method, cost 358 MiB when size = 1000000
 func TestTree_MemoryFlushed(t *testing.T) {
 	tree, err := NewTree()
 	if err != nil {
 		t.Fatal(err)
 	}
-	size := 100000
+	size := 1000000
 	for _ = range size {
 		randomKey := make([]byte, 32)
 		randomVal := make([]byte, 32)
