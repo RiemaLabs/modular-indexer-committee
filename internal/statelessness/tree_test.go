@@ -2,8 +2,14 @@ package statelessness
 
 import (
 	"bytes"
+	"crypto/rand"
+	"fmt"
 	"log"
+	"runtime"
 	"testing"
+
+	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
+	"github.com/ethereum/go-verkle"
 )
 
 func TestTree_Insert(t *testing.T) {
@@ -84,4 +90,64 @@ func TestTree_InsertFlushed(t *testing.T) {
 	}
 	commitFlushed := treeFlushed.Commit()
 	log.Println(*commitFlushed)
+}
+
+// Get the memory usage of previous method
+func TestTree_MemoryUnflushed(t *testing.T) {
+	root := verkle.New()
+	kvMap := make(stateless.KeyValueMap)
+	size := 100000
+	for _ = range size {
+		randomKey := make([]byte, 32)
+		randomVal := make([]byte, 32)
+
+		_, err := rand.Read(randomKey)
+		if err != nil {
+			panic(err)
+		}
+		_, err = rand.Read(randomVal)
+		if err != nil {
+			panic(err)
+		}
+		root.Insert(randomKey, randomVal, stateless.NodeResolveFn)
+		var key [32]byte
+		var val [32]byte
+		copy(key[:], randomKey)
+		copy(val[:], randomVal)
+		kvMap[key] = val
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	fmt.Printf("Used memory = %v MiB", m.Alloc/1024/1024)
+}
+
+// Get memory usage of statelessness.tree with flushed method
+func TestTree_MemoryFlushed(t *testing.T) {
+	tree, err := NewTree()
+	if err != nil {
+		t.Fatal(err)
+	}
+	size := 100000
+	for _ = range size {
+		randomKey := make([]byte, 32)
+		randomVal := make([]byte, 32)
+
+		_, err := rand.Read(randomKey)
+		if err != nil {
+			panic(err)
+		}
+		_, err = rand.Read(randomVal)
+		if err != nil {
+			panic(err)
+		}
+		tree.Insert(randomKey, randomVal)
+		tree.Flush()
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	fmt.Printf("Used memory = %v MiB", m.Alloc/1024/1024)
 }
