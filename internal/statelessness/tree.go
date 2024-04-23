@@ -37,6 +37,8 @@ func (t *Tree) Insert(key, value []byte) error {
 	return t.tree.Insert(key, value, t.restoreNode)
 }
 
+func (t *Tree) Commit() *verkle.Point { return t.tree.Commit() }
+
 func (t *Tree) Flush() {
 	// TODO: When to flush, what to flush?
 	if node, ok := t.tree.(*verkle.InternalNode); ok {
