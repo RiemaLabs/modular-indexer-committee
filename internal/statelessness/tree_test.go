@@ -92,7 +92,7 @@ func TestTree_InsertFlushed(t *testing.T) {
 	log.Println(*commitFlushed)
 }
 
-// Get the memory usage of previous method, cost 7667 MiB when size = 1000000
+// Get the memory usage of previous method, cost 7667 MB when size = 1000000
 func TestTree_MemoryUnflushed(t *testing.T) {
 	root := verkle.New()
 	size := 1000000
@@ -117,7 +117,7 @@ func TestTree_MemoryUnflushed(t *testing.T) {
 	fmt.Printf("Used memory = %v MiB", m.Alloc/1024/1024)
 }
 
-// Get memory usage of statelessness.tree with flushed method, cost 358 MiB when size = 1000000
+// Get memory usage of statelessness.tree with flushed method, cost 358 MB when size = 1000000
 func TestTree_MemoryFlushed(t *testing.T) {
 	tree, err := NewTree()
 	if err != nil {
