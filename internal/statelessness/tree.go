@@ -59,9 +59,11 @@ func (t *Tree) restoreNode(key []byte) ([]byte, error) {
 func (t *Tree) storeNode(key []byte, node verkle.VerkleNode) {
 	val, err := node.Serialize()
 	if err != nil {
-		panic(err) // TODO
+		msg := fmt.Sprintf("[stateless] failed to serialize node: %v", err)
+		panic(msg)
 	}
 	if err := t.db.Set(key, val, new(pebble.WriteOptions)); err != nil {
-		panic(err) // TODO
+		msg := fmt.Sprintf("[stateless] failed to store node: %v", err)
+		panic(msg)
 	}
 }
