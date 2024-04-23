@@ -60,7 +60,7 @@ func TestTree_InsertUnflushed(t *testing.T) {
 		t.Fatal(err)
 	}
 	commitUnflushed := tree.Commit()
-	log.Println(commitUnflushed)
+	log.Println(*commitUnflushed)
 }
 
 func TestTree_InsertFlushed(t *testing.T) {
@@ -81,5 +81,5 @@ func TestTree_InsertFlushed(t *testing.T) {
 		t.Fatal(err)
 	}
 	commitFlushed := treeFlushed.Commit()
-	log.Println(commitFlushed)
+	log.Println(*commitFlushed)
 }
