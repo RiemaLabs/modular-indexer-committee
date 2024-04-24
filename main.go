@@ -172,7 +172,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							err = checkpoint.UploadCheckpointByS3(&c,
 								s3cfg.AccessKey, s3cfg.SecretKey, s3cfg.Region, s3cfg.Bucket, timeout)
 							if err != nil {
-								log.Fatalf("Unable to upload the checkpoint by S3 due to: %v", err)
+								log.Printf("Unable to upload the checkpoint by S3 due to: %v", err)
 							} else {
 								log.Printf("Succeed to upload the checkpoint by S3 at height: %s\n", c.Height)
 							}
@@ -182,7 +182,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 							err = checkpoint.UploadCheckpointByDA(&c,
 								dacfg.PrivateKey, dacfg.GasCoupon, dacfg.NamespaceID, dacfg.Network, timeout)
 							if err != nil {
-								log.Fatalf("Unable to upload the checkpoint by DA due to: %v", err)
+								log.Printf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
 								log.Printf("Succeed to upload the checkpoint by DA at height: %s\n", c.Height)
 							}
