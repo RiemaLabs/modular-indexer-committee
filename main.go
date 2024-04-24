@@ -252,7 +252,7 @@ func Execution(arguments *RuntimeArguments) {
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
 	var ordGetter getter.OrdGetter
 	if arguments.EnableTest {
-		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
+		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, arguments.TestBlockHeightLimit)
 	} else {
 		ordGetter, err = getter.NewOPIOrdGetter(&gd)
 	}

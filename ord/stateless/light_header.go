@@ -36,7 +36,7 @@ func (h *LightHeader) InsertInscriptionID(key []byte, value string) {
 	if err != nil {
 		panic(err)
 	}
-	h.InsertBytes(firstKey, transactionID)
+	h.insert(firstKey, transactionID, NodeResolveFn)
 
 	// The second slot contains the output index of the InscriptionID
 	secondKey := make([]byte, verkle.KeySize)
@@ -55,7 +55,7 @@ func (h *LightHeader) GetInscriptionID(key []byte) string {
 	// The first Key
 	firstKey := make([]byte, verkle.KeySize)
 	copy(firstKey, key)
-	transactionIDBytes := h.GetBytes(firstKey)
+	transactionIDBytes := h.get(firstKey, NodeResolveFn)
 	transactionID := hex.EncodeToString(transactionIDBytes)
 
 	// The second Key
