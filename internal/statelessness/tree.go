@@ -7,13 +7,19 @@ import (
 	"github.com/ethereum/go-verkle"
 )
 
+const DefaultTreeDirname = "verkle.pebble"
+
 type Tree struct {
 	tree verkle.VerkleNode
 	db   *pebble.DB
 }
 
-func NewTree() (*Tree, error) {
-	db, err := pebble.Open("verkle.pebble", new(pebble.Options))
+func NewTree(dirname ...string) (*Tree, error) {
+	dir := DefaultTreeDirname
+	if len(dirname) > 0 {
+		dir = dirname[0]
+	}
+	db, err := pebble.Open(dir, new(pebble.Options))
 	if err != nil {
 		return nil, err
 	}

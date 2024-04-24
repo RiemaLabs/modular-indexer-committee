@@ -32,7 +32,7 @@ go.work
 config.json
 
 # Cache
-verkle.pebble/
+*verkle.pebble/
 .cache/*
 !.cache/.gitkeep
 
