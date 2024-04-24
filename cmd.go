@@ -13,6 +13,7 @@ type RuntimeArguments struct {
 	EnableTest           bool
 	TestBlockHeightLimit uint
 	EnablePprof          bool
+	ConfigFilePath       string
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -50,15 +51,18 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 				log.Printf("Use the test mode and limit the max blockheight %d to avoid catching up to the real latest block.\n", arguments.TestBlockHeightLimit)
 			}
 
+			log.Printf("The path of the config file is %s\n", arguments.ConfigFilePath)
+
 			Execution(arguments)
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&arguments.EnableService, "service", "s", false, "Enable this flag to provide API service")
-	rootCmd.Flags().BoolVarP(&arguments.EnableCommittee, "committee", "", false, "Enable this flag to provide committee service by uploading checkpoint")
-	rootCmd.Flags().BoolVarP(&arguments.EnableStateRootCache, "cache", "", true, "Enable this flag to cache State Root")
+	rootCmd.Flags().BoolVar(&arguments.EnableCommittee, "committee", false, "Enable this flag to provide committee service by uploading checkpoint")
+	rootCmd.Flags().BoolVar(&arguments.EnableStateRootCache, "cache", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "t", false, "Enable this flag to hijack the blockheight to test the service")
-	rootCmd.Flags().UintVarP(&arguments.TestBlockHeightLimit, "blockheight", "", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want.")
+	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want.")
 	rootCmd.Flags().BoolVar(&arguments.EnablePprof, "pprof", false, "Enable the pprof HTTP handler (at `/debug/pprof/`)")
+	rootCmd.Flags().StringVar(&arguments.ConfigFilePath, "cfg", "config.json", "Indicate the path of config.json")
 	return rootCmd
 }
