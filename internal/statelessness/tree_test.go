@@ -128,6 +128,35 @@ func TestTree_Commit(t *testing.T) {
 	}
 }
 
+func TestTree_CommitBytes(t *testing.T) {
+	key1 := bytes.Repeat([]byte("a"), 32)
+	val1 := bytes.Repeat([]byte("a"), 32)
+	key2 := bytes.Repeat([]byte("b"), 32)
+	val2 := bytes.Repeat([]byte("b"), 32)
+
+	tree := verkle.New()
+	if err := tree.Insert(key1, val1, nil); err != nil {
+		t.Fatal(err)
+	}
+	c0 := tree.Commit()
+	b0 := c0.Bytes()
+
+	if err := tree.Insert(key2, val2, nil); err != nil {
+		t.Fatal(err)
+	}
+	c1 := tree.Commit()
+	b1 := c1.Bytes()
+
+	// Raw bytes between tree changes SHOULD NOT be the same.
+	if bytes.Equal(b0[:], b1[:]) {
+		t.Fatal(b0, b1)
+	}
+	// Tree commits COULD BE the same since they share the same memory address.
+	if !c0.Equal(c1) {
+		t.Fatal(c0, c1)
+	}
+}
+
 // Get the memory usage of previous method, cost 7667 MB when size = 1000000
 func TestTree_MemoryUnflushed(t *testing.T) {
 	root := verkle.New()
