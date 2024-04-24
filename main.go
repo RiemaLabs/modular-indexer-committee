@@ -159,7 +159,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					if curRecord, found := history[key]; !(found && curRecord.Success) {
 						indexerID := checkpoint.IndexerIdentification{
 							URL:          GlobalConfig.Service.URL,
-							Name:         GlobalConfig.Service.Name,
+							Name:         arguments.CommitteeIndexerName,
 							Version:      Version,
 							MetaProtocol: GlobalConfig.Service.MetaProtocol,
 						}
