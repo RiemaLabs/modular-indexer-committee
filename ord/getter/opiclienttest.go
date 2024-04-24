@@ -23,7 +23,7 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedH
 	}
 
 	// read data/*-brc20_block_hashes.csv and populate the BlockHash map in the OPIOrdGetterTest struct
-	filename := "./data/"+fmt.Sprintf("%d", hashedHeight) + "-brc20_block_hashes.csv"
+	filename := "./data/" + fmt.Sprintf("%d", hashedHeight) + "-brc20_block_hashes.csv"
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedH
 	}
 
 	// read data/*-ord_transfers.csv and populate the OrdTransfers slice in the OPIOrdGetterTest struct
-	filename = "./data/"+fmt.Sprintf("%d", hashedHeight) + "-ord_transfers.csv"
+	filename = "./data/" + fmt.Sprintf("%d", hashedHeight) + "-ord_transfers.csv"
 	file, err = os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedH
 			SentAsFee:     bool(sent_as_fee),
 			Content:       []byte(content),
 			ContentType:   content_type,
-			ParentID:  parent_id,
+			ParentID:      parent_id,
 		}
 
 		// Append to OrdTransfers slice

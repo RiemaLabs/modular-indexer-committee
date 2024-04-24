@@ -136,8 +136,8 @@ func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
 	loadVerifyCurrentBalanceOfWallet("meme", "bc1prvqdfjku8359hk9uc2tdgg0xlwvsel2fjr9ysydmaas9x3kyzuvskuwmlq", uint(779980), t, 782000)
 }
 
-func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight uint, t *testing.T, loadFile uint) {
-	ordGetterTest, arguments := loadMain(loadFile)
+func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight uint, t *testing.T, loadHeight uint) {
+	ordGetterTest, arguments := loadMain(loadHeight)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Get current balance from api
