@@ -14,7 +14,7 @@ import (
 
 func Test_NewProof(t *testing.T) {
 	var latestHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, err := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))

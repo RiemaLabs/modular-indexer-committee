@@ -15,7 +15,7 @@ type OPIOrdGetterTest struct {
 	OrdTransfers      []OrdTransfer
 }
 
-func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOrdGetterTest, error) {
+func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedHeight uint) (*OPIOrdGetterTest, error) {
 	// Initialize OPIOrdGetterTest struct
 	getter := OPIOrdGetterTest{
 		LatestBlockHeight: latestBlockHeight,
@@ -23,7 +23,8 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOr
 	}
 
 	// read data/*-brc20_block_hashes.csv and populate the BlockHash map in the OPIOrdGetterTest struct
-	file, err := os.Open("./data/782000-brc20_block_hashes.csv")
+	filename := "./data/"+fmt.Sprintf("%d", hashedHeight) + "-brc20_block_hashes.csv"
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,8 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOr
 	}
 
 	// read data/*-ord_transfers.csv and populate the OrdTransfers slice in the OPIOrdGetterTest struct
-	file, err = os.Open("./data/782000-ord_transfers.csv")
+	filename = "./data/"+fmt.Sprintf("%d", hashedHeight) + "-ord_transfers.csv"
+	file, err = os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +66,7 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOr
 		sent_as_fee, _ := strconv.ParseBool(record[7])
 		content := record[8]
 		content_type := record[9]
+		parent_id := record[10]
 
 		// Create OrdTransfer struct
 		ordTransfer := OrdTransfer{
@@ -77,6 +80,7 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint) (*OPIOr
 			SentAsFee:     bool(sent_as_fee),
 			Content:       []byte(content),
 			ContentType:   content_type,
+			ParentID:  parent_id,
 		}
 
 		// Append to OrdTransfers slice

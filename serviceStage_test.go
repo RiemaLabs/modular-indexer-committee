@@ -12,7 +12,7 @@ import (
 
 func Test_ServiceStage(t *testing.T) {
 	var catchupHeight uint = 780000
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 	ordGetterTest.LatestBlockHeight = catchupHeight
 

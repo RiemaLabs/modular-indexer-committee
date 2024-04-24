@@ -16,13 +16,13 @@ func Test_OPI(t *testing.T) {
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, err := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
 	ordGetterTest.LatestBlockHeight = latestHeight
-	go ServiceStage(ordGetterTest, &arguments, queue, 10*time.Millisecond)
+	go ServiceStage(ordGetterTest, &arguments, queue, 50*time.Millisecond)
 	for {
 		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
 			queue.Header.VerifyState(&records)

@@ -253,7 +253,7 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 	r.Use(gin.Recovery(), gin.Logger(), cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"POST", "GET"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length"},
+		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
