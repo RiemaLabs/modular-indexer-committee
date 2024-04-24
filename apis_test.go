@@ -24,7 +24,7 @@ func TestAPI_GetLatestStateProof_ZeroTransfers(t *testing.T) {
 }
 
 func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Set gin as test mode
@@ -79,7 +79,7 @@ func TestAPI_VerifyCurrentBalanceOfPkscript(t *testing.T) {
 }
 
 func loadVerifyCurrentBalanceOfPkscript(tick string, pkScript string, catchupHeight uint, t *testing.T) {
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Get current balance from api
@@ -133,11 +133,11 @@ func loadVerifyCurrentBalanceOfPkscript(tick string, pkScript string, catchupHei
 }
 
 func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
-	loadVerifyCurrentBalanceOfWallet("meme", "bc1prvqdfjku8359hk9uc2tdgg0xlwvsel2fjr9ysydmaas9x3kyzuvskuwmlq", uint(779980), t)
+	loadVerifyCurrentBalanceOfWallet("meme", "bc1prvqdfjku8359hk9uc2tdgg0xlwvsel2fjr9ysydmaas9x3kyzuvskuwmlq", uint(779980), t, 782000)
 }
 
-func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight uint, t *testing.T) {
-	ordGetterTest, arguments := loadMain()
+func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight uint, t *testing.T, loadHeight uint) {
+	ordGetterTest, arguments := loadMain(loadHeight)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
 
 	// Get current balance from api
@@ -181,7 +181,8 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 		log.Fatal("[TestVerifyCurrentBalanceOfWallet]", err)
 	}
 
-	log.Println("[res]: ", res.Result.OverallBalance)
+	log.Println("[OverallBalance res]: ", res.Result.OverallBalance)
+	log.Println("[AvailableBalance res]: ", res.Result.AvailableBalance)
 
 	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.Commit(), tick, wallet, &res)
 	if err != nil {

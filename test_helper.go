@@ -9,7 +9,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
 
-func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {
+func loadMain(hashedHeight uint) (*getter.OPIOrdGetterTest, RuntimeArguments) {
 	arguments := RuntimeArguments{
 		EnableService:        false,
 		EnableCommittee:      false,
@@ -38,7 +38,7 @@ func loadMain() (*getter.OPIOrdGetterTest, RuntimeArguments) {
 
 	// Use OPI database as the getter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	getter, err := getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit)
+	getter, err := getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, hashedHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)

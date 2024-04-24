@@ -15,7 +15,7 @@ import (
 const BRC20StartHeight uint = 779832
 
 // Start Height of the Self-Mint
-const SelfMintEnableHeight uint = 837090
+var SelfMintEnableHeight uint = 837090
 
 var NodeResolveFn verkle.NodeResolverFn = nil
 

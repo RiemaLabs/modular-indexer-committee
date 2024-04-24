@@ -255,18 +255,13 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 
 func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proof, error) {
 	if len(stateDiff.Access.Elements) == 0 {
-		log.Printf("len(stateDiff.Access.Elements) == 0")
+		return nil, nil
 	}
 	var keys [][]byte
 	kvMap := make(KeyValueMap)
 	for _, elem := range stateDiff.Access.Elements {
 		keys = append(keys, elem.Key[:])
 		kvMap[elem.Key] = elem.NewValue
-	}
-
-	if len(keys) == 0 {
-		log.Printf("no key provided for proof")
-		return nil, nil
 	}
 
 	preroot := header.Root

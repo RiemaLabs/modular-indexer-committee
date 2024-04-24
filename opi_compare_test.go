@@ -16,7 +16,7 @@ func Test_OPI(t *testing.T) {
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
-	ordGetterTest, arguments := loadMain()
+	ordGetterTest, arguments := loadMain(782000)
 	queue, err := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, latestHeight)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
