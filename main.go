@@ -202,10 +202,10 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 func Execution(arguments *RuntimeArguments) {
 
 	// TODO: High. Get the version from Git Tag.
-	Version = "v0.1.0-rc.3"
+	Version = "v0.1.0"
 
 	// Get the configuration.
-	configFile, err := os.ReadFile("config.json")
+	configFile, err := os.ReadFile(arguments.ConfigFilePath)
 	if err != nil {
 		log.Fatalf("Failed to read config file: %v", err)
 	}
