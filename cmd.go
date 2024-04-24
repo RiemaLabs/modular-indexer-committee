@@ -14,6 +14,7 @@ type RuntimeArguments struct {
 	TestBlockHeightLimit uint
 	EnablePprof          bool
 	ConfigFilePath       string
+	CommitteeIndexerName string
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -33,25 +34,26 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if arguments.EnableService {
-				log.Println("Service mode is enabled.")
+				log.Println("Service mode is enabled")
 			} else {
-				log.Println("Service mode is disabled.")
+				log.Println("Service mode is disabled")
 			}
 			if arguments.EnableCommittee {
-				log.Println("Committee mode is enabled.")
+				log.Println("Committee mode is enabled")
 			} else {
-				log.Println("Committee mode is disabled.")
+				log.Println("Committee mode is disabled")
 			}
 			if arguments.EnableStateRootCache {
-				log.Println("StateRoot cache is enabled.")
+				log.Println("StateRoot cache is enabled")
 			} else {
-				log.Println("StateRoot cache is disabled.")
+				log.Println("StateRoot cache is disabled")
 			}
 			if arguments.EnableTest && arguments.TestBlockHeightLimit != 0 {
-				log.Printf("Use the test mode and limit the max blockheight %d to avoid catching up to the real latest block.\n", arguments.TestBlockHeightLimit)
+				log.Printf("Use the test mode and limit the max blockheight %d to avoid catching up to the real latest block\n", arguments.TestBlockHeightLimit)
 			}
 
 			log.Printf("The path of the config file is %s\n", arguments.ConfigFilePath)
+			log.Printf("The name of the committee indexer service is %s\n", arguments.CommitteeIndexerName)
 
 			Execution(arguments)
 		},
@@ -61,8 +63,9 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().BoolVar(&arguments.EnableCommittee, "committee", false, "Enable this flag to provide committee service by uploading checkpoint")
 	rootCmd.Flags().BoolVar(&arguments.EnableStateRootCache, "cache", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "t", false, "Enable this flag to hijack the blockheight to test the service")
-	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want.")
+	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want")
 	rootCmd.Flags().BoolVar(&arguments.EnablePprof, "pprof", false, "Enable the pprof HTTP handler (at `/debug/pprof/`)")
-	rootCmd.Flags().StringVar(&arguments.ConfigFilePath, "cfg", "config.json", "Indicate the path of config.json")
+	rootCmd.Flags().StringVar(&arguments.ConfigFilePath, "cfg", "config.json", "Indicate the path of config file")
+	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "default", "Indicate the name of the committee indexer service")
 	return rootCmd
 }

@@ -24,7 +24,6 @@
     },
     "service": {
         "url": "YourCommitteeIndexerServiceURL",
-        "name": "YourCommitteeIndexerName",
         "metaProtocol": "brc-20"
     }
 }
