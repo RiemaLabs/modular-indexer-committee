@@ -193,7 +193,9 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 					}
 				}
 			}
-			log.Printf("Listening for new Bitcoin block, current height: %d\n", latestHeight)
+			if !arguments.EnableTest {
+				log.Printf("Listening for new Bitcoin block, current height: %d\n", latestHeight)
+			}
 			time.Sleep(interval)
 		}
 	}
