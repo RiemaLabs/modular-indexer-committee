@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 	"github.com/ethereum/go-verkle"
@@ -209,4 +210,47 @@ func TestTree_MemoryFlushed(t *testing.T) {
 	runtime.ReadMemStats(&m)
 
 	fmt.Printf("Used memory = %v MiB", m.Alloc/1024/1024)
+}
+
+func TestTree_FlushUnflushTime(t *testing.T) {
+	size := uint(3000000) // About 22GB, flushing costs 1m17s, restoring costs few ms
+	flushTime, unflushTime := getFlushUnflushTime(size, t)
+	fmt.Printf("Flush time: %v, Unflush time: %v", flushTime, unflushTime)
+}
+
+func getFlushUnflushTime(size uint, t *testing.T) (time.Duration, time.Duration) {
+	tree, err := NewTree()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _ = range size {
+		randomKey := make([]byte, 32)
+		randomVal := make([]byte, 32)
+
+		_, err := rand.Read(randomKey)
+		if err != nil {
+			panic(err)
+		}
+		_, err = rand.Read(randomVal)
+		if err != nil {
+			panic(err)
+		}
+		tree.Insert(randomKey, randomVal)
+	}
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	fmt.Printf("Used memory = %v MB", m.Alloc/1024/1024)
+	start := time.Now()
+	tree.Flush()
+	flushTime := time.Since(start)
+	randomKey := make([]byte, 32)
+	_, err = rand.Read(randomKey)
+	if err != nil {
+		panic(err)
+	}
+	start = time.Now()
+	tree.restoreNode(randomKey)
+	unflushTime := time.Since(start)
+	return flushTime, unflushTime
 }
