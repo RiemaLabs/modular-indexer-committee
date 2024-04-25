@@ -19,7 +19,7 @@ Committee indexer serves as a key component of Modular Indexer, and is responsib
 - Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
 - Update reliance on OPI to version 0.4.1.
 - Enable specifying the path to `config.json` via the command line.
-- Remove `Name` field from `config.json` and require it to be passed via the command line.
+- Remove `Name` field from `config.json` and allow it to be passed via the command line.
 
 ## Getting Started
 
