@@ -15,7 +15,10 @@ Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.dis
 ## What is Committee Indexer?
 Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
 
-The Committee Indexer now supports the Self-Mint and Burn logic for BRC-20 meta-protocol, enhancing flexibility and functionality in managing token operations within the ecosystem.
+## What is Happening for Committee Indexer?
+- Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
+- Update reliance on OPI to version 0.4.1.
+- Enable specifying the path to `config.json` via the command line.
 
 ## Getting Started
 
