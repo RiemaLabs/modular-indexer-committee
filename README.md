@@ -19,6 +19,7 @@ Committee indexer serves as a key component of Modular Indexer, and is responsib
 - Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
 - Update reliance on OPI to version 0.4.1.
 - Enable specifying the path to `config.json` via the command line.
+- Remove `Name` field from `config.json` and require it to be passed via the command line.
 
 ## Getting Started
 
@@ -68,10 +69,10 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 ```Bash
 go build
 
-# Run the committee indexer with providing service, specifying the config file path and the name of the service
+# Run the committee indexer with providing service
 ./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service
 
-# Run the committee indexer in test mode, specifying the block height
+# Run the committee indexer in test mode
 ./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service -t --blockheight 780010
 ```
 
