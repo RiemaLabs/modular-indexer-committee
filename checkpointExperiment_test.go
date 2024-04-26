@@ -47,7 +47,7 @@ func CheckpointExperiment(startHeight uint, endHeight uint) []CheckpointData {
 	// For each block height, start with the previous checkpoint and apply stateDiff to compute the next checkpoint.
 	// Record the time taken to compute each checkpoint in milliseconds.
 	for i := startHeight; i <= endHeight; i++ {
-		ordGetterTest, arguments := loadMain(792000)
+		ordGetterTest, arguments := loadMain(782000)
 		queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, i)
 		indexerID := checkpoint.IndexerIdentification{
 			URL:          GlobalConfig.Service.URL,
@@ -57,6 +57,7 @@ func CheckpointExperiment(startHeight uint, endHeight uint) []CheckpointData {
 		}
 		// Calculate the next checkpoint using the previous checkpoint and stateDiff.
 		startTime := time.Now()
+		log.Println(len(queue.History), queue.History)
 		stateDiff := queue.History[len(queue.History)-1]
 		commitment := base64.StdEncoding.EncodeToString(stateDiff.VerkleCommit[:])
 		checkpoint.NewCheckpoint(&indexerID, stateDiff.Height, stateDiff.Hash, commitment)
@@ -84,4 +85,10 @@ func CheckpointExperiment(startHeight uint, endHeight uint) []CheckpointData {
 		})
 	}
 	return checkpointData
+}
+
+func TestCatchup(t *testing.T) {
+	ordGetterTest, arguments := loadMain(782000)
+	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, uint(790000))
+	log.Println(len(queue.History), queue.History)
 }
