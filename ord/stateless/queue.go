@@ -306,7 +306,9 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 	sort.Strings(paths)
 	cis := make([]*verkle.Point, len(pe.ByPath)-1)
 	for i, path := range paths {
-		cis[i] = pe.ByPath[path]
+		src := pe.ByPath[path]
+		dst := *src
+		cis[i] = &dst
 	}
 
 	proof := &verkle.Proof{
