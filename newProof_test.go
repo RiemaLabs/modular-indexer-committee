@@ -26,7 +26,7 @@ func Test_NewProof(t *testing.T) {
 			if VerifyProof(queue) {
 				log.Printf("Block: %d is verified!\n", ordGetterTest.LatestBlockHeight)
 			} else {
-				log.Printf("Block: %d cannot pass verification!\n", ordGetterTest.LatestBlockHeight)
+				log.Fatalf("Block: %d cannot pass verification!\n", ordGetterTest.LatestBlockHeight)
 			}
 			ordGetterTest.LatestBlockHeight++
 		}
@@ -52,8 +52,11 @@ func VerifyProof(queue *stateless.Queue) bool {
 		return false
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
-	log.Println("VerifyProof finalproof:", finalproof)
-	return finalproof == RollingbackProof(queue)
+	rollingbackProof := RollingbackProof(queue)
+	if rollingbackProof == "" {
+		return true
+	}
+	return finalproof == rollingbackProof
 }
 
 func RollingbackProof(queue *stateless.Queue) string {

@@ -196,6 +196,10 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 		Hash:   "",
 	}
 
+	if resp.Result == nil {
+		return preHeader.Root, nil
+	}
+
 	var ordTransfers []getter.OrdTransfer
 	for _, tran := range resp.Result.OrdTransfers {
 		contentBytes, _ := base64.StdEncoding.DecodeString(tran.Content)
