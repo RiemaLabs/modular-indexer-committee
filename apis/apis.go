@@ -138,27 +138,15 @@ func GetBlockHeight(c *gin.Context, queue *stateless.Queue) {
 }
 
 func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
-
-	lastIndex := len(queue.History) - 1
-	postState := queue.Header.Root
-	// TODO: High. Use another root to store the preState after the flushing to disk has been done.
-	// TODO: Urgent. Rollingback here is unsafe because we don't lock the queue.
-	preState, keys := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
-
-	if len(keys) == 0 {
-		res := Brc20VerifiableLatestStateProofResult{
-			StateDiff:    make([]string, 0),
-			OrdTransfers: make([]OrdTransferJSON, 0),
-		}
+	if queue.LastStateProof == nil {
 		c.JSON(http.StatusOK, Brc20VerifiableLatestStateProofResponse{
 			Error:  nil,
-			Result: &res,
+			Result: nil,
 			Proof:  nil,
 		})
 		return
 	}
-
-	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(preState, postState, keys, stateless.NodeResolveFn)
+	vProof, stateDiff, err := verkle.SerializeProof(queue.LastStateProof)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
 		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
@@ -168,18 +156,6 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 		})
 		return
 	}
-
-	vProof, stateDiff, err := verkle.SerializeProof(proofOfKeys)
-	if err != nil {
-		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableLatestStateProofResponse{
-			Error:  &errStr,
-			Result: nil,
-			Proof:  nil,
-		})
-		return
-	}
-
 	vProofBytes, err := vProof.MarshalJSON()
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
