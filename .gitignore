@@ -39,5 +39,8 @@ config.json
 __debug*
 *.prof
 
+# Data
+data/790100-ord_transfers.csv
+
 # Binary
 modular-indexer-committee
