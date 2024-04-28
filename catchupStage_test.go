@@ -17,7 +17,7 @@ func Test_CatchupStage(t *testing.T) {
 	if queue.Header.Height != catchupHeight {
 		log.Println("Queue header not updated correctly")
 	}
-	ordGetterTest.LatestBlockHeight = catchupHeight
+	ordGetterTest.SetLatestBlockHeight(catchupHeight)
 	elapsed := time.Since(startTime)
 	elapsedSeconds := float64(elapsed) / float64(time.Second)
 	averageTime := elapsedSeconds / float64(catchupHeight-stateless.BRC20StartHeight)

@@ -19,18 +19,21 @@ func Test_NewProof(t *testing.T) {
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error happened: %v", err))
 	}
-	ordGetterTest.LatestBlockHeight = latestHeight
+	ordGetterTest.SetLatestBlockHeight(latestHeight)
 	go ServiceStage(ordGetterTest, &arguments, queue, 10*time.Millisecond)
 	for {
-		if ordGetterTest.LatestBlockHeight == queue.LatestHeight() {
+		curHeight, _ := ordGetterTest.GetLatestBlockHeight()
+		if height := curHeight; height == queue.LatestHeight() {
 			if VerifyProof(queue) {
-				log.Printf("Block: %d is verified!\n", ordGetterTest.LatestBlockHeight)
+				log.Printf("Block: %d is verified!\n", curHeight)
 			} else {
-				log.Fatalf("Block: %d cannot pass verification!\n", ordGetterTest.LatestBlockHeight)
+				log.Fatalf("Block: %d cannot pass verification!\n", curHeight)
 			}
-			ordGetterTest.LatestBlockHeight++
+			ordGetterTest.SetLatestBlockHeight(curHeight + 1)
 		}
-		if ordGetterTest.LatestBlockHeight >= 780000 {
+
+		newHeight, _ := ordGetterTest.GetLatestBlockHeight()
+		if newHeight >= 780000 {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
