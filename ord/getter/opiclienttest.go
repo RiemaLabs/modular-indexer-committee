@@ -10,7 +10,7 @@ import (
 )
 
 type OPIOrdGetterTest struct {
-	LatestBlockHeight uint
+	latestBlockHeight uint
 	BlockHash         map[uint]string
 	OrdTransfers      []OrdTransfer
 }
@@ -18,7 +18,7 @@ type OPIOrdGetterTest struct {
 func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedHeight uint) (*OPIOrdGetterTest, error) {
 	// Initialize OPIOrdGetterTest struct
 	getter := OPIOrdGetterTest{
-		LatestBlockHeight: latestBlockHeight,
+		latestBlockHeight: latestBlockHeight,
 		BlockHash:         make(map[uint]string),
 	}
 
@@ -91,7 +91,11 @@ func NewOPIOrdGetterTest(config *DatabaseConfig, latestBlockHeight uint, hashedH
 }
 
 func (opi *OPIOrdGetterTest) GetLatestBlockHeight() (uint, error) {
-	return opi.LatestBlockHeight, nil
+	return opi.latestBlockHeight, nil
+}
+
+func (opi *OPIOrdGetterTest) SetLatestBlockHeight(height uint) {
+	opi.latestBlockHeight = height
 }
 
 func (opi *OPIOrdGetterTest) GetBlockHash(blockHeight uint) (string, error) {
