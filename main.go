@@ -104,7 +104,11 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 	var history = make(map[string]checkpoint.UploadRecord)
 
 	if arguments.EnableService {
-		log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
+		if arguments.CommitteeIndexerURL != "" {
+			log.Printf("Providing API service at: %s", arguments.CommitteeIndexerURL)
+		} else {
+			log.Printf("Providing API service at: %s", GlobalConfig.Service.URL)
+		}
 		go apis.StartService(queue, arguments.EnableCommittee, arguments.EnableTest, arguments.EnablePprof)
 	}
 
@@ -157,11 +161,23 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 				for _, i := range hs {
 					key := fmt.Sprintf("%d", i.Height) + i.Hash
 					if curRecord, found := history[key]; !(found && curRecord.Success) {
+						committeeIndexerName := GlobalConfig.Service.Name
+						if arguments.CommitteeIndexerName != "" {
+							committeeIndexerName = arguments.CommitteeIndexerName
+						}
+						serviceURL := GlobalConfig.Service.URL
+						if arguments.CommitteeIndexerURL != "" {
+							serviceURL = arguments.CommitteeIndexerURL
+						}
+						metaProtocol := GlobalConfig.Service.MetaProtocol
+						if arguments.ProtocolName != "" {
+							metaProtocol = arguments.ProtocolName
+						}
 						indexerID := checkpoint.IndexerIdentification{
-							URL:          GlobalConfig.Service.URL,
-							Name:         arguments.CommitteeIndexerName,
+							URL:          serviceURL,
+							Name:         committeeIndexerName,
 							Version:      Version,
-							MetaProtocol: GlobalConfig.Service.MetaProtocol,
+							MetaProtocol: metaProtocol,
 						}
 						commitment := base64.StdEncoding.EncodeToString(i.VerkleCommit[:])
 						c := checkpoint.NewCheckpoint(&indexerID, i.Height, i.Hash, commitment)
