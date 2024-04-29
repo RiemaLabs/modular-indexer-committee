@@ -250,7 +250,7 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 		GetBlockHeight(c, queue)
 	})
 
-	r.GET("/health", func(c *gin.Context) {
+	r.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "healthy",
 		})
