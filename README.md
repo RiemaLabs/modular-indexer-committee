@@ -70,7 +70,7 @@ See [Details](#preparing-configjson) of how to set up your own `config.json`.
 go build
 
 # Run the committee indexer with providing service
-./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service
+./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --url "YourServiceURL" --protocol "meta-protocol" --committee --service
 
 # Run the committee indexer in test mode
 ./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service -t --blockheight 780010
@@ -80,6 +80,10 @@ Below are the explanation for each of the command flags.
 - `--cfg`: Specify the path of your configuration file. This can be used to point the indexer to a specific configuration file instead of the default config.json.
 
 - `--name` `(-n)`: Indicate the name of the committee indexer service. This is useful for identifying different instances or configurations of the indexer.
+
+- `--url` `(-u)`: Indicate the url of the committee indexer service. Usually this prameter is the public IP address or the domain name of your machine.
+
+- `--protocol`: Indicate the meta protocol supported by the committee indexer. Currently, only BRC-20 is supported by committee indexer. Please name it as `brc-20` by default.
 
 - `--committee`: This flag activates the committee functionality. When enabled, the committee indexer will publish checkpoints to the DA layer/S3.
 

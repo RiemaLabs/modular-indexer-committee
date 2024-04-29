@@ -25,6 +25,7 @@ type Config struct {
 		} `json:"da"`
 	} `json:"report"`
 	Service struct {
+		Name 		 string `json:"name"`
 		URL          string `json:"url"`
 		MetaProtocol string `json:"metaProtocol"`
 	} `json:"service"`

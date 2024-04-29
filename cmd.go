@@ -15,6 +15,8 @@ type RuntimeArguments struct {
 	EnablePprof          bool
 	ConfigFilePath       string
 	CommitteeIndexerName string
+	CommitteeIndexerURL  string
+	ProtocolName		 string
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -54,6 +56,8 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 
 			log.Printf("The path of the config file is %s\n", arguments.ConfigFilePath)
 			log.Printf("The name of the committee indexer service is %s\n", arguments.CommitteeIndexerName)
+			log.Printf("The url of the committee indexer service is %s\n", arguments.CommitteeIndexerURL)
+			log.Printf("The meta protocol chosen is %s\n", arguments.ProtocolName)
 
 			Execution(arguments)
 		},
@@ -66,6 +70,8 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want")
 	rootCmd.Flags().BoolVar(&arguments.EnablePprof, "pprof", false, "Enable the pprof HTTP handler (at `/debug/pprof/`)")
 	rootCmd.Flags().StringVar(&arguments.ConfigFilePath, "cfg", "config.json", "Indicate the path of config file")
-	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "default", "Indicate the name of the committee indexer service")
+	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "", "Indicate the name of the committee indexer service")
+	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerURL, "url", "u", "", "Indicate the url of the committee indexer service")
+	rootCmd.Flags().StringVar(&arguments.ProtocolName, "protocol", "brc-20", "Indicate the meta protocol supported by the committee indexer")
 	return rootCmd
 }

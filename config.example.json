@@ -23,6 +23,7 @@
         }
     },
     "service": {
+        "name": "YourServiceName",
         "url": "YourCommitteeIndexerServiceURL",
         "metaProtocol": "brc-20"
     }
