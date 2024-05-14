@@ -11,6 +11,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 
+	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
@@ -220,12 +221,6 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 	}
 	r := gin.Default()
 
-	// TODO: Medium. Add the TRUSTED_PROXIES to our config
-	// trustedProxies := os.Getenv("TRUSTED_PROXIES")
-	// if trustedProxies != "" {
-	//     r.SetTrustedProxies([]string{trustedProxies})
-	// }
-
 	r.Use(gin.Recovery(), gin.Logger(), cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"POST", "GET"},
@@ -233,6 +228,7 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	r.Use(metrics.HTTP)
 
 	if enablePprof {
 		pprof.Register(r)

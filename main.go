@@ -16,12 +16,15 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/apis"
 	"github.com/RiemaLabs/modular-indexer-committee/checkpoint"
+	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
 func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
+	metrics.Stage.Set(metrics.StageCatchup)
+
 	// Fetch the latest block height.
 	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
@@ -51,7 +54,6 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 				}
 				header.Lock()
 				stateless.Exec(header, ordTransfer, i)
-				// header.Height ++
 				header.Paging(ordGetter, false, stateless.NodeResolveFn)
 				header.Unlock()
 				if i%1000 == 0 {
@@ -97,6 +99,8 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 }
 
 func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue *stateless.Queue, interval time.Duration) {
+	metrics.Stage.Set(metrics.StageServing)
+
 	// Create a channel to listen for SIGINT (Ctrl+C) signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -127,10 +131,12 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 			}
 
 			if curHeight < latestHeight {
+				metrics.Stage.Set(metrics.StageUpdating)
 				err := queue.Update(ordGetter, latestHeight)
 				if err != nil {
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
+				metrics.Stage.Set(metrics.StageServing)
 			}
 
 			reorgHeight, err := queue.CheckForReorg(ordGetter)
@@ -140,10 +146,12 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 			}
 
 			if reorgHeight != 0 {
+				metrics.Stage.Set(metrics.StageReorg)
 				err := queue.Recovery(ordGetter, reorgHeight)
 				if err != nil {
 					log.Fatalf("Failed to update the queue: %v", err)
 				}
+				metrics.Stage.Set(metrics.StageServing)
 			}
 
 			if arguments.EnableCommittee {
@@ -218,9 +226,12 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func Execution(arguments *RuntimeArguments) {
-
 	// TODO: High. Get the version from Git Tag.
 	Version = "v0.2.0"
+
+	go metrics.ListenAndServe(arguments.MetricAddr)
+	metrics.Version.WithLabelValues(Version).Set(1)
+	metrics.Stage.Set(metrics.StageInitializing)
 
 	// Get the configuration.
 	configFile, err := os.ReadFile(arguments.ConfigFilePath)
