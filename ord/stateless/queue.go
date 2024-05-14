@@ -83,7 +83,6 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		}
 
 		queue.Header.OrdTrans = ordTransfer
-		// header.Height ++
 		queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 	return nil
