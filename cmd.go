@@ -16,7 +16,8 @@ type RuntimeArguments struct {
 	ConfigFilePath       string
 	CommitteeIndexerName string
 	CommitteeIndexerURL  string
-	ProtocolName		 string
+	ProtocolName         string
+	MetricAddr           string
 }
 
 func NewRuntimeArguments() *RuntimeArguments {
@@ -58,6 +59,7 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 			log.Printf("The name of the committee indexer service is %s\n", arguments.CommitteeIndexerName)
 			log.Printf("The url of the committee indexer service is %s\n", arguments.CommitteeIndexerURL)
 			log.Printf("The meta protocol chosen is %s\n", arguments.ProtocolName)
+			log.Println("Metrics listen at:", arguments.MetricAddr)
 
 			Execution(arguments)
 		},
@@ -73,5 +75,6 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "", "Indicate the name of the committee indexer service")
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerURL, "url", "u", "", "Indicate the url of the committee indexer service")
 	rootCmd.Flags().StringVar(&arguments.ProtocolName, "protocol", "brc-20", "Indicate the meta protocol supported by the committee indexer")
+	rootCmd.Flags().StringVar(&arguments.MetricAddr, "metrics", "0.0.0.0:8081", "Metrics listening address")
 	return rootCmd
 }

@@ -7,23 +7,12 @@ import (
 	"fmt"
 	"sort"
 
-	verkle "github.com/ethereum/go-verkle"
-	uint256 "github.com/holiman/uint256"
+	"github.com/ethereum/go-verkle"
+	"github.com/holiman/uint256"
 
+	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
-
-func NewHeader(getter *getter.OrdGetter, initState *DiffState) *Header {
-	myHeader := Header{
-		Root:           verkle.New(),
-		Height:         initState.Height,
-		Hash:           initState.Hash,
-		KV:             make(KeyValueMap),
-		Access:         AccessList{},
-		IntermediateKV: KeyValueMap{},
-	}
-	return &myHeader
-}
 
 func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) {
 	if len(key) != verkle.KeySize {
@@ -223,6 +212,7 @@ func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool, nodeResolver
 	h.IntermediateKV = KeyValueMap{}
 	// Update height and hash
 	h.Height++
+	metrics.CurrentHeight.Set(float64(h.Height))
 	if queryHash {
 		hash, err := ordGetter.GetBlockHash(h.Height)
 		if err != nil {

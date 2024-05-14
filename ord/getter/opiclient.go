@@ -2,9 +2,12 @@ package getter
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 )
 
 type DatabaseConfig struct {
@@ -41,6 +44,8 @@ func NewOPIOrdGetter(config *DatabaseConfig) (*OPIOrdGetter, error) {
 }
 
 func (opi *OPIOrdGetter) GetLatestBlockHeight() (uint, error) {
+	defer metrics.ObserveDBQuery("getLatestBlockHeight", time.Now())
+
 	var blockHeight int
 	sql := `
 		SELECT block_height
@@ -54,6 +59,8 @@ func (opi *OPIOrdGetter) GetLatestBlockHeight() (uint, error) {
 }
 
 func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
+	defer metrics.ObserveDBQuery("getBlockHash", time.Now())
+
 	var blockHash string
 	sql := `
 		SELECT block_hash
@@ -68,6 +75,8 @@ func (opi *OPIOrdGetter) GetBlockHash(blockHeight uint) (string, error) {
 }
 
 func (opi *OPIOrdGetter) GetOrdTransfers(blockHeight uint) ([]OrdTransfer, error) {
+	defer metrics.ObserveDBQuery("getOrdTransfers", time.Now())
+
 	var ordTransfers []OrdTransfer
 	sql := `
 	SELECT ot.id, ot.inscription_id, ot.block_height, ot.old_satpoint, ot.new_satpoint, ot.new_pkscript, ot.new_wallet, ot.sent_as_fee, oc."content", oc.content_type, onti.parent_id
