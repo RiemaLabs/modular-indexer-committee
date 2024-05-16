@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"runtime/debug"
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
@@ -17,13 +16,6 @@ func loadMain(hashedHeight uint) (*getter.OPIOrdGetterTest, RuntimeArguments) {
 		EnableTest:           false,
 		TestBlockHeightLimit: 0,
 	}
-
-	// Get the version as a stamp for the checkpoint.
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		log.Fatalf("Failed to obtain build information.")
-	}
-	Version = bi.Main.Version
 
 	// Get the configuration.
 	configFile, err := os.ReadFile("config.json")
@@ -38,11 +30,11 @@ func loadMain(hashedHeight uint) (*getter.OPIOrdGetterTest, RuntimeArguments) {
 
 	// Use OPI database as the getter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	getter, err := getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, hashedHeight)
+	g, err := getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, hashedHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
-	return getter, arguments
+	return g, arguments
 }

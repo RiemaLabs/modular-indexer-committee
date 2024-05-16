@@ -83,7 +83,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		}
 
 		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
+		_ = queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]b
 
 	rollback := verkle.New()
 	for k, v := range kvMap {
-		rollback.Insert(k[:], v[:], NodeResolveFn)
+		_ = rollback.Insert(k[:], v[:], NodeResolveFn)
 	}
 	// The call of Commit is necessary to refresh the root commit.
 	rollback.Commit()
@@ -148,7 +148,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 		}
 		newRoot := verkle.New()
 		for k, v := range queue.Header.KV {
-			newRoot.Insert(k[:], v[:], NodeResolveFn)
+			_ = newRoot.Insert(k[:], v[:], NodeResolveFn)
 		}
 		newBytes := newRoot.Commit().Bytes()
 		n := base64.StdEncoding.EncodeToString(newBytes[:])
@@ -188,7 +188,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 			VerkleCommit: queue.Header.Root.Commit().Bytes(),
 		}
 		queue.Header.OrdTrans = ordTransfer
-		queue.Header.Paging(getter, true, NodeResolveFn)
+		_ = queue.Header.Paging(getter, true, NodeResolveFn)
 	}
 
 	return nil
@@ -240,7 +240,7 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 		if i == startHeight+ord.BitcoinConfirmations-1 {
 			proof, _ = generateProofFromUpdate(header, &stateList[i-startHeight])
 		}
-		header.Paging(getter, true, NodeResolveFn)
+		_ = header.Paging(getter, true, NodeResolveFn)
 	}
 	// The call of Commit is necessary to refresh the root commit.
 	header.Root.Commit()

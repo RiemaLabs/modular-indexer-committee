@@ -205,7 +205,7 @@ func (h *Header) GetBytes(key []byte) []byte {
 func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
 	for key, value := range h.IntermediateKV {
 		h.KV[key] = value
-		h.Root.Insert(key[:], value[:], nodeResolverFn)
+		_ = h.Root.Insert(key[:], value[:], nodeResolverFn)
 	}
 
 	h.Access = AccessList{}

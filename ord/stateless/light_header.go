@@ -9,7 +9,7 @@ import (
 )
 
 func (h *LightHeader) insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) {
-	h.Root.Insert(key, value, nodeResolverFn)
+	_ = h.Root.Insert(key, value, nodeResolverFn)
 }
 
 func (h *LightHeader) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
