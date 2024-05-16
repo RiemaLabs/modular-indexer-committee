@@ -41,7 +41,7 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 	curHeight := queue.Header.Height
 	// reorgHeights means that the blockHash of this height changed.
 	reorgHeight := curHeight - recovery + 1
-	queue.Recovery(getter, reorgHeight)
+	_ = queue.Recovery(getter, reorgHeight)
 
 	for i, h := range queue.History {
 		newBytes := h.VerkleCommit
