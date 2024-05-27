@@ -157,7 +157,7 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 	if resp.Proof != nil {
 		preProofBytes, _ := base64.StdEncoding.DecodeString(*resp.Proof)
 		preVerkleProof := &verkle.VerkleProof{}
-		preVerkleProof.UnmarshalJSON(preProofBytes)
+		_ = preVerkleProof.UnmarshalJSON(preProofBytes)
 
 		stateDiff := make([]verkle.StemStateDiff, 0)
 		for _, s := range resp.Result.StateDiff {

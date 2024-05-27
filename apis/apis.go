@@ -2,7 +2,9 @@ package apis
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -259,5 +261,7 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 	}
 
 	// TODO: Medium. Allow user to setup port.
-	r.Run(":8080")
+	if err := r.Run(":8080"); !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }

@@ -22,6 +22,11 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
+var (
+	version = "latest"
+	gitHash = "unknown"
+)
+
 func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
 	metrics.Stage.Set(metrics.StageCatchup)
 
@@ -45,7 +50,7 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 			case <-sigChan:
 				// SIGINT received, stop the catch-up process
 				log.Printf("Saving cache file. Please don't force exit.")
-				stateless.StoreHeader(header, header.Height-2000)
+				_ = stateless.StoreHeader(header, header.Height-2000)
 				os.Exit(0)
 			default:
 				ordTransfer, err := ordGetter.GetOrdTransfers(i)
@@ -54,7 +59,7 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 				}
 				header.Lock()
 				stateless.Exec(header, ordTransfer, i)
-				header.Paging(ordGetter, false, stateless.NodeResolveFn)
+				_ = header.Paging(ordGetter, false, stateless.NodeResolveFn)
 				header.Unlock()
 				if i%1000 == 0 {
 					log.Printf("Blocks: %d / %d \n", i, catchupHeight)
@@ -184,7 +189,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						indexerID := checkpoint.IndexerIdentification{
 							URL:          serviceURL,
 							Name:         committeeIndexerName,
-							Version:      Version,
+							Version:      version,
 							MetaProtocol: metaProtocol,
 						}
 						commitment := base64.StdEncoding.EncodeToString(i.VerkleCommit[:])
@@ -226,11 +231,8 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 }
 
 func Execution(arguments *RuntimeArguments) {
-	// TODO: High. Get the version from Git Tag.
-	Version = "v0.2.0"
-
 	go metrics.ListenAndServe(arguments.MetricAddr)
-	metrics.Version.WithLabelValues(Version).Set(1)
+	metrics.Version.WithLabelValues(version).Set(1)
 	metrics.Stage.Set(metrics.StageInitializing)
 
 	// Get the configuration.

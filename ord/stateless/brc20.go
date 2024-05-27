@@ -278,7 +278,7 @@ func Exec(state KVStorage, ots []getter.OrdTransfer, blockHeight uint) {
 		inscriptionID, oldSatpoint, newPkscript, newWallet, sentAsFee, content, contentType, parentID :=
 			ot.InscriptionID, ot.OldSatpoint, ot.NewPkscript, ot.NewWallet, ot.SentAsFee, ot.Content, ot.ContentType, ot.ParentID
 		var js map[string]string
-		json.Unmarshal(content, &js)
+		_ = json.Unmarshal(content, &js)
 		if sentAsFee && oldSatpoint == "" {
 			continue // inscribed as fee
 		}
