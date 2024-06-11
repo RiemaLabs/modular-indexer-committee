@@ -18,15 +18,15 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
-func GetAllBalances(queue *stateless.Queue, tick string, pkScript string) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfPkscriptResult) {
-	var ordPkscript ord.Pkscript = ord.Pkscript(pkScript)
-	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, ordPkscript)
+func GetAllBalances(queue *stateless.Queue, tick string, wallet ord.Wallet) ([]byte, []byte, Brc20VerifiableCurrentBalanceOfWalletResult) {
+	availKey, overKey, availableBalance, overallBalance := stateless.GetBalances(queue.Header, tick, wallet)
 	availableBalanceStr := availableBalance.String()
 	overallBalanceStr := overallBalance.String()
 
-	result := Brc20VerifiableCurrentBalanceOfPkscriptResult{
+	result := Brc20VerifiableCurrentBalanceOfWalletResult{
 		AvailableBalance: availableBalanceStr,
 		OverallBalance:   overallBalanceStr,
+		Wallet:           string(wallet),
 	}
 
 	return availKey, overKey, result
@@ -36,9 +36,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
 
-	_, pkScript := stateless.GetLatestPkscript(queue.Header, wallet)
-
-	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
+	availKey, overKey, result := GetAllBalances(queue, tick, ord.Wallet(wallet))
 
 	keys := [][]byte{availKey, overKey}
 
@@ -75,60 +73,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	}
 	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
 
-	resultWallet := Brc20VerifiableCurrentBalanceOfWalletResult{
-		AvailableBalance: result.AvailableBalance,
-		OverallBalance:   result.OverallBalance,
-		Pkscript:         pkScript,
-	}
-
 	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfWalletResponse{
-		Error:  nil,
-		Result: &resultWallet,
-		Proof:  &finalproof,
-	})
-}
-
-func GetCurrentBalanceOfPkscript(c *gin.Context, queue *stateless.Queue) {
-	tick := c.DefaultQuery("tick", "")
-	pkScript := c.DefaultQuery("pkscript", "")
-	availKey, overKey, result := GetAllBalances(queue, tick, pkScript)
-
-	keys := [][]byte{availKey, overKey}
-	// Generate proof
-	proofOfKeys, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
-	if err != nil {
-		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
-			Error:  &errStr,
-			Result: nil,
-			Proof:  nil,
-		})
-		return
-	}
-	vProof, _, err := verkle.SerializeProof(proofOfKeys)
-	if err != nil {
-		errStr := fmt.Sprintf("Failed to serialize proof due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
-			Error:  &errStr,
-			Result: nil,
-			Proof:  nil,
-		})
-		return
-	}
-
-	vProofBytes, err := vProof.MarshalJSON()
-	if err != nil {
-		errStr := fmt.Sprintf("Failed to marshal the proof to JSON due to %v", err)
-		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
-			Error:  &errStr,
-			Result: nil,
-			Proof:  nil,
-		})
-		return
-	}
-	finalproof := base64.StdEncoding.EncodeToString(vProofBytes[:])
-
-	c.JSON(http.StatusOK, Brc20VerifiableCurrentBalanceOfPkscriptResponse{
 		Error:  nil,
 		Result: &result,
 		Proof:  &finalproof,
@@ -189,20 +134,10 @@ func GetLatestStateProof(c *gin.Context, queue *stateless.Queue) {
 
 	ordTransfers := queue.Header.OrdTrans
 
-	var ordTransfersJSON []OrdTransferJSON
+	var ordTransfersJSON []interface{}
 
-	for _, ordTransfer := range ordTransfers {
-		ordTransfersJSON = append(ordTransfersJSON, OrdTransferJSON{
-			ID:            ordTransfer.ID,
-			InscriptionID: ordTransfer.InscriptionID,
-			OldSatpoint:   ordTransfer.OldSatpoint,
-			NewSatpoint:   ordTransfer.NewSatpoint,
-			NewPkscript:   ordTransfer.NewPkscript,
-			NewWallet:     ordTransfer.NewWallet,
-			SentAsFee:     ordTransfer.SentAsFee,
-			Content:       base64.StdEncoding.EncodeToString(ordTransfer.Content),
-			ContentType:   ordTransfer.ContentType,
-		})
+	for _, event := range ordTransfers {
+		ordTransfersJSON = append(ordTransfersJSON, event)
 	}
 
 	res := Brc20VerifiableLatestStateProofResult{
@@ -238,10 +173,6 @@ func StartService(queue *stateless.Queue, enableCommittee, enableDebug, enablePp
 
 	r.GET("/v1/brc20_verifiable/current_balance_of_wallet", func(c *gin.Context) {
 		GetCurrentBalanceOfWallet(c, queue)
-	})
-
-	r.GET("/v1/brc20_verifiable/current_balance_of_pkscript", func(c *gin.Context) {
-		GetCurrentBalanceOfPkscript(c, queue)
 	})
 
 	r.GET("/v1/brc20_verifiable/block_height", func(c *gin.Context) {

@@ -89,13 +89,12 @@ func ParseStateDiff(Keys, PreValues, PostValues [][]byte) *verkle.StateDiff {
 	}
 	return &statediff
 }
-
-func VerifyCurrentBalanceOfPkscript(rootC *verkle.Point, tick, pkscript string, resp *Brc20VerifiableCurrentBalanceOfPkscriptResponse) (bool, error) {
+func VerifyCurrentBalanceOfWallet(rootC *verkle.Point, tick, wallet string, resp *Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
 	if resp.Error != nil {
 		return false, fmt.Errorf("failed to obtain the proof from committee indexer, error: %s", *resp.Error)
 	}
-	availKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.AvailableBalancePkscript)
-	overallKey := stateless.GetTickPkscriptHash(tick, ord.Pkscript(pkscript), stateless.OverallBalancePkscript)
+	availKey := stateless.GetTickWalletHash(tick, ord.Wallet(wallet), stateless.AvailableBalanceWallet)
+	overallKey := stateless.GetTickWalletHash(tick, ord.Wallet(wallet), stateless.OverallBalanceWallet)
 
 	keys := [][]byte{availKey, overallKey}
 
@@ -133,19 +132,6 @@ func VerifyCurrentBalanceOfPkscript(rootC *verkle.Point, tick, pkscript string, 
 	}
 
 	return true, nil
-}
-
-func VerifyCurrentBalanceOfWallet(rootC *verkle.Point, tick, wallet string, resp *Brc20VerifiableCurrentBalanceOfWalletResponse) (bool, error) {
-	pkscript := resp.Result.Pkscript
-	respWallet := Brc20VerifiableCurrentBalanceOfPkscriptResponse{
-		Error: resp.Error,
-		Result: &Brc20VerifiableCurrentBalanceOfPkscriptResult{
-			AvailableBalance: resp.Result.AvailableBalance,
-			OverallBalance:   resp.Result.OverallBalance,
-		},
-		Proof: resp.Proof,
-	}
-	return VerifyCurrentBalanceOfPkscript(rootC, tick, pkscript, &respWallet)
 }
 
 func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20VerifiableLatestStateProofResponse) (verkle.VerkleNode, error) {
@@ -200,20 +186,13 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 		return preHeader.Root, nil
 	}
 
-	var ordTransfers []getter.OrdTransfer
-	for _, tran := range resp.Result.OrdTransfers {
-		contentBytes, _ := base64.StdEncoding.DecodeString(tran.Content)
-		ordTransfers = append(ordTransfers, getter.OrdTransfer{
-			ID:            tran.ID,
-			InscriptionID: tran.InscriptionID,
-			OldSatpoint:   tran.OldSatpoint,
-			NewSatpoint:   tran.NewSatpoint,
-			NewPkscript:   tran.NewPkscript,
-			NewWallet:     tran.NewWallet,
-			SentAsFee:     tran.SentAsFee,
-			Content:       contentBytes,
-			ContentType:   tran.ContentType,
-		})
+	var ordTransfers []getter.BRC20Event
+	for _, item := range resp.Result.OrdTransfers {
+		if event, ok := item.(getter.BRC20Event); ok {
+			ordTransfers = append(ordTransfers, event)
+		} else {
+			return nil, fmt.Errorf("type assertion failed")
+		}
 	}
 
 	stateless.Exec(preHeader, ordTransfers, blockHeight)

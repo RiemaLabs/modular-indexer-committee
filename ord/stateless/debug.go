@@ -20,9 +20,9 @@ type Record struct {
 	EventID          uint
 }
 
-type OPIRecords = map[uint][]Record
+type ORDRecords = map[uint][]Record
 
-func LoadOPIRecords(filepath string) (OPIRecords, error) {
+func LoadORDRecords(filepath string) (ORDRecords, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -70,27 +70,26 @@ func LoadOPIRecords(filepath string) (OPIRecords, error) {
 	return records, nil
 }
 
-func (h *Header) VerifyState(records *OPIRecords) {
+func (h *Header) VerifyState(records *ORDRecords) {
 	height := h.Height
 	if recordsForHeight, found := (*records)[height]; found {
 		for _, ele := range recordsForHeight {
-			opiTick := ele.Tick
-			opiPkScript := ele.Pkscript
-			opiOverallBalance := ele.OverallBalance
-			opiAvailableBalance := ele.AvailableBalance
+			ordTick := ele.Tick
+			ordWallet := ele.Wallet
+			ordOverallBalance := ele.OverallBalance
+			ordAvailableBalance := ele.AvailableBalance
 
-			var ordPkscript ord.Pkscript = ord.Pkscript(opiPkScript)
-			_, _, availableBalance, overallBalance := GetBalances(h, opiTick, ordPkscript)
+			_, _, availableBalance, overallBalance := GetBalances(h, ordTick, ord.Wallet(ordWallet))
 			availableBalanceStr := availableBalance.String()
 			overallBalanceStr := overallBalance.String()
 
-			if availableBalanceStr != opiAvailableBalance {
-				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
-				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
+			if availableBalanceStr != ordAvailableBalance {
+				log.Fatalf(`at block height %d, Wallet %s's availableBalance doens't match.
+				Our balance is: %s, ORD balance is: %s`, height, ordWallet, availableBalanceStr, ordAvailableBalance)
 			}
-			if overallBalanceStr != opiOverallBalance {
-				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
-				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
+			if overallBalanceStr != ordOverallBalance {
+				log.Fatalf(`at block height %d, Wallet %s's availableBalance doens't match.
+				Our balance is: %s, ORD balance is: %s`, height, ordWallet, availableBalanceStr, ordAvailableBalance)
 			}
 		}
 	}

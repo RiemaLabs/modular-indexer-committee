@@ -27,7 +27,7 @@ var (
 	gitHash = "unknown"
 )
 
-func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
+func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
 	metrics.Stage.Set(metrics.StageCatchup)
 
 	// Fetch the latest block height.
@@ -53,13 +53,13 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 				_ = stateless.StoreHeader(header, header.Height-2000)
 				os.Exit(0)
 			default:
-				ordTransfer, err := ordGetter.GetOrdTransfers(i)
+				ordTransfer, err := okxGetter.GetOrdTransfers(i)
 				if err != nil {
 					return nil, err
 				}
 				header.Lock()
 				stateless.Exec(header, ordTransfer, i)
-				_ = header.Paging(ordGetter, false, stateless.NodeResolveFn)
+				_ = header.Paging(okxGetter, false, stateless.NodeResolveFn)
 				header.Unlock()
 				if i%1000 == 0 {
 					log.Printf("Blocks: %d / %d \n", i, catchupHeight)
@@ -79,8 +79,7 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	}
 
 	// Currently, header.Height equals to catchupHeight.
-
-	ots, err := ordGetter.GetOrdTransfers(catchupHeight)
+	ots, err := okxGetter.GetOrdTransfers(catchupHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +92,7 @@ func CatchupStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 		}
 	}
 
-	queue, err := stateless.NewQueues(ordGetter, header, true, catchupHeight+1)
+	queue, err := stateless.NewQueues(okxGetter, header, true, catchupHeight+1)
 	if err != nil {
 		return nil, err
 	}
@@ -279,30 +278,30 @@ func Execution(arguments *RuntimeArguments) {
 		}
 	}
 
-	// Use OPI database as the ordGetter.
+	// Use OKX database as the ordGetter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	var ordGetter getter.OrdGetter
+	var okxGetter getter.OrdGetter
 	if arguments.EnableTest {
-		ordGetter, err = getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, arguments.TestBlockHeightLimit)
+		okxGetter, err = getter.NewOKXBRC20GetterTest(&gd, arguments.TestBlockHeightLimit, arguments.TestBlockHeightLimit)
 	} else {
-		ordGetter, err = getter.NewOPIOrdGetter(&gd)
+		okxGetter, err = getter.NewOKXBRC20Getter(&gd)
 	}
 	if err != nil {
-		log.Fatalf("Failed to initial getter from opi database: %v", err)
+		log.Fatalf("Failed to initial getter from okx database: %v", err)
 	}
 
-	latestHeight, err := ordGetter.GetLatestBlockHeight()
+	latestHeight, err := okxGetter.GetLatestBlockHeight()
 	if err != nil {
 		log.Fatalf("Failed to get the latest block height: %v", err)
 	}
 
-	queue, err := CatchupStage(ordGetter, arguments, stateless.BRC20StartHeight-1, latestHeight)
+	queue, err := CatchupStage(okxGetter, arguments, stateless.BRC20StartHeight-1, latestHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)
 	}
 
-	ServiceStage(ordGetter, arguments, queue, 60*time.Second)
+	ServiceStage(okxGetter, arguments, queue, 60*time.Second)
 }
 
 func main() {

@@ -8,7 +8,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
 
-func loadMain(hashedHeight uint) (*getter.OPIOrdGetterTest, RuntimeArguments) {
+func loadMain(hashedHeight uint) (*getter.OKXBRC20GetterTest, RuntimeArguments) {
 	arguments := RuntimeArguments{
 		EnableService:        false,
 		EnableCommittee:      false,
@@ -28,9 +28,9 @@ func loadMain(hashedHeight uint) (*getter.OPIOrdGetterTest, RuntimeArguments) {
 		log.Fatalf("Failed to parse config file: %v", err)
 	}
 
-	// Use OPI database as the getter.
+	// Use OKX database as the getter.
 	gd := getter.DatabaseConfig(GlobalConfig.Database)
-	g, err := getter.NewOPIOrdGetterTest(&gd, arguments.TestBlockHeightLimit, hashedHeight)
+	g, err := getter.NewOKXBRC20GetterTest(&gd, arguments.TestBlockHeightLimit, hashedHeight)
 
 	if err != nil {
 		log.Fatalf("Failed to catchup the latest state: %v", err)

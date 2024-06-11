@@ -3,9 +3,9 @@ package stateless
 import (
 	"fmt"
 	"strings"
-	"unicode"
+	// "unicode"
 
-	base58 "github.com/btcsuite/btcd/btcutil/base58"
+	// base58 "github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/ethereum/go-verkle"
 
 	uint256 "github.com/holiman/uint256"
@@ -17,22 +17,11 @@ const BRC20StartHeight uint = 779832
 // Start Height of the Self-Mint
 var SelfMintEnableHeight uint = 837090
 
+// Length of self-mint ticks
+var SelfMintTickLenght uint = 5
+
 var NodeResolveFn verkle.NodeResolverFn = nil
 
-func isPositiveNumber(s string, doStrip bool) bool {
-	if doStrip {
-		s = strings.TrimSpace(s)
-	}
-	if len(s) == 0 {
-		return false
-	}
-	for _, ch := range s {
-		if !unicode.IsDigit(ch) {
-			return false
-		}
-	}
-	return true
-}
 
 func isPositiveNumberWithDot(s string, doStrip bool) bool {
 	if doStrip {
@@ -53,7 +42,7 @@ func isPositiveNumberWithDot(s string, doStrip bool) bool {
 	return true
 }
 
-func getNumberExtendedTo18Decimals(s string, decimals *uint256.Int, doStrip bool) (*uint256.Int, error) {
+func get18DecimalNumbers(s string, decimals *uint256.Int, doStrip bool) (*uint256.Int, error) {
 	if doStrip {
 		s = strings.TrimSpace(s)
 	}
@@ -84,7 +73,7 @@ func getNumberExtendedTo18Decimals(s string, decimals *uint256.Int, doStrip bool
 		return result, nil
 	} else {
 		// No decimal point, directly extend to 18 digits
-		result, err := uint256.FromDecimal(s + strings.Repeat("0", 18))
+		result, err := uint256.FromDecimal(s)
 		if err != nil {
 			return nil, fmt.Errorf("number overflow: %s", s)
 		}
@@ -107,14 +96,6 @@ func getLimit() *uint256.Int {
 	// Calculate (2^64 - 1) * (10^18)
 	result := uint256.NewInt(0).Mul(two64Minus1, ten18)
 	return result
-}
-
-func decodeBitcoinWallet(s string) []byte {
-	return base58.Decode(s)
-}
-
-func encodeBitcoinWallet(b []byte) string {
-	return base58.Encode(b)
 }
 
 func defaultValue() [ValueSize]byte {

@@ -1,6 +1,8 @@
 package apis
 
-import "encoding/base64"
+import (
+	"encoding/base64"
+)
 
 func BatchDecodeBase64(strs []string) ([][]byte, error) {
 	res := make([][]byte, 0)

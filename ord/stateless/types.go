@@ -10,6 +10,7 @@ import (
 )
 
 const ValueSize = 32
+const MaxDecimalWidth = 18
 
 type TripleElement struct {
 	Key            [verkle.KeySize]byte
@@ -46,7 +47,7 @@ type Header struct {
 	// Block Hash.
 	Hash string
 	// Ord Transfers at Height and Hash.
-	OrdTrans []getter.OrdTransfer
+	OrdTrans []getter.BRC20Event
 
 	// All values being accessed at this height.
 	Access AccessList
