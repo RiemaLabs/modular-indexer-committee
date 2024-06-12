@@ -188,11 +188,15 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 
 	var ordTransfers []getter.BRC20Event
 	for _, item := range resp.Result.OrdTransfers {
-		if event, ok := item.(getter.BRC20Event); ok {
-			ordTransfers = append(ordTransfers, event)
-		} else {
-			return nil, fmt.Errorf("type assertion failed")
+		data, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("type assertion to map[string]interface{} failed")
 		}
+		event, err := convertMapToBRC20Event(data)
+		if err != nil {
+			return nil, fmt.Errorf("type transfer failed")
+		}
+		ordTransfers = append(ordTransfers, event)
 	}
 
 	stateless.Exec(preHeader, ordTransfers, blockHeight)
