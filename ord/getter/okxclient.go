@@ -60,7 +60,12 @@ func (okx *OKXBRC20Getter) GetLatestBlockHeight() (uint, error) {
 		return 0, err
 	}
 
-	ordBlockHeight, ok := result["ordBlockHeight"].(uint)
+	chainInfo, ok := result["data"].(map[string]interface{})["chainInfo"].(map[string]interface{})
+	if !ok {
+		return 0, fmt.Errorf("missing chainInfo field")
+	}
+
+	ordBlockHeight, ok := chainInfo["ordBlockHeight"].(float64)
 	if !ok {
 		return 0, fmt.Errorf("missing ordBlockHeight field")
 	}
