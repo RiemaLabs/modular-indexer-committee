@@ -1,7 +1,6 @@
 package getter
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,7 +39,7 @@ func (okx *OKXBRC20Getter) GetLatestBlockHeight() (uint, error) {
 	url := okx.eventUrl + "/api/v1/node/info"
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	resp, err := client.Get(url)
+	resp, err := getHeightWithRetries(client, url, maxRetries)
 	if err != nil {
 		return 0, err
 	}
@@ -88,7 +87,7 @@ func (okx *OKXBRC20Getter) GetBlockHash(blockHeight uint) (string, error) {
 		return "", err
 	}
 
-	resp, err := http.Post(okx.hashUrl, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := getHashWithRetries(okx.hashUrl, blockHeight, "application/json", jsonData, maxRetries)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +116,7 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 		return nil, err
 	}
 	url := fmt.Sprintf("%s/api/v1/brc20/block/%s/events", okx.eventUrl, blockHash)
-	resp, err := http.Get(url)
+	resp, err := getOrdTransferWithRetries(url, maxRetries, blockHeight)
 	if err != nil {
 		return nil, err
 	}
