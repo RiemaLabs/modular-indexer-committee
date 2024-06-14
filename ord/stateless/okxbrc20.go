@@ -3,6 +3,7 @@ package stateless
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-verkle"
 	uint256 "github.com/holiman/uint256"
@@ -108,6 +109,7 @@ func processDeploy(state KVStorage, deployEvent *getter.BRC20DeployEvent) {
 	}
 	// get tick name
 	tick := deployEvent.Tick
+	tick = strings.ToLower(tick)
 	keyExists, _, _, _, _, _, _ := getTickStatus(tick)
 	tickExists := state.GetUInt256(keyExists)
 	if tickExists.Eq(uint256.NewInt(1)) {
@@ -191,6 +193,7 @@ func processMint(state KVStorage, mintEvent *getter.BRC20MintEvent) {
 	upperLimit := getLimit()
 
 	tick := mintEvent.Tick
+	tick = strings.ToLower(tick)
 	keyExists, keyRemainingSupply, _, keyLimitPerMint, keyDecimals, _, _ := getTickStatus(tick)
 	tickExists := state.GetUInt256(keyExists)
 	if tickExists.Eq(uint256.NewInt(0)) {
@@ -242,6 +245,7 @@ func processInscribeTransfer(state KVStorage, inscribeTransferEvent *getter.BRC2
 		return
 	}
 	tick := inscribeTransferEvent.Tick
+	tick = strings.ToLower(tick)
 	keyExists, _, _, _, keyDecimals, _, _ := getTickStatus(tick)
 	tickExists := state.GetUInt256(keyExists)
 	if tickExists.Eq(uint256.NewInt(0)) {
@@ -283,6 +287,7 @@ func processTransfer(state KVStorage, transferEvent *getter.BRC20TransferEvent) 
 		return
 	}
 	tick := transferEvent.Tick
+	tick = strings.ToLower(tick)
 	keyExists, _, _, _, keyDecimals, _, _ := getTickStatus(tick)
 	tickExists := state.GetUInt256(keyExists)
 	if tickExists.Eq(uint256.NewInt(0)) {
