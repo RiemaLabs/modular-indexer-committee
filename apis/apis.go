@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-verkle"
@@ -35,6 +36,7 @@ func GetAllBalances(queue *stateless.Queue, tick string, wallet ord.Wallet) ([]b
 func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 	tick := c.DefaultQuery("tick", "")
 	wallet := c.DefaultQuery("wallet", "")
+	tick = strings.ToLower(tick)
 
 	availKey, overKey, result := GetAllBalances(queue, tick, ord.Wallet(wallet))
 

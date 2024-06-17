@@ -16,6 +16,7 @@ Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.dis
 Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
 
 ## What is Happening for Committee Indexer?
+- Switch brc20 data source to OKX rpc.
 - Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
 - Update reliance on OPI to version 0.4.1.
 - Enable specifying the path to `config.json` via the command line.
@@ -44,28 +45,14 @@ Golang is easy to install all dependence. Fetch all required package by simply r
 go mod tidy
 ```
 
-### 3. Install OPI Indexer
-Modular Indexer relies on a running [OPI indexer 0.4.1](https://github.com/bestinslot-xyz/OPI/releases/tag/0.4.1). 
-First, clone the repository to get the necessary files:
-```Bash
-# Clone the OPI repository
-git clone https://github.com/bestinslot-xyz/OPI.git
-```
-
-Run this command to set up it up after indexing API to latest block:
-```Bash
-cd OPI/modules/main_index
-node index.js
-```
-
-### 4. Prepare config.json
+### 3. Prepare config.json
 ```Bash
 cp config.example.json config.json
 # Tailor config.json according to your setup
 ``` 
 See [Details](#preparing-configjson) of how to set up your own `config.json`.
 
-### 5. Run with Command Flag
+### 4. Run with Command Flag
 ```Bash
 go build
 
@@ -95,14 +82,14 @@ Below are the explanation for each of the command flags.
 
 - `--blockheight`: When test mode is enabled with -t, this flag sets a fixed maximum block height limit for the committee indexer's operations. It allows for focused testing and performance tuning by limiting the range of blocks the committee indexer processes.
 
-### 6. Provide APIs
+### 5. Provide APIs
 https://docs.nubit.org/modular-indexer/nubit-committee-indexer-apis
 
 ## Preparing Config.json
 Proper configuration of config.json is key for the smooth operation of the Committee Indexer.
 
 ### Setting Up `database` Configuration
-The database section requires connection details to the OPI database. If you're running an OPI full node, ensure to provide the correct details as follows:
+The database section requires connection details to the RiemaLabs OKX database. Please reach out to RiemaLabs to gain access, ensure to provide the correct details as follows:
 - `host`: The IP address or hostname of the machine where database is running.
 - `user`: The username for accessing the database.
 - `password`: The password associated with the above user account.
