@@ -53,6 +53,24 @@ type BRC20InscribeTransferEvent struct {
 	Amount string `json:"amount"`
 }
 
+type row struct {
+	BlockHeight    uint
+	EventType      string
+	Tick           string
+	InscriptionID  string
+	InscriptionNum string
+	OldSatpoint    string
+	NewSatpoint    string
+	FromAddress    string
+	ToAddress      string
+	Valid          bool
+	Msg            string
+	Supply         string
+	LimitPerMint   string
+	Decimal        string
+	Amount         string
+}
+
 type OrdGetter interface {
 	GetLatestBlockHeight() (uint, error)
 	GetBlockHash(blockHeight uint) (string, error)

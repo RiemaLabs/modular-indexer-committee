@@ -2,8 +2,11 @@ package main
 
 type Config struct {
 	Database struct {
-		EventUrl     string `json:"eventUrl"`
-		HashUrl	   string `json:"hashUrl"`
+		Host     string `json:"host"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		DBname   string `json:"dbname"`
+		Port     string `json:"port"`
 	} `json:"database"`
 	Report struct {
 		Method  string `json:"method"`
