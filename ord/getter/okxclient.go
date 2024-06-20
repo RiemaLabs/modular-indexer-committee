@@ -2,6 +2,7 @@ package getter
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -30,7 +31,7 @@ func ConnectOKXDatabase(config *DatabaseConfig) (*gorm.DB, error) {
 	password := config.Password
 	dbname := config.DBname
 	port := config.Port
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, port, dbname)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True", user, password, host, port, dbname)
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
 }
 
@@ -92,6 +93,9 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 
 	var events []BRC20Event
 	for _, row := range rows {
+		log.Println(row)
+		log.Println(row.InscriptionNum)
+		log.Println(row.Decimals)
 		intInscriptionNum, err := strconv.ParseInt(row.InscriptionNum, 10, 32)
 		if err != nil {
 			return nil, err
@@ -112,7 +116,7 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 
 		switch row.EventType {
 		case "deploy":
-			intDecimal, err := strconv.ParseInt(row.Decimal, 10, 32)
+			intDecimal, err := strconv.ParseInt(row.Decimals, 10, 32)
 			if err != nil {
 				return nil, err
 			}

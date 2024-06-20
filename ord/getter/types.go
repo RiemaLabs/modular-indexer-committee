@@ -67,7 +67,7 @@ type row struct {
 	Msg            string
 	Supply         string
 	LimitPerMint   string
-	Decimal        string
+	Decimals        string
 	Amount         string
 }
 
