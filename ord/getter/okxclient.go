@@ -92,10 +92,7 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 
 	var events []BRC20Event
 	for _, row := range rows {
-		intInscriptionNum, err := strconv.ParseInt(row.InscriptionNum, 10, 32)
-		if err != nil {
-			return nil, err
-		}
+		intInscriptionNum, _ := strconv.ParseInt(row.InscriptionNum, 10, 32)
 		baseEvent := BaseEvent{
 			BlockHeight:    row.BlockHeight,
 			EventType:      row.EventType,
@@ -114,7 +111,7 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 		case "deploy":
 			intDecimal, err := strconv.ParseInt(row.Decimals, 10, 32)
 			if err != nil {
-				return nil, err
+				intDecimal = 18
 			}
 			events = append(events, &BRC20DeployEvent{
 				BaseEvent:    baseEvent,
