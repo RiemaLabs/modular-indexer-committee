@@ -2,7 +2,6 @@ package getter
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -93,9 +92,6 @@ func (okx *OKXBRC20Getter) GetOrdTransfers(blockHeight uint) ([]BRC20Event, erro
 
 	var events []BRC20Event
 	for _, row := range rows {
-		log.Println(row)
-		log.Println(row.InscriptionNum)
-		log.Println(row.Decimals)
 		intInscriptionNum, err := strconv.ParseInt(row.InscriptionNum, 10, 32)
 		if err != nil {
 			return nil, err

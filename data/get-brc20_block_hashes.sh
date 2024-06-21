@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HASH_URL="https://hardworking-light-meme.btc.quiknode.pro/68929884d240f652"
+HASH_URL="https://hardworking-light-meme.btc.quiknode.pro/<token>"
 
 if [ $# -ne 2 ]; then
   echo "Usage: $0 <start_height> <num_heights>"
