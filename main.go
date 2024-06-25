@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -10,12 +9,13 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/RiemaLabs/modular-indexer-committee/apis"
 	"github.com/RiemaLabs/modular-indexer-committee/checkpoint"
+	"github.com/RiemaLabs/modular-indexer-committee/checkpoint/aws_s3"
+	"github.com/RiemaLabs/modular-indexer-committee/checkpoint/nubit_da"
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
@@ -197,7 +197,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						if GlobalConfig.Report.Method == "S3" {
 							log.Printf("Uploading the checkpoint by S3 at height: %s\n", c.Height)
 							s3cfg := GlobalConfig.Report.S3
-							err = checkpoint.UploadCheckpointByS3(&c,
+							err = aws_s3.UploadCheckpointByS3(&c,
 								s3cfg.AccessKey, s3cfg.SecretKey, s3cfg.Region, s3cfg.Bucket, timeout)
 							if err != nil {
 								log.Printf("Unable to upload the checkpoint by S3 due to: %v", err)
@@ -207,8 +207,8 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						} else if GlobalConfig.Report.Method == "DA" {
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							dacfg := GlobalConfig.Report.Da
-							err = checkpoint.UploadCheckpointByDA(&c,
-								dacfg.PrivateKey, dacfg.GasCoupon, dacfg.NamespaceID, dacfg.Network, timeout)
+							err = nubit_da.UploadCheckpointByDA(&c,
+								dacfg.NodeRpc, dacfg.AuthToken, dacfg.FetchTimeout, dacfg.SubmitTimeout)
 							if err != nil {
 								log.Printf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
@@ -243,39 +243,6 @@ func Execution(arguments *RuntimeArguments) {
 	err = json.Unmarshal(configFile, &GlobalConfig)
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
-	}
-
-	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
-		if !checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {
-			log.Printf("Got invalid Namespace ID from the config.json. Initializing a new namespace.")
-			scanner := bufio.NewScanner(os.Stdin)
-			namespaceName := ""
-			for {
-				fmt.Print("Please enter the namespace name: ")
-				if scanner.Scan() {
-					namespaceName = scanner.Text()
-					if strings.TrimSpace(namespaceName) == "" {
-						fmt.Print("Namespace name couldn't be empty!")
-					} else {
-						break
-					}
-				}
-			}
-			nid, err := checkpoint.CreateNamespace(GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCoupon, namespaceName, GlobalConfig.Report.Da.Network)
-			if err != nil {
-				log.Fatalf("Failed to create namespace due to %v", err)
-			}
-			GlobalConfig.Report.Da.NamespaceID = nid
-			bytes, err := json.Marshal(GlobalConfig)
-			if err != nil {
-				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
-			}
-			err = os.WriteFile("config.json", bytes, 0644)
-			if err != nil {
-				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
-			}
-			fmt.Printf("Succeed to create namespace, ID: %s!", nid)
-		}
 	}
 
 	// Use OKX database as the ordGetter.

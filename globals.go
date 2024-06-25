@@ -18,10 +18,10 @@ type Config struct {
 			SecretKey string `json:"secretKey"`
 		} `json:"s3"`
 		Da struct {
-			Network     string `json:"network"`
-			NamespaceID string `json:"namespaceID"`
-			GasCoupon   string `json:"gasCoupon"`
-			PrivateKey  string `json:"privateKey"`
+			NodeRpc       string `json:"nodeRpc"`
+			AuthToken     string `json:"authToken"`
+			FetchTimeout  string `json:"fetchTimeout"`
+			SubmitTimeout string `json:"submitTimeout"`
 		} `json:"da"`
 	} `json:"report"`
 	Service struct {

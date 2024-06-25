@@ -75,6 +75,6 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "", "Indicate the name of the committee indexer service")
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerURL, "url", "u", "", "Indicate the url of the committee indexer service")
 	rootCmd.Flags().StringVar(&arguments.ProtocolName, "protocol", "brc-20", "Indicate the meta protocol supported by the committee indexer")
-	rootCmd.Flags().StringVar(&arguments.MetricAddr, "metrics", "0.0.0.0:8080", "Metrics listening address")
+	rootCmd.Flags().StringVar(&arguments.MetricAddr, "metrics", "0.0.0.0:8081", "Metrics listening address")
 	return rootCmd
 }

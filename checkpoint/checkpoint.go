@@ -1,5 +1,9 @@
 package checkpoint
 
+import (
+	"fmt"
+)
+
 type IndexerIdentification struct {
 	URL          string
 	Name         string
@@ -30,3 +34,17 @@ type UploadRecord struct {
 }
 
 type UploadHistory = map[uint]map[string]UploadRecord
+
+func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, commitment string) Checkpoint {
+	blockHeight := fmt.Sprintf("%d", height)
+	content := Checkpoint{
+		URL:          indexID.URL,
+		Name:         indexID.Name,
+		Version:      indexID.Version,
+		MetaProtocol: indexID.MetaProtocol,
+		Height:       blockHeight,
+		Hash:         hash,
+		Commitment:   commitment,
+	}
+	return content
+}
