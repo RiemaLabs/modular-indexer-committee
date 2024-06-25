@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -10,7 +9,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -245,33 +243,6 @@ func Execution(arguments *RuntimeArguments) {
 	err = json.Unmarshal(configFile, &GlobalConfig)
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
-	}
-
-	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
-		if !checkpoint.IsValidNamespaceID(nubit_da.DefaultNamespace) {
-			log.Printf("Got invalid Namespace ID from the config.json. Initializing a new namespace.")
-			scanner := bufio.NewScanner(os.Stdin)
-			namespaceName := ""
-			for {
-				fmt.Print("Please enter the namespace name: ")
-				if scanner.Scan() {
-					namespaceName = scanner.Text()
-					if strings.TrimSpace(namespaceName) == "" {
-						fmt.Print("Namespace name couldn't be empty!")
-					} else {
-						break
-					}
-				}
-			}
-			bytes, err := json.Marshal(GlobalConfig)
-			if err != nil {
-				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
-			}
-			err = os.WriteFile("config.json", bytes, 0644)
-			if err != nil {
-				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
-			}
-		}
 	}
 
 	// Use OKX database as the ordGetter.

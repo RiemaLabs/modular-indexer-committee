@@ -15,8 +15,6 @@ const (
 	AuthTokenFlagName = "da.auth_token"
 	// The namespace of running Layer 2
 	NamespaceFlagName = "da.namespace"
-	// NamespaceSize is the size of the hex encoded namespace string
-	NamespaceSize = 29 * 2
 	// Default Namespace for okx-brc20
 	DefaultNamespace = "00000000000000000000000000000000000000006F6B782D6272633230"
 	// Default local deployed Nubit Node
@@ -43,7 +41,7 @@ func NewNubitDABackend(rpc, token, FetchTimeout string, SubmitTimeout string) (*
 	if err != nil {
 		return nil, err
 	}
-	ns, err := hex.DecodeString(DefaultNamespace)
+	ns, err := hex.DecodeString(DefaultNamespace[2:])
 	if err != nil {
 		return nil, err
 	}
