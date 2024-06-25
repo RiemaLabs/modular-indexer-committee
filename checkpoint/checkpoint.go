@@ -1,5 +1,11 @@
 package checkpoint
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 type IndexerIdentification struct {
 	URL          string
 	Name         string
@@ -30,3 +36,32 @@ type UploadRecord struct {
 }
 
 type UploadHistory = map[uint]map[string]UploadRecord
+
+func NewCheckpoint(indexID *IndexerIdentification, height uint, hash string, commitment string) Checkpoint {
+	blockHeight := fmt.Sprintf("%d", height)
+	content := Checkpoint{
+		URL:          indexID.URL,
+		Name:         indexID.Name,
+		Version:      indexID.Version,
+		MetaProtocol: indexID.MetaProtocol,
+		Height:       blockHeight,
+		Hash:         hash,
+		Commitment:   commitment,
+	}
+	return content
+}
+
+func IsValidNamespaceID(nID string) bool {
+	if strings.HasPrefix(nID, "0x") {
+		_, err := strconv.ParseUint(nID[2:], 16, 64)
+		if err != nil {
+			return false
+		}
+	} else {
+		_, err := strconv.ParseUint(nID, 10, 64)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}

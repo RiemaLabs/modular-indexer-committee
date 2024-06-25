@@ -16,6 +16,8 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/apis"
 	"github.com/RiemaLabs/modular-indexer-committee/checkpoint"
+	"github.com/RiemaLabs/modular-indexer-committee/checkpoint/aws_s3"
+	"github.com/RiemaLabs/modular-indexer-committee/checkpoint/nubit_da"
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
@@ -197,7 +199,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						if GlobalConfig.Report.Method == "S3" {
 							log.Printf("Uploading the checkpoint by S3 at height: %s\n", c.Height)
 							s3cfg := GlobalConfig.Report.S3
-							err = checkpoint.UploadCheckpointByS3(&c,
+							err = aws_s3.UploadCheckpointByS3(&c,
 								s3cfg.AccessKey, s3cfg.SecretKey, s3cfg.Region, s3cfg.Bucket, timeout)
 							if err != nil {
 								log.Printf("Unable to upload the checkpoint by S3 due to: %v", err)
@@ -207,8 +209,8 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						} else if GlobalConfig.Report.Method == "DA" {
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							dacfg := GlobalConfig.Report.Da
-							err = checkpoint.UploadCheckpointByDA(&c,
-								dacfg.PrivateKey, dacfg.GasCoupon, dacfg.NamespaceID, dacfg.Network, timeout)
+							err = nubit_da.UploadCheckpointByDA(&c,
+								dacfg.NodeRpc, dacfg.AuthToken, dacfg.FetchTimeout, dacfg.SubmitTimeout)
 							if err != nil {
 								log.Printf("Unable to upload the checkpoint by DA due to: %v", err)
 							} else {
@@ -246,7 +248,7 @@ func Execution(arguments *RuntimeArguments) {
 	}
 
 	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
-		if !checkpoint.IsValidNamespaceID(GlobalConfig.Report.Da.NamespaceID) {
+		if !checkpoint.IsValidNamespaceID(nubit_da.DefaultNamespace) {
 			log.Printf("Got invalid Namespace ID from the config.json. Initializing a new namespace.")
 			scanner := bufio.NewScanner(os.Stdin)
 			namespaceName := ""
@@ -261,11 +263,6 @@ func Execution(arguments *RuntimeArguments) {
 					}
 				}
 			}
-			nid, err := checkpoint.CreateNamespace(GlobalConfig.Report.Da.PrivateKey, GlobalConfig.Report.Da.GasCoupon, namespaceName, GlobalConfig.Report.Da.Network)
-			if err != nil {
-				log.Fatalf("Failed to create namespace due to %v", err)
-			}
-			GlobalConfig.Report.Da.NamespaceID = nid
 			bytes, err := json.Marshal(GlobalConfig)
 			if err != nil {
 				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
@@ -274,7 +271,6 @@ func Execution(arguments *RuntimeArguments) {
 			if err != nil {
 				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
 			}
-			fmt.Printf("Succeed to create namespace, ID: %s!", nid)
 		}
 	}
 
