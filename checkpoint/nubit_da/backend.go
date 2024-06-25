@@ -41,7 +41,7 @@ func NewNubitDABackend(rpc, token, FetchTimeout string, SubmitTimeout string) (*
 	if err != nil {
 		return nil, err
 	}
-	ns, err := hex.DecodeString(DefaultNamespace[2:])
+	ns, err := hex.DecodeString(DefaultNamespace)
 	if err != nil {
 		return nil, err
 	}
