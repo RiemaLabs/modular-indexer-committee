@@ -28,6 +28,7 @@ func UploadCheckpointByDA(c *checkpoint.Checkpoint, namespace string, nodeRpc st
 		log.Println("🏆 nubit: blob successfully submitted", "id", hex.EncodeToString(ids[0]))
 	} else {
 		log.Println("❗ nubit: blob submission failed", "err", err)
+		return err
 	}
 	return nil
 }

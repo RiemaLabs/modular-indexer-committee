@@ -70,6 +70,9 @@ func NewNubitDABackend(rpc, token, namespace string, FetchTimeout string, Submit
 }
 
 func IsValidNamespaceID(nID string) bool {
+	if len(nID) > 10 {
+		return false
+	}
 	byteData := []byte(nID)
 	hexString := hex.EncodeToString(byteData)
 	return len(hexString) <= NamespaceSize
