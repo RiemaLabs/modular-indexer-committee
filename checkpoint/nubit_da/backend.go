@@ -2,6 +2,7 @@ package nubit_da
 
 import (
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"github.com/rollkit/go-da"
@@ -44,7 +45,8 @@ func NewNubitDABackend(rpc, token, namespace string, FetchTimeout string, Submit
 	}
 	byteData := []byte(namespace)
 	hexNamespace := hex.EncodeToString(byteData)
-	ns, err := hex.DecodeString(hexNamespace)
+	fullNamespace := padNamespaceLeft(hexNamespace)
+	ns, err := hex.DecodeString(fullNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -71,4 +73,12 @@ func IsValidNamespaceID(nID string) bool {
 	byteData := []byte(nID)
 	hexString := hex.EncodeToString(byteData)
 	return len(hexString) <= NamespaceSize
+}
+
+func padNamespaceLeft(s string) string {
+	currentLength := len(s)
+	if currentLength < NamespaceSize {
+		return strings.Repeat("0", NamespaceSize-currentLength) + s
+	}
+	return s
 }
