@@ -11,12 +11,12 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/checkpoint"
 )
 
-func UploadCheckpointByDA(c *checkpoint.Checkpoint, nodeRpc string, authToken string, fetchTimeout string, submitTimeout string) error {
+func UploadCheckpointByDA(c *checkpoint.Checkpoint, namespace string, nodeRpc string, authToken string, fetchTimeout string, submitTimeout string) error {
 	checkpointJSON, err := json.Marshal(c)
 	if err != nil {
 		return fmt.Errorf("failed to generate checkpoint, err: %v", err)
 	}
-	nubitDABackend, err := NewNubitDABackend(nodeRpc, authToken, fetchTimeout, submitTimeout)
+	nubitDABackend, err := NewNubitDABackend(nodeRpc, authToken, namespace, fetchTimeout, submitTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to connect to Nubit DA, err: %v", err)
 	}
@@ -28,6 +28,7 @@ func UploadCheckpointByDA(c *checkpoint.Checkpoint, nodeRpc string, authToken st
 		log.Println("🏆 nubit: blob successfully submitted", "id", hex.EncodeToString(ids[0]))
 	} else {
 		log.Println("❗ nubit: blob submission failed", "err", err)
+		return err
 	}
 	return nil
 }

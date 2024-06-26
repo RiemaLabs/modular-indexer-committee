@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -207,7 +209,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 						} else if GlobalConfig.Report.Method == "DA" {
 							log.Printf("Uploading the checkpoint by DA at height: %s\n", c.Height)
 							dacfg := GlobalConfig.Report.Da
-							err = nubit_da.UploadCheckpointByDA(&c,
+							err = nubit_da.UploadCheckpointByDA(&c, dacfg.Namespace,
 								dacfg.NodeRpc, dacfg.AuthToken, dacfg.FetchTimeout, dacfg.SubmitTimeout)
 							if err != nil {
 								log.Printf("Unable to upload the checkpoint by DA due to: %v", err)
@@ -243,6 +245,37 @@ func Execution(arguments *RuntimeArguments) {
 	err = json.Unmarshal(configFile, &GlobalConfig)
 	if err != nil {
 		log.Fatalf("Failed to parse config file: %v", err)
+	}
+
+	if GlobalConfig.Report.Method == "DA" && arguments.EnableCommittee {
+		if !nubit_da.IsValidNamespaceID(GlobalConfig.Report.Da.Namespace) {
+			log.Printf("Got invalid Namespace ID from the config.json. Initializing a new namespace.")
+			scanner := bufio.NewScanner(os.Stdin)
+			namespaceName := ""
+			for {
+				fmt.Print("Please enter the namespace name: ")
+				if scanner.Scan() {
+					namespaceName = scanner.Text()
+					if strings.TrimSpace(namespaceName) == "" {
+						fmt.Print("Namespace name couldn't be empty!")
+					} else if !nubit_da.IsValidNamespaceID(namespaceName) {
+						fmt.Print("Namespace name shouldn't be too long!")
+					} else {
+						break
+					}
+				}
+			}
+			GlobalConfig.Report.Da.Namespace = namespaceName
+			bytes, err := json.Marshal(GlobalConfig)
+			if err != nil {
+				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
+			}
+			err = os.WriteFile("config.json", bytes, 0644)
+			if err != nil {
+				log.Fatalf("Failed to save namespace ID to local file due to %v", err)
+			}
+			fmt.Printf("Succeed to create namespace, ID: %s!", namespaceName)
+		}
 	}
 
 	// Use OKX database as the ordGetter.

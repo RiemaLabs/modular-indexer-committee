@@ -19,6 +19,7 @@ type Config struct {
 		} `json:"s3"`
 		Da struct {
 			NodeRpc       string `json:"nodeRpc"`
+			Namespace     string `json:"namespace"`
 			AuthToken     string `json:"authToken"`
 			FetchTimeout  string `json:"fetchTimeout"`
 			SubmitTimeout string `json:"submitTimeout"`

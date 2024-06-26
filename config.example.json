@@ -18,6 +18,7 @@
         "da": {
             "nodeRpc": "YourOwnNodeRpc",
             "authToken": "YourOwnAuthToken",
+            "namespace": "YourOwnNamespace",
             "fetchTimeout": "TimeLimitForFetch",
             "submitTimeout": "TimeLimitForSubmit"
         }

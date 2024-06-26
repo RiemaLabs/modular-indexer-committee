@@ -2,6 +2,7 @@ package nubit_da
 
 import (
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"github.com/rollkit/go-da"
@@ -15,6 +16,8 @@ const (
 	AuthTokenFlagName = "da.auth_token"
 	// The namespace of running Layer 2
 	NamespaceFlagName = "da.namespace"
+	// NamespaceSize is the size of the hex encoded namespace string
+	NamespaceSize = 29 * 2
 	// Default Namespace for okx-brc20
 	DefaultNamespace = "00000000000000000000000000000000000000006F6B782D6272633230"
 	// Default local deployed Nubit Node
@@ -27,7 +30,6 @@ const (
 	NubitDataPrefix = 0xda
 )
 
-
 type NubitDABackend struct {
 	Client       da.DA
 	FetchTimeout time.Duration
@@ -36,12 +38,15 @@ type NubitDABackend struct {
 	Namespace     da.Namespace
 }
 
-func NewNubitDABackend(rpc, token, FetchTimeout string, SubmitTimeout string) (*NubitDABackend, error) {
+func NewNubitDABackend(rpc, token, namespace string, FetchTimeout string, SubmitTimeout string) (*NubitDABackend, error) {
 	client, err := proxy.NewClient(rpc, token)
 	if err != nil {
 		return nil, err
 	}
-	ns, err := hex.DecodeString(DefaultNamespace)
+	byteData := []byte(namespace)
+	hexNamespace := hex.EncodeToString(byteData)
+	fullNamespace := padNamespaceLeft(hexNamespace)
+	ns, err := hex.DecodeString(fullNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +69,19 @@ func NewNubitDABackend(rpc, token, FetchTimeout string, SubmitTimeout string) (*
 	}, nil
 }
 
-// func NewNubitDABackendFromCfg(c CLIConfig) (*NubitDABackend, error) {
-// 	return NewNubitDABackend(c.Rpc, c.AuthToken, c.Namespace, c.FetchTimeout, c.SubmitTimeout)
-// }
+func IsValidNamespaceID(nID string) bool {
+	if len(nID) > 10 {
+		return false
+	}
+	byteData := []byte(nID)
+	hexString := hex.EncodeToString(byteData)
+	return len(hexString) <= NamespaceSize
+}
+
+func padNamespaceLeft(s string) string {
+	currentLength := len(s)
+	if currentLength < NamespaceSize {
+		return strings.Repeat("0", NamespaceSize-currentLength) + s
+	}
+	return s
+}
