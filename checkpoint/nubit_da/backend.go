@@ -42,7 +42,9 @@ func NewNubitDABackend(rpc, token, namespace string, FetchTimeout string, Submit
 	if err != nil {
 		return nil, err
 	}
-	ns, err := hex.DecodeString(namespace)
+	byteData := []byte(namespace)
+	hexNamespace := hex.EncodeToString(byteData)
+	ns, err := hex.DecodeString(hexNamespace)
 	if err != nil {
 		return nil, err
 	}
