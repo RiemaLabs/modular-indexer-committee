@@ -52,32 +52,10 @@ func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
 		}
 		log.Printf("Commitment at height %d: %s", h.Height, newCommitment)
 	}
-	b := queue.Header.Root.Commit().Bytes()
+	b := queue.Header.Root.VerkleTree.Commit().Bytes()
 	latestCommitment := base64.StdEncoding.EncodeToString(b[:])
 	log.Printf("Commitment at height %d: %s", queue.Header.Height, latestCommitment)
 	elapsed := time.Since(startTime)
 	log.Printf("Reorganize the queue by %d blocks succeed!", recovery)
 	log.Printf("Timecost: %s\n", elapsed)
-}
-
-func Test_Rollingback(t *testing.T) {
-	loadRollingback(uint(779900))
-	loadRollingback(uint(780000))
-}
-
-func loadRollingback(catchupHeight uint) {
-	ordGetterTest, arguments := loadMain(782000)
-	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
-	lastHistory := queue.History[len(queue.History)-1]
-	preState, _ := stateless.Rollingback(queue.Header, &lastHistory)
-	preBytes := preState.Commit().Bytes()
-	preCommitment := base64.StdEncoding.EncodeToString(preBytes[:])
-
-	oldBytes := lastHistory.VerkleCommit
-	oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
-
-	if preCommitment != oldCommitment {
-		log.Fatalf("Rollingback the queue by %d blocks failed!", catchupHeight)
-	}
-	log.Printf("Commitment when rollingback at height %d: %s", catchupHeight, preCommitment)
 }

@@ -2,10 +2,8 @@ package stateless
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/hex"
 	"fmt"
-	"sort"
 
 	"github.com/ethereum/go-verkle"
 	"github.com/holiman/uint256"
@@ -14,7 +12,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 )
 
-func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) {
+func (h *Header) insert(key []byte, value []byte) {
 	if len(key) != verkle.KeySize {
 		panic(fmt.Errorf("the length the key to insert bytes must be %d, current is: %d", verkle.KeySize, len(key)))
 	}
@@ -23,7 +21,7 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	}
 
 	// Get the old value from the verkle tree root.
-	oldValue, err := h.Root.Get(key, nodeResolverFn)
+	oldValue, err := h.Root.Get(key)
 	if err != nil {
 		panic(err)
 	}
@@ -61,14 +59,14 @@ func (h *Header) insert(key []byte, value []byte, nodeResolverFn verkle.NodeReso
 	h.IntermediateKV[[verkle.KeySize]byte(key)] = [ValueSize]byte(value)
 }
 
-func (h *Header) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
+func (h *Header) get(key []byte) []byte {
 	if len(key) != verkle.KeySize {
 		panic(fmt.Errorf("the length the key to insert bytes must be %d, current is: %d", verkle.KeySize, len(key)))
 	}
 
 	key32 := [verkle.KeySize]byte(key)
 
-	oldValue, err := h.Root.Get(key, nodeResolverFn)
+	oldValue, err := h.Root.Get(key)
 	if err != nil {
 		panic(err)
 	}
@@ -116,7 +114,7 @@ func (h *Header) InsertInscriptionID(key []byte, value string) {
 	if err != nil {
 		panic(err)
 	}
-	h.insert(firstKey, transactionID, NodeResolveFn)
+	h.insert(firstKey, transactionID)
 
 	// The second slot contains the output index of the InscriptionID
 	secondKey := make([]byte, verkle.KeySize)
@@ -135,7 +133,7 @@ func (h *Header) GetInscriptionID(key []byte) string {
 	// The first Key
 	firstKey := make([]byte, verkle.KeySize)
 	copy(firstKey, key)
-	transactionIDBytes := h.get(firstKey, NodeResolveFn)
+	transactionIDBytes := h.get(firstKey)
 	transactionID := hex.EncodeToString(transactionIDBytes)
 
 	// The second Key
@@ -151,12 +149,12 @@ func (h *Header) GetInscriptionID(key []byte) string {
 func (h *Header) InsertUInt256(key []byte, value *uint256.Int) {
 	var dest [ValueSize]byte
 	value.WriteToArray32(&dest)
-	h.insert(key, dest[:], NodeResolveFn)
+	h.insert(key, dest[:])
 }
 
 func (h *Header) GetUInt256(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
-	value := h.get(key, NodeResolveFn)
+	value := h.get(key)
 	return res.SetBytes(value)
 }
 
@@ -179,7 +177,7 @@ func (h *Header) InsertBytes(key []byte, value []byte) {
 
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize], NodeResolveFn)
+		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize])
 	}
 }
 
@@ -196,16 +194,15 @@ func (h *Header) GetBytes(key []byte) []byte {
 	padded := make([]byte, 0)
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		padded = append(padded, h.get(newKey, NodeResolveFn)...)
+		padded = append(padded, h.get(newKey)...)
 	}
 	res := padded[:len]
 	return res
 }
 
-func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool, nodeResolverFn verkle.NodeResolverFn) error {
+func (h *Header) Paging(ordGetter getter.OrdGetter, queryHash bool) error {
 	for key, value := range h.IntermediateKV {
-		h.KV[key] = value
-		_ = h.Root.Insert(key[:], value[:], nodeResolverFn)
+		_ = h.Root.Insert(key[:], value[:])
 	}
 
 	h.Access = AccessList{}
@@ -227,52 +224,10 @@ func (h *Header) GetHeight() uint {
 	return h.Height
 }
 
-func (h *Header) Serialize() (*bytes.Buffer, error) {
-	// TODO: Medium. Use a native database instead of a key-value store for the state management.
-	var buffer bytes.Buffer
-	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(h.KV)
+func (h *Header) Serialize() error {
+	err := h.Root.Serialization()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &buffer, nil
-}
-
-func (h *Header) OrderedKeys() [][verkle.KeySize]byte {
-	keys := make([][verkle.KeySize]byte, 0, len(h.KV))
-	for key := range h.KV {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return string(keys[i][:]) < string(keys[j][:])
-	})
-	return keys
-}
-
-func Deserialize(buffer *bytes.Buffer, height uint, nodeResolverFn verkle.NodeResolverFn) (*Header, error) {
-	var kv KeyValueMap
-	decoder := gob.NewDecoder(buffer)
-	err := decoder.Decode(&kv)
-	if err != nil {
-		return nil, err
-	}
-	root := verkle.New()
-	for k, v := range kv {
-		err := root.Insert(k[:], v[:], nodeResolverFn)
-		if err != nil {
-			return nil, nil
-		}
-	}
-	// The call of Commit is necessary to refresh the root commit.
-	root.Commit()
-
-	myHeader := Header{
-		Root:           root,
-		KV:             kv,
-		Height:         height,
-		Hash:           "",
-		Access:         AccessList{},
-		IntermediateKV: KeyValueMap{},
-	}
-	return &myHeader, nil
+	return nil
 }

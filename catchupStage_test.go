@@ -25,7 +25,7 @@ func Test_CatchupStage(t *testing.T) {
 	log.Printf("Using Time %s, And %f Per Block on Average During CatchUp Stage", elapsed, averageTime)
 
 	// Commitment logging
-	bytes := queue.Header.Root.Commit().Bytes()
+	bytes := queue.Header.Root.VerkleTree.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
 	log.Printf("Header's Commitment Is %s", commitment)
 }

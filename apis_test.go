@@ -64,14 +64,6 @@ func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 	if err := json.Unmarshal(body, &res); err != nil {
 		log.Fatal("[TestGetLatestStateProof]", err)
 	}
-
-	lastIndex := len(queue.History) - 1
-	preState, _ := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
-
-	_, err = apis.GeneratePostRoot(preState.Commit(), queue.LatestHeight(), &res)
-	if err != nil {
-		log.Fatal("With error: ", err)
-	}
 }
 
 func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
@@ -126,7 +118,7 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 	log.Println("[OverallBalance res]: ", res.Result.OverallBalance)
 	log.Println("[AvailableBalance res]: ", res.Result.AvailableBalance)
 
-	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.Commit(), tick, wallet, &res)
+	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.VerkleTree.Commit(), tick, wallet, &res)
 	if err != nil {
 		// log.Fatalf("[TestVerifyCurrentBalanceOfWallet] verify not right. At tick %s, wallet %s, height %d", tick, wallet, catchupHeight)
 		log.Fatal("With error: ", err)

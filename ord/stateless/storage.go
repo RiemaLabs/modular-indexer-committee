@@ -1,7 +1,6 @@
 package stateless
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -9,95 +8,152 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-verkle"
-
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
+	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
 )
 
 const cachePath = ".cache"
 const fileSuffix = ".dat"
+const LRUsize = 100000
+const FlushDepth = 3
+const VerkleDataPath = ".tmpTreeStore"
 
 func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 	curHeight := initHeight
 	myHeader := Header{
-		Root:           verkle.New(),
+		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, cachePath),
 		Height:         curHeight,
-		KV:             make(KeyValueMap),
 		Access:         AccessList{},
 		IntermediateKV: KeyValueMap{},
 	}
 	metrics.CurrentHeight.Set(float64(myHeader.Height))
+
 	if enableStateRootCache {
-		files, err := os.ReadDir(cachePath)
+		directories, err := os.ReadDir(cachePath)
 		if err != nil {
 			return &myHeader
 		}
 		// Variables to keep track of the file with the maximum state.height
 		var maxHeight int
-		var maxFile string
+		var maxDir string
 
 		// Iterate through all files
-		for _, file := range files {
-			// Check if the file has the suffix
-			if filepath.Ext(file.Name()) == fileSuffix {
-				heightString := strings.TrimSuffix(file.Name(), fileSuffix)
+		for _, dir := range directories {
+			if dir.IsDir() && filepath.Ext(dir.Name()) == fileSuffix {
+				heightString := strings.TrimSuffix(dir.Name(), fileSuffix)
 				height, err := strconv.Atoi(heightString)
 				if err == nil && height > maxHeight {
-					// Update the maximum state.height and corresponding file name
 					maxHeight = height
-					maxFile = file.Name()
+					maxDir = dir.Name()
 				}
 			}
 		}
 
-		if maxFile != "" {
-			data, err := os.ReadFile(filepath.Join(cachePath, maxFile))
+		if maxDir != "" {
+			storedState, err := Deserialize(uint(maxHeight))
 			if err != nil {
 				return &myHeader
 			}
-			var buffer = bytes.NewBuffer(data)
-			log.Println("Start to rebuild verkle tree.")
-			storedState, err := Deserialize(buffer, uint(maxHeight), nil)
-			if err != nil {
-				return &myHeader
-			}
-			log.Println("End to rebuild verkle tree.")
 			return storedState
 		}
-
 	}
 	return &myHeader
 }
 
 func StoreHeader(header *Header, evictHeight uint) error {
-	buffer, err := header.Serialize()
-	bytes := buffer.Bytes()
+	err := header.Serialize()
 	if err != nil {
 		return err
 	}
 
 	fileName := fmt.Sprintf("%d%s", header.Height, fileSuffix)
 	filePath := filepath.Join(cachePath, fileName)
-	err = os.WriteFile(filePath, bytes, 0666)
+	err = CopyDir(VerkleDataPath, filePath)
 	if err != nil {
 		return err
 	}
 
 	// Delete old files
-	files, err := os.ReadDir(cachePath)
+	directories, err := os.ReadDir(cachePath)
 	if err != nil {
 		return err
 	}
-	for _, file := range files {
-		// Check if the file has the suffix
-		if filepath.Ext(file.Name()) == fileSuffix {
-			heightString := strings.TrimSuffix(file.Name(), fileSuffix)
+	for _, dir := range directories {
+		// Check if the dir has the suffix
+		if dir.IsDir() && filepath.Ext(dir.Name()) == fileSuffix {
+			heightString := strings.TrimSuffix(dir.Name(), fileSuffix)
 			height, err := strconv.Atoi(heightString)
 			if err == nil && height < int(evictHeight) {
-				err := os.Remove(filepath.Join(cachePath, file.Name()))
+				err := os.Remove(filepath.Join(cachePath, dir.Name()))
 				if err != nil {
-					log.Printf("Failed to remove old file: %s, err: %v", file.Name(), err)
+					log.Printf("Failed to remove old file: %s, err: %v", dir.Name(), err)
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func Deserialize(height uint) (*Header, error) {
+	origDir := filepath.Join(cachePath, strconv.Itoa(int(height)), fileSuffix)
+
+	// Delete the existing VerkleDataPath
+	os.RemoveAll(VerkleDataPath)
+	err := CopyDir(origDir, VerkleDataPath)
+	if err != nil {
+		return nil, fmt.Errorf("error during copying levelDB: %v", err)
+	}
+
+	dbTree := tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, VerkleDataPath)
+	if dbTree == nil {
+		return nil, fmt.Errorf("error during creating verkle tree")
+	}
+
+	// The call of Commit is necessary to refresh the root commit.
+	dbTree.VerkleTree.Commit()
+
+	myHeader := Header{
+		Root:           dbTree,
+		Height:         height,
+		Hash:           "",
+		Access:         AccessList{},
+		IntermediateKV: KeyValueMap{},
+	}
+	return &myHeader, nil
+}
+
+func CopyDir(src string, dest string) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dest, entry.Name())
+
+		fileInfo, err := os.Stat(srcPath)
+		if err != nil {
+			return err
+		}
+
+		if fileInfo.IsDir() {
+			err = os.MkdirAll(destPath, fileInfo.Mode())
+			if err != nil {
+				return err
+			}
+			err = CopyDir(srcPath, destPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			data, err := os.ReadFile(srcPath)
+			if err != nil {
+				return err
+			}
+			err = os.WriteFile(destPath, data, fileInfo.Mode())
+			if err != nil {
+				return err
 			}
 		}
 	}
