@@ -12,8 +12,8 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
 )
 
-const cachePath = ".cache"
-const fileSuffix = ".dat"
+const CachePath = ".cache"
+const FileSuffix = ".dat"
 const LRUsize = 100000
 const FlushDepth = 3
 const VerkleDataPath = ".tmpTreeStore"
@@ -21,7 +21,7 @@ const VerkleDataPath = ".tmpTreeStore"
 func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 	curHeight := initHeight
 	myHeader := Header{
-		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, cachePath),
+		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, VerkleDataPath),
 		Height:         curHeight,
 		Access:         AccessList{},
 		IntermediateKV: KeyValueMap{},
@@ -29,7 +29,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 	metrics.CurrentHeight.Set(float64(myHeader.Height))
 
 	if enableStateRootCache {
-		directories, err := os.ReadDir(cachePath)
+		directories, err := os.ReadDir(CachePath)
 		if err != nil {
 			return &myHeader
 		}
@@ -39,8 +39,8 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 
 		// Iterate through all files
 		for _, dir := range directories {
-			if dir.IsDir() && filepath.Ext(dir.Name()) == fileSuffix {
-				heightString := strings.TrimSuffix(dir.Name(), fileSuffix)
+			if dir.IsDir() && filepath.Ext(dir.Name()) == FileSuffix {
+				heightString := strings.TrimSuffix(dir.Name(), FileSuffix)
 				height, err := strconv.Atoi(heightString)
 				if err == nil && height > maxHeight {
 					maxHeight = height
@@ -54,6 +54,7 @@ func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {
 			if err != nil {
 				return &myHeader
 			}
+			log.Printf("Recovered from cache at height %d", maxHeight)
 			return storedState
 		}
 	}
@@ -66,27 +67,30 @@ func StoreHeader(header *Header, evictHeight uint) error {
 		return err
 	}
 
-	fileName := fmt.Sprintf("%d%s", header.Height, fileSuffix)
-	filePath := filepath.Join(cachePath, fileName)
+	fileName := fmt.Sprintf("%d%s", header.Height, FileSuffix)
+	filePath := filepath.Join(CachePath, fileName)
 	err = CopyDir(VerkleDataPath, filePath)
+	log.Printf("Stored header at height %d", header.Height)
 	if err != nil {
 		return err
 	}
 
 	// Delete old files
-	directories, err := os.ReadDir(cachePath)
+	directories, err := os.ReadDir(CachePath)
 	if err != nil {
 		return err
 	}
 	for _, dir := range directories {
 		// Check if the dir has the suffix
-		if dir.IsDir() && filepath.Ext(dir.Name()) == fileSuffix {
-			heightString := strings.TrimSuffix(dir.Name(), fileSuffix)
+		if dir.IsDir() && filepath.Ext(dir.Name()) == FileSuffix {
+			heightString := strings.TrimSuffix(dir.Name(), FileSuffix)
 			height, err := strconv.Atoi(heightString)
 			if err == nil && height < int(evictHeight) {
-				err := os.Remove(filepath.Join(cachePath, dir.Name()))
+				err := os.RemoveAll(filepath.Join(CachePath, dir.Name()))
 				if err != nil {
 					log.Printf("Failed to remove old file: %s, err: %v", dir.Name(), err)
+				} else {
+					log.Printf("Removed old file: %s", dir.Name())
 				}
 			}
 		}
@@ -95,7 +99,7 @@ func StoreHeader(header *Header, evictHeight uint) error {
 }
 
 func Deserialize(height uint) (*Header, error) {
-	origDir := filepath.Join(cachePath, strconv.Itoa(int(height)), fileSuffix)
+	origDir := filepath.Join(CachePath, strconv.Itoa(int(height))+FileSuffix)
 
 	// Delete the existing VerkleDataPath
 	os.RemoveAll(VerkleDataPath)
@@ -125,6 +129,10 @@ func Deserialize(height uint) (*Header, error) {
 func CopyDir(src string, dest string) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(dest, 0755); err != nil {
 		return err
 	}
 
@@ -158,4 +166,8 @@ func CopyDir(src string, dest string) error {
 		}
 	}
 	return nil
+}
+
+func CleanPath(dirPath string) error {
+	return os.RemoveAll(dirPath)
 }

@@ -95,14 +95,19 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 	queue.Lock()
 	defer queue.Unlock()
+	// turn off current LevelDB, and remove tmpStore, create from left cache
+	queue.Header.Root.KvStore.Close()
+	os.RemoveAll(VerkleDataPath)
+	// Copy the old LevelDB to the new LevelDB
+	
 	myHeader := Header{
-		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, cachePath),
+		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, VerkleDataPath),
 		Height:         BRC20StartHeight - 1,
 		Access:         AccessList{},
 		IntermediateKV: KeyValueMap{},
 	}
 	queue.Header = &myHeader
-	directories, err := os.ReadDir(cachePath)
+	directories, err := os.ReadDir(CachePath)
 	if err != nil {
 		return nil
 	}
@@ -112,8 +117,8 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 
 	// Iterate through all files
 	for _, dir := range directories {
-		if dir.IsDir() && filepath.Ext(dir.Name()) == fileSuffix {
-			heightString := strings.TrimSuffix(dir.Name(), fileSuffix)
+		if dir.IsDir() && filepath.Ext(dir.Name()) == FileSuffix {
+			heightString := strings.TrimSuffix(dir.Name(), FileSuffix)
 			height, err := strconv.Atoi(heightString)
 			if err == nil && height > maxHeight {
 				maxHeight = height
@@ -121,7 +126,7 @@ func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 			}
 		}
 	}
-	if maxDir != "" && uint(maxHeight) <= reorgHeight{
+	if maxDir != "" && uint(maxHeight) <= reorgHeight {
 		storedState, err := Deserialize(uint(maxHeight))
 		if err != nil {
 			return nil

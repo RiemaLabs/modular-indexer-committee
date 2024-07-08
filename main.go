@@ -30,6 +30,7 @@ var (
 )
 
 func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
+	stateless.CleanPath(stateless.VerkleDataPath) // remove last time cache
 	metrics.Stage.Set(metrics.StageCatchup)
 
 	// Fetch the latest block height.

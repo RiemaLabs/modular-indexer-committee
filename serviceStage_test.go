@@ -38,5 +38,5 @@ func mockService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint)
 	}
 	bytes := queue.Header.Root.VerkleTree.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
-	log.Printf("Header's Commitment Is %s", commitment)
+	log.Printf("Header's Commitment at Height %d Is %s", latestHeight, commitment)
 }
