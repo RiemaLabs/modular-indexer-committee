@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -10,6 +11,10 @@ import (
 )
 
 func Test_Serialization(t *testing.T) {
+	log.Println("Test_Serialization")
+	wg.Wait()
+	wg.Add(1)
+	defer wg.Done()
 	var catchupHeight uint = 780050
 	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
@@ -19,16 +24,8 @@ func Test_Serialization(t *testing.T) {
 	}
 }
 
-func Test_CleanPath(t *testing.T) {
-	var catchupHeight uint = 780050
-	cleanPath := filepath.Join(stateless.CachePath, strconv.Itoa(int(catchupHeight))+".dat")
-	err := stateless.CleanPath(cleanPath)
-	if err != nil {
-		t.Errorf("Error cleaning path: %v", err)
-	}
-}
-
 func Test_Deserialization(t *testing.T) {
+	log.Println("Test_Deserialization")
 	var catchupHeight uint = 780050 + ord.BitcoinConfirmations
 	ordGetterTest, arguments := loadMain(782000)
 	arguments.EnableStateRootCache = true
@@ -39,6 +36,7 @@ func Test_Deserialization(t *testing.T) {
 	}
 }
 func Test_Recover(t *testing.T) {
+	log.Println("Test_Recover")
 	var catchupHeight uint = 780050 + ord.BitcoinConfirmations
 	ordGetterTest, arguments := loadMain(782000)
 	arguments.EnableStateRootCache = true
@@ -49,35 +47,12 @@ func Test_Recover(t *testing.T) {
 	mockService(ordGetterTest, queue, 10)        // test if queue can still grow
 }
 
-// func loadReorg(getter getter.OrdGetter, queue *stateless.Queue, recovery uint) {
-// 	startTime := time.Now()
-
-// 	oldCommitments := make([]string, 0)
-
-// 	for _, h := range queue.History {
-// 		oldBytes := h.VerkleCommit
-// 		oldCommitment := base64.StdEncoding.EncodeToString(oldBytes[:])
-// 		oldCommitments = append(oldCommitments, oldCommitment)
-// 	}
-
-// 	curHeight := queue.Header.Height
-// 	// reorgHeights means that the blockHash of this height changed.
-// 	reorgHeight := curHeight - recovery + 1
-// 	_ = queue.Recovery(getter, reorgHeight)
-
-// 	for i, h := range queue.History {
-// 		newBytes := h.VerkleCommit
-// 		newCommitment := base64.StdEncoding.EncodeToString(newBytes[:])
-// 		oldCommitment := oldCommitments[i]
-// 		if oldCommitment != newCommitment {
-// 			log.Fatalf("Reorganize the queue by %d blocks failed!", recovery)
-// 		}
-// 		log.Printf("Commitment at height %d: %s", h.Height, newCommitment)
-// 	}
-// 	b := queue.Header.Root.VerkleTree.Commit().Bytes()
-// 	latestCommitment := base64.StdEncoding.EncodeToString(b[:])
-// 	log.Printf("Commitment at height %d: %s", queue.Header.Height, latestCommitment)
-// 	elapsed := time.Since(startTime)
-// 	log.Printf("Reorganize the queue by %d blocks succeed!", recovery)
-// 	log.Printf("Timecost: %s\n", elapsed)
-// }
+func Test_CleanPath(t *testing.T) {
+	log.Println("Test_CleanPath")
+	var catchupHeight uint = 780050
+	cleanPath := filepath.Join(stateless.CachePath, strconv.Itoa(int(catchupHeight))+".dat")
+	err := stateless.CleanPath(cleanPath)
+	if err != nil {
+		t.Errorf("Error cleaning path: %v", err)
+	}
+}

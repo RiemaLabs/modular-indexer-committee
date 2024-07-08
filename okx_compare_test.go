@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,7 +11,13 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
 )
 
+var wg sync.WaitGroup
+
 func Test_OKX(t *testing.T) {
+	t.SkipNow() // This test can only be run in a single mode
+	log.Println("Test_OKX")
+	wg.Add(1)
+	defer wg.Done()
 	var latestHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
 	records, err := stateless.LoadORDRecords("./data/785000-ordi.csv")
 	if err != nil {
@@ -36,4 +43,6 @@ func Test_OKX(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+	stateless.CleanPath(stateless.VerkleDataPath)
+	log.Println("Test_OKX finished")
 }

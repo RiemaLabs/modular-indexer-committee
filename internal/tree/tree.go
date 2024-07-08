@@ -93,7 +93,7 @@ func (v *VerkleTreeWithLRU) pagingInsideLRU(key []byte) error {
 	if evicted {
 		// follow evicted key path in verkle tree, if exists, then flush everything **under** internal node into kvram
 		// 4 steps: 1) tree.GetNode 2) tree.BatchSerialize 3) tree.HashNodeFromInternal 4) kv.insert
-		flushStartNode, _ := v.VerkleTree.(*verkle.InternalNode).GetInternalNode(evictedValue, v.FlushAtDepth) // flushStartNode is not flushed
+		flushStartNode, startPath, _ := v.VerkleTree.(*verkle.InternalNode).GetInternalNode(evictedValue, v.FlushAtDepth) // flushStartNode is not flushed
 		if flushStartNode == nil {
 			return nil
 		}
@@ -105,7 +105,7 @@ func (v *VerkleTreeWithLRU) pagingInsideLRU(key []byte) error {
 			internalNode.HashNodeFromInternal() // flush under internalNode
 			// Insert the serialized nodes into kvStore
 			for _, node := range serializedNodes[1:] { // exclude itself
-				v.KvStore.Insert(node.Path, node.SerializedBytes)
+				v.KvStore.Insert(append(startPath, node.Path...), node.SerializedBytes)
 			}
 		}
 	}
