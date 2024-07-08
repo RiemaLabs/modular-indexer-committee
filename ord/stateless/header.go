@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	"github.com/holiman/uint256"
 
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"

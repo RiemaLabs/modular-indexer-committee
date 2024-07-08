@@ -10,7 +10,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/internal/tree/cache"
 	"github.com/RiemaLabs/modular-indexer-committee/internal/tree/kvstore"
 
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
 )
 
 type VerkleTreeWithLRU struct {

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	uint256 "github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 

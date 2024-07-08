@@ -5,7 +5,7 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
 	tree "github.com/RiemaLabs/modular-indexer-committee/internal/tree"
 	uint256 "github.com/holiman/uint256"
 )

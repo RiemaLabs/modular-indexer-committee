@@ -16,7 +16,7 @@ import (
 	goipa "github.com/crate-crypto/go-ipa"
 	"github.com/crate-crypto/go-ipa/common"
 	"github.com/crate-crypto/go-ipa/ipa"
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
 )
 
 func (state DiffState) Copy() DiffState {

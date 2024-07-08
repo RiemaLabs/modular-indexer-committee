@@ -3,7 +3,7 @@ package cache
 import (
 	"container/list"
 
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
 )
 
 type LRUCache struct {

@@ -12,7 +12,7 @@ import (
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	"github.com/holiman/uint256"
 )
 
