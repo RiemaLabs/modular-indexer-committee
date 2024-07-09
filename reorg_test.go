@@ -12,9 +12,6 @@ import (
 
 func Test_Serialization(t *testing.T) {
 	log.Println("Test_Serialization")
-	wg.Wait()
-	wg.Add(1)
-	defer wg.Done()
 	var catchupHeight uint = 780050
 	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)

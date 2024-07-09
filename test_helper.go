@@ -18,7 +18,7 @@ func loadMain(hashedHeight uint) (*getter.OKXBRC20GetterTest, RuntimeArguments) 
 	}
 
 	// Get the configuration.
-	configFile, err := os.ReadFile("config.json")
+	configFile, err := os.ReadFile("config.example.json")
 	if err != nil {
 		log.Fatalf("Failed to read config file: %v", err)
 	}
