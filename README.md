@@ -16,6 +16,7 @@ Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.dis
 Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
 
 ## What is Happening for Committee Indexer?
+- Optimize memory usage.
 - Switch brc20 data source to OKX rpc.
 - Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
 - Update reliance on OPI to version 0.4.1.
@@ -29,9 +30,9 @@ Before we stepped into the installation, ensure your machine is equipped with th
 
 | Metric       | Minimum Requirements     | Recommended Requirements   |
 |--------------|------------------------- |----------------------------|
-| **CPU**      | Single Core              | 8 Cores                    |
-| **Memory**   | 96 GB                    | 128 GB                     |
-| **Disk**     | 1 TB                     | 5 TB                       |
+| **CPU**      | Single Core              | 4 Cores                    |
+| **Memory**   | 4 GB                    | 16 GB                     |
+| **Disk**     | 32GB                     | 64GB                       |
 | **Bandwidth**| Upload/Download 100 KB/s | Upload/Download 1 MB/s+    |
 
 We highly appreciate you running the committee indexer to contribute to the decentralization.
@@ -62,6 +63,7 @@ go build
 # Run the committee indexer in test mode
 ./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service -t --blockheight 780010
 ```
+Note that if you choose to upload your committee indexer's checkpoints to Nubit DA, you will need to start a nubit light node and set up the `config.json` correspondingly. See [nubit docs](https://docs.nubit.org/nubit-da/run-a-node) for more information.
 
 Below are the explanation for each of the command flags.
 - `--cfg`: Specify the path of your configuration file. This can be used to point the indexer to a specific configuration file instead of the default config.json.
