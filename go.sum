@@ -44,6 +44,8 @@ github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/RiemaLabs/go-verkle v0.0.0-20240708111525-859a3daab4b7 h1:G9MHVgalMv2Um+ybyt1UzKUMoOQk/xGmV5+136TrmE4=
 github.com/RiemaLabs/go-verkle v0.0.0-20240708111525-859a3daab4b7/go.mod h1:BZAtvzpkBz+5Yg8GYNFSwTwqSXFik7MtfX1rBoVxNRI=
+github.com/RiemaLabs/go-verkle v0.0.0-20240710070404-3f637b1aa1ef h1:oIpzuU2sujHfZ71P2zSSJb+nHNzbT56+D5RhwJYMuPI=
+github.com/RiemaLabs/go-verkle v0.0.0-20240710070404-3f637b1aa1ef/go.mod h1:BZAtvzpkBz+5Yg8GYNFSwTwqSXFik7MtfX1rBoVxNRI=
 github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.2 h1:nBe3EQcLjMmLpRzF7W4Y85neJUg83Uf40D7UkyjLvIU=
 github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.2/go.mod h1:sIRvuWPYyUjQP9Ai+a2Xkagi1TXlcO6pEk8KbZqcOIs=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmHS9iAKVt9AyzRSqNU1qabPih5BY=

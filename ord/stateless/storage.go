@@ -15,7 +15,7 @@ import (
 const CachePath = ".cache"
 const FileSuffix = ".dat"
 const LRUsize = 100000
-const FlushDepth = 3
+const FlushDepth = 2
 const VerkleDataPath = ".tmpTreeStore"
 
 func LoadHeader(enableStateRootCache bool, initHeight uint) *Header {

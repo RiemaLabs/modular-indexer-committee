@@ -3,7 +3,6 @@ module github.com/RiemaLabs/modular-indexer-committee
 go 1.22.2
 
 require (
-	github.com/RiemaLabs/go-verkle v0.0.0-20240708111525-859a3daab4b7
 	github.com/RiemaLabs/nubit-da-sdk v0.1.0-rc.2
 	github.com/aws/aws-sdk-go-v2 v1.30.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.24
@@ -11,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.58.0
 	github.com/crate-crypto/go-ipa v0.0.0-20240223125850-b1e8a79f509c
+	github.com/RiemaLabs/go-verkle v0.0.0-20240710070404-3f637b1aa1ef
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-contrib/pprof v1.5.0
 	github.com/gin-gonic/gin v1.10.0
