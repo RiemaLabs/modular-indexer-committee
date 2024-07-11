@@ -75,3 +75,12 @@ func (bm *ByteMap) PathClean(key []byte, flushAtDepth byte) error {
 func (bm *ByteMap) Close() error {
 	return bm.DB.Close()
 }
+
+func (bm *ByteMap) ReOpen(path string) error {
+	db, err := leveldb.OpenFile(path, nil)
+	if err != nil {
+		return err
+	}
+	bm.DB = db
+	return nil
+}
