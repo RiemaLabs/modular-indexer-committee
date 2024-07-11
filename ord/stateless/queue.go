@@ -2,17 +2,21 @@ package stateless
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
+	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	goipa "github.com/crate-crypto/go-ipa"
 	"github.com/crate-crypto/go-ipa/common"
 	"github.com/crate-crypto/go-ipa/ipa"
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
 )
 
 func (state DiffState) Copy() DiffState {
@@ -69,7 +73,7 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 			Height:       i - 1,
 			Hash:         hash,
 			Access:       queue.Header.Access,
-			VerkleCommit: queue.Header.Root.Commit().Bytes(),
+			VerkleCommit: queue.Header.Root.VerkleTree.Commit().Bytes(),
 		}
 		copy(queue.History[:], queue.History[1:])
 		queue.History[len(queue.History)-1] = newDiffState
@@ -83,114 +87,52 @@ func (queue *Queue) Update(getter getter.OrdGetter, latestHeight uint) error {
 		}
 
 		queue.Header.OrdTrans = ordTransfer
-		_ = queue.Header.Paging(getter, true, NodeResolveFn)
+		_ = queue.Header.Paging(getter, true)
 	}
 	return nil
-}
-
-func Rollingback(header *Header, stateDiff *DiffState) (verkle.VerkleNode, [][]byte) {
-	var keys [][]byte
-	kvMap := make(KeyValueMap)
-	for k, v := range header.KV {
-		kvMap[k] = v
-	}
-
-	for _, elem := range stateDiff.Access.Elements {
-		keys = append(keys, elem.Key[:])
-		if elem.OldValueExists {
-			kvMap[elem.Key] = elem.OldValue
-		} else {
-			delete(kvMap, elem.Key)
-		}
-	}
-
-	rollback := verkle.New()
-	for k, v := range kvMap {
-		_ = rollback.Insert(k[:], v[:], NodeResolveFn)
-	}
-	// The call of Commit is necessary to refresh the root commit.
-	rollback.Commit()
-
-	return rollback, keys
 }
 
 func (queue *Queue) Recovery(getter getter.OrdGetter, reorgHeight uint) error {
 	queue.Lock()
 	defer queue.Unlock()
-	curHeight := queue.Header.Height
-	startHeight := queue.StartHeight()
+	// turn off current LevelDB, and remove tmpStore, create from left cache
+	queue.Header.Root.KvStore.Close()
+	os.RemoveAll(VerkleDataPath)
+	// Copy the old LevelDB to the new LevelDB
+	
+	myHeader := Header{
+		Root:           tree.NewVerkleTreeWithLRU(LRUsize, FlushDepth, VerkleDataPath),
+		Height:         BRC20StartHeight - 1,
+		Access:         AccessList{},
+		IntermediateKV: KeyValueMap{},
+	}
+	queue.Header = &myHeader
+	directories, err := os.ReadDir(CachePath)
+	if err != nil {
+		return nil
+	}
+	// Variables to keep track of the file with the maximum state.height
+	var maxHeight int
+	var maxDir string
 
-	// Rollback to the reorgHeight - 1.
-	for i := curHeight - 1; i >= reorgHeight-1; i-- {
-		index := i - startHeight
-		pastState := queue.History[index]
-
-		// Inner bug in go-verkle, doesn't work.
-		// for _, elem := range pastState.Diff.Elements {
-		// 	if elem.OldValueExists {
-		// 		queue.Header.KV[elem.Key] = elem.OldValue
-		// 		queue.Header.Root.Insert(elem.Key[:], elem.OldValue[:], NodeResolveFn)
-		// 	} else {
-		// 		delete(queue.Header.KV, elem.Key)
-		// 		queue.Header.Root.Delete(elem.Key[:], NodeResolveFn)
-		// 	}
-		// }
-		// newRoot := queue.Header.Root
-		// newBytes := queue.Header.Root.Commit().Bytes()
-		// n := base64.StdEncoding.EncodeToString(newBytes[:])
-
-		for _, elem := range pastState.Access.Elements {
-			if elem.OldValueExists {
-				queue.Header.KV[elem.Key] = elem.OldValue
-			} else {
-				delete(queue.Header.KV, elem.Key)
+	// Iterate through all files
+	for _, dir := range directories {
+		if dir.IsDir() && filepath.Ext(dir.Name()) == FileSuffix {
+			heightString := strings.TrimSuffix(dir.Name(), FileSuffix)
+			height, err := strconv.Atoi(heightString)
+			if err == nil && height > maxHeight {
+				maxHeight = height
+				maxDir = dir.Name()
 			}
 		}
-		newRoot := verkle.New()
-		for k, v := range queue.Header.KV {
-			_ = newRoot.Insert(k[:], v[:], NodeResolveFn)
-		}
-		newBytes := newRoot.Commit().Bytes()
-		n := base64.StdEncoding.EncodeToString(newBytes[:])
-		o := base64.StdEncoding.EncodeToString(pastState.VerkleCommit[:])
-		if n != o {
-			panic(fmt.Sprintf("Recovery the header failed! The commitment is different: %s and %s", n, o))
-		}
-		newHeader := Header{
-			Root:           newRoot,
-			KV:             queue.Header.KV,
-			Height:         i,
-			Hash:           pastState.Hash,
-			Access:         AccessList{},
-			IntermediateKV: KeyValueMap{},
-			OrdTrans:       queue.Header.OrdTrans,
-		}
-		queue.Header = &newHeader
 	}
-
-	// Compute to the curHeight from the reorgHeight.
-	for i := reorgHeight; i <= curHeight; i++ {
-		index := i - startHeight - 1
-		ordTransfer, err := getter.GetOrdTransfers(i)
+	if maxDir != "" && uint(maxHeight) <= reorgHeight {
+		storedState, err := Deserialize(uint(maxHeight))
 		if err != nil {
-			return err
+			return nil
 		}
-		Exec(queue.Header, ordTransfer, i)
-		var hash string
-		hash, err = getter.GetBlockHash(i - 1)
-		if err != nil {
-			return err
-		}
-		queue.History[index] = DiffState{
-			Height:       i - 1,
-			Hash:         hash,
-			Access:       queue.Header.Access,
-			VerkleCommit: queue.Header.Root.Commit().Bytes(),
-		}
-		queue.Header.OrdTrans = ordTransfer
-		_ = queue.Header.Paging(getter, true, NodeResolveFn)
+		queue.Header = storedState
 	}
-
 	return nil
 }
 
@@ -235,15 +177,15 @@ func NewQueues(getter getter.OrdGetter, header *Header, queryHash bool, startHei
 			Height:       i - 1,
 			Hash:         hash,
 			Access:       header.Access,
-			VerkleCommit: header.Root.Commit().Bytes(),
+			VerkleCommit: header.Root.VerkleTree.Commit().Bytes(),
 		}
 		if i == startHeight+ord.BitcoinConfirmations-1 {
 			proof, _ = generateProofFromUpdate(header, &stateList[i-startHeight])
 		}
-		_ = header.Paging(getter, true, NodeResolveFn)
+		_ = header.Paging(getter, true)
 	}
 	// The call of Commit is necessary to refresh the root commit.
-	header.Root.Commit()
+	header.Root.VerkleTree.Commit()
 	queue := Queue{
 		Header:         header,
 		History:        stateList,
@@ -263,8 +205,8 @@ func generateProofFromUpdate(header *Header, stateDiff *DiffState) (*verkle.Proo
 		kvMap[elem.Key] = elem.NewValue
 	}
 
-	preroot := header.Root
-	pe, es, poas, err := verkle.GetCommitmentsForMultiproof(preroot, keys, NodeResolveFn)
+	preroot := header.Root.VerkleTree
+	pe, es, poas, err := verkle.GetCommitmentsForMultiproof(preroot, keys, header.Root.KvStore.Get)
 	if err != nil {
 		return nil, fmt.Errorf("error getting pre-state proof data: %w", err)
 	}

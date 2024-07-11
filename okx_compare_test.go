@@ -11,6 +11,8 @@ import (
 )
 
 func Test_OKX(t *testing.T) {
+	t.SkipNow() // This test can only be run in a single mode
+	log.Println("Test_OKX")
 	var latestHeight uint = stateless.BRC20StartHeight + ord.BitcoinConfirmations
 	records, err := stateless.LoadORDRecords("./data/785000-ordi.csv")
 	if err != nil {
@@ -36,4 +38,6 @@ func Test_OKX(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+	stateless.CleanPath(stateless.VerkleDataPath)
+	log.Println("Test_OKX finished")
 }

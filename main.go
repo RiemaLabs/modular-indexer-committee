@@ -30,6 +30,7 @@ var (
 )
 
 func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initHeight uint, latestHeight uint) (*stateless.Queue, error) {
+	stateless.CleanPath(stateless.VerkleDataPath) // remove last time cache
 	metrics.Stage.Set(metrics.StageCatchup)
 
 	// Fetch the latest block height.
@@ -61,7 +62,7 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 				}
 				header.Lock()
 				stateless.Exec(header, ordTransfer, i)
-				_ = header.Paging(okxGetter, false, stateless.NodeResolveFn)
+				_ = header.Paging(okxGetter, false)
 				header.Unlock()
 				if i%1000 == 0 {
 					log.Printf("Blocks: %d / %d \n", i, catchupHeight)
@@ -164,7 +165,7 @@ func ServiceStage(ordGetter getter.OrdGetter, arguments *RuntimeArguments, queue
 				latestHistory := stateless.DiffState{
 					Height:       queue.Header.Height,
 					Hash:         queue.Header.Hash,
-					VerkleCommit: queue.Header.Root.Commit().Bytes(),
+					VerkleCommit: queue.Header.Root.VerkleTree.Commit().Bytes(),
 					Access:       stateless.AccessList{},
 				}
 				hs := make([]*stateless.DiffState, 0)

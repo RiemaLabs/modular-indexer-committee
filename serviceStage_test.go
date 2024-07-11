@@ -11,6 +11,7 @@ import (
 )
 
 func Test_ServiceStage(t *testing.T) {
+	log.Println("Test_ServiceStage")
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain(782000)
 	queue, _ := CatchupStage(ordGetterTest, &arguments, stateless.BRC20StartHeight-1, catchupHeight)
@@ -25,6 +26,7 @@ func Test_ServiceStage(t *testing.T) {
 	mockService(ordGetterTest, queue, 10) // all update, no historical record stays
 	elapsed = time.Since(startTime)
 	log.Printf("Using Time %s\n", elapsed)
+	stateless.CleanPath(stateless.VerkleDataPath)
 }
 
 func mockService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint) {
@@ -36,7 +38,7 @@ func mockService(getter getter.OrdGetter, queue *stateless.Queue, upHeight uint)
 			log.Fatalf("Failed To Update The Queue: %v", err)
 		}
 	}
-	bytes := queue.Header.Root.Commit().Bytes()
+	bytes := queue.Header.Root.VerkleTree.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
-	log.Printf("Header's Commitment Is %s", commitment)
+	log.Printf("Header's Commitment at Height %d Is %s", latestHeight, commitment)
 }

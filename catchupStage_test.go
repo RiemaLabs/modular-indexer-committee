@@ -10,6 +10,7 @@ import (
 )
 
 func Test_CatchupStage(t *testing.T) {
+	log.Println("Test_CatchupStage")
 	var catchupHeight uint = 780000
 	ordGetterTest, arguments := loadMain(782000)
 	startTime := time.Now()
@@ -25,7 +26,8 @@ func Test_CatchupStage(t *testing.T) {
 	log.Printf("Using Time %s, And %f Per Block on Average During CatchUp Stage", elapsed, averageTime)
 
 	// Commitment logging
-	bytes := queue.Header.Root.Commit().Bytes()
+	bytes := queue.Header.Root.VerkleTree.Commit().Bytes()
 	commitment := base64.StdEncoding.EncodeToString(bytes[:])
 	log.Printf("Header's Commitment Is %s", commitment)
+	stateless.CleanPath(stateless.VerkleDataPath)
 }

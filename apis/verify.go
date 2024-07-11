@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
+	"github.com/RiemaLabs/modular-indexer-committee/internal/tree/cache"
+	"github.com/RiemaLabs/modular-indexer-committee/internal/tree/kvstore"
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/stateless"
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	"github.com/holiman/uint256"
 )
 
@@ -175,15 +178,26 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 	}
 
 	preRoot.Commit()
+	lightTmpStore, err := kvstore.NewByteMap(".light" + stateless.VerkleDataPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queueHeader := &tree.VerkleTreeWithLRU{
+		VerkleTree:   preRoot,
+		LRU:          cache.NewLRUCache(0),
+		KvStore:      lightTmpStore,
+		FlushAtDepth: stateless.FlushDepth,
+	}
 
 	preHeader := &stateless.LightHeader{
-		Root:   preRoot,
+		Root:   queueHeader,
 		Height: blockHeight - 1,
 		Hash:   "",
 	}
 
 	if resp.Result == nil {
-		return preHeader.Root, nil
+		return preHeader.Root.VerkleTree, nil
 	}
 
 	var ordTransfers []getter.BRC20Event
@@ -200,5 +214,5 @@ func GeneratePostRoot(rootC *verkle.Point, blockHeight uint, resp *Brc20Verifiab
 	}
 
 	stateless.Exec(preHeader, ordTransfers, blockHeight)
-	return preHeader.Root, nil
+	return preHeader.Root.VerkleTree, nil
 }

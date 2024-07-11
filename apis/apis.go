@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -42,7 +42,7 @@ func GetCurrentBalanceOfWallet(c *gin.Context, queue *stateless.Queue) {
 
 	keys := [][]byte{availKey, overKey}
 
-	proof, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root, nil, keys, stateless.NodeResolveFn)
+	proof, _, _, _, err := verkle.MakeVerkleMultiProof(queue.Header.Root.VerkleTree, nil, keys, queue.Header.Root.KvStore.Get)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to generate proof due to %v", err)
 		c.JSON(http.StatusInternalServerError, Brc20VerifiableCurrentBalanceOfWalletResponse{

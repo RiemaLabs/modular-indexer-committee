@@ -5,7 +5,8 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/ord"
 	"github.com/RiemaLabs/modular-indexer-committee/ord/getter"
-	verkle "github.com/ethereum/go-verkle"
+	verkle "github.com/RiemaLabs/go-verkle"
+	tree "github.com/RiemaLabs/modular-indexer-committee/internal/tree"
 	uint256 "github.com/holiman/uint256"
 )
 
@@ -37,10 +38,7 @@ type KeyValueMap = map[[verkle.KeySize]byte][ValueSize]byte
 
 type Header struct {
 	// Verkle Tree Root
-	Root verkle.VerkleNode
-
-	// All Key Values on the Verkle Tree. It shall be consistent with the Root.
-	KV KeyValueMap
+	Root *tree.VerkleTreeWithLRU
 
 	// The state is after the execution of Block Height.
 	Height uint
@@ -59,7 +57,7 @@ type Header struct {
 
 type LightHeader struct {
 	// Verkle Tree Root
-	Root verkle.VerkleNode
+	Root *tree.VerkleTreeWithLRU
 	// The state is after the execution of Block Height.
 	Height uint
 	// Block Hash.
@@ -74,9 +72,9 @@ type Queue struct {
 }
 
 type KVStorage interface {
-	insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn)
+	insert(key []byte, value []byte)
 
-	get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte
+	get(key []byte) []byte
 
 	InsertInscriptionID(key []byte, value string)
 

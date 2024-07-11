@@ -4,16 +4,16 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 	uint256 "github.com/holiman/uint256"
 )
 
-func (h *LightHeader) insert(key []byte, value []byte, nodeResolverFn verkle.NodeResolverFn) {
-	_ = h.Root.Insert(key, value, nodeResolverFn)
+func (h *LightHeader) insert(key []byte, value []byte) {
+	_ = h.Root.Insert(key, value)
 }
 
-func (h *LightHeader) get(key []byte, nodeResolverFn verkle.NodeResolverFn) []byte {
-	oldValue, err := h.Root.Get(key, nodeResolverFn)
+func (h *LightHeader) get(key []byte) []byte {
+	oldValue, err := h.Root.Get(key)
 	if err != nil {
 		if err.Error() == "trying to access a node that is missing from the stateless view" {
 			// stateless view doesn't include values that first read then write.
@@ -36,7 +36,7 @@ func (h *LightHeader) InsertInscriptionID(key []byte, value string) {
 	if err != nil {
 		panic(err)
 	}
-	h.insert(firstKey, transactionID, NodeResolveFn)
+	h.insert(firstKey, transactionID)
 
 	// The second slot contains the output index of the InscriptionID
 	secondKey := make([]byte, verkle.KeySize)
@@ -55,7 +55,7 @@ func (h *LightHeader) GetInscriptionID(key []byte) string {
 	// The first Key
 	firstKey := make([]byte, verkle.KeySize)
 	copy(firstKey, key)
-	transactionIDBytes := h.get(firstKey, NodeResolveFn)
+	transactionIDBytes := h.get(firstKey)
 	transactionID := hex.EncodeToString(transactionIDBytes)
 
 	// The second Key
@@ -71,12 +71,12 @@ func (h *LightHeader) GetInscriptionID(key []byte) string {
 func (h *LightHeader) InsertUInt256(key []byte, value *uint256.Int) {
 	var dest [ValueSize]byte
 	value.WriteToArray32(&dest)
-	h.insert(key, dest[:], nil)
+	h.insert(key, dest[:])
 }
 
 func (h *LightHeader) GetUInt256(key []byte) *uint256.Int {
 	res := uint256.NewInt(0)
-	value := h.get(key, nil)
+	value := h.get(key)
 	if len(value) == 0 {
 		return res
 	}
@@ -103,7 +103,7 @@ func (h *LightHeader) InsertBytes(key []byte, value []byte) {
 
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize], nil)
+		h.insert(newKey, padded[i*ValueSize:(i+1)*ValueSize])
 	}
 }
 
@@ -120,7 +120,7 @@ func (h *LightHeader) GetBytes(key []byte) []byte {
 	padded := make([]byte, 0)
 	for i := range requiredSlots {
 		newKey[verkle.StemSize] = key[verkle.StemSize] + byte(i+1)
-		padded = append(padded, h.get(newKey, nil)...)
+		padded = append(padded, h.get(newKey)...)
 	}
 	res := padded[:len]
 	return res

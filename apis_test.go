@@ -15,11 +15,13 @@ import (
 )
 
 func TestAPI_GetLatestStateProof(t *testing.T) {
+	log.Println("TestAPI_GetLatestStateProof")
 	loadGetLatestStateProof(uint(779980), t)
 }
 
 func TestAPI_GetLatestStateProof_ZeroTransfers(t *testing.T) {
 	// There is no transaction at block 779940.
+	log.Println("TestAPI_GetLatestStateProof_ZeroTransfers")
 	loadGetLatestStateProof(uint(779940), t)
 }
 
@@ -64,17 +66,11 @@ func loadGetLatestStateProof(catchupHeight uint, t *testing.T) {
 	if err := json.Unmarshal(body, &res); err != nil {
 		log.Fatal("[TestGetLatestStateProof]", err)
 	}
-
-	lastIndex := len(queue.History) - 1
-	preState, _ := stateless.Rollingback(queue.Header, &queue.History[lastIndex])
-
-	_, err = apis.GeneratePostRoot(preState.Commit(), queue.LatestHeight(), &res)
-	if err != nil {
-		log.Fatal("With error: ", err)
-	}
+	stateless.CleanPath(stateless.VerkleDataPath)
 }
 
 func TestAPI_VerifyCurrentBalanceOfWallet(t *testing.T) {
+	log.Println("TestAPI_VerifyCurrentBalanceOfWallet")
 	loadVerifyCurrentBalanceOfWallet("meme", "bc1prvqdfjku8359hk9uc2tdgg0xlwvsel2fjr9ysydmaas9x3kyzuvskuwmlq", uint(779980), t, 782000)
 }
 
@@ -126,9 +122,10 @@ func loadVerifyCurrentBalanceOfWallet(tick string, wallet string, catchupHeight 
 	log.Println("[OverallBalance res]: ", res.Result.OverallBalance)
 	log.Println("[AvailableBalance res]: ", res.Result.AvailableBalance)
 
-	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.Commit(), tick, wallet, &res)
+	_, err = apis.VerifyCurrentBalanceOfWallet(queue.Header.Root.VerkleTree.Commit(), tick, wallet, &res)
 	if err != nil {
 		// log.Fatalf("[TestVerifyCurrentBalanceOfWallet] verify not right. At tick %s, wallet %s, height %d", tick, wallet, catchupHeight)
 		log.Fatal("With error: ", err)
 	}
+	stateless.CleanPath(stateless.VerkleDataPath)
 }

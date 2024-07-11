@@ -6,7 +6,7 @@ import (
 	// "unicode"
 
 	// base58 "github.com/btcsuite/btcd/btcutil/base58"
-	"github.com/ethereum/go-verkle"
+	"github.com/RiemaLabs/go-verkle"
 
 	uint256 "github.com/holiman/uint256"
 )
