@@ -8,7 +8,7 @@ import (
 )
 
 type ByteMap struct {
-	db     *leveldb.DB
+	DB     *leveldb.DB
 	length int
 }
 
@@ -18,12 +18,12 @@ func NewByteMap(dbPath string) (*ByteMap, error) {
 		return nil, err
 	}
 	return &ByteMap{
-		db: db,
+		DB: db,
 	}, nil
 }
 
 func (bm *ByteMap) Get(key []byte) ([]byte, error) {
-	value, err := bm.db.Get(key, nil)
+	value, err := bm.DB.Get(key, nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
 			return nil, fmt.Errorf("key not found for key: %x", key)
@@ -35,7 +35,7 @@ func (bm *ByteMap) Get(key []byte) ([]byte, error) {
 
 // Insert adds or updates a key-value pair in the map.
 func (bm *ByteMap) Insert(key []byte, value []byte) error {
-	err := bm.db.Put(key, value, nil)
+	err := bm.DB.Put(key, value, nil)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (bm *ByteMap) Insert(key []byte, value []byte) error {
 }
 
 func (bm *ByteMap) Delete(key []byte) error {
-	err := bm.db.Delete(key, nil)
+	err := bm.DB.Delete(key, nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
 			return errors.New("key not found")
@@ -73,5 +73,5 @@ func (bm *ByteMap) PathClean(key []byte, flushAtDepth byte) error {
 }
 
 func (bm *ByteMap) Close() error {
-	return bm.db.Close()
+	return bm.DB.Close()
 }

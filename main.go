@@ -69,7 +69,7 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 					if arguments.EnableStateRootCache {
 						err := stateless.StoreHeader(header, header.Height-2000)
 						if err != nil {
-							log.Printf("Failed to store the cache at height: %d", i)
+							log.Printf("Failed to store the cache at height: %d, err: %v", i, err)
 						}
 					}
 				}
@@ -91,7 +91,7 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	if arguments.EnableStateRootCache {
 		err := stateless.StoreHeader(header, header.Height-2000)
 		if err != nil {
-			log.Printf("Failed to store the cache at height: %d", header.Height)
+			log.Printf("Failed to store the cache at height: %d, err: %v", header.Height, err)
 		}
 	}
 

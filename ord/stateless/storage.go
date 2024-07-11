@@ -10,6 +10,9 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 const CachePath = ".cache"
@@ -69,7 +72,8 @@ func StoreHeader(header *Header, evictHeight uint) error {
 
 	fileName := fmt.Sprintf("%d%s", header.Height, FileSuffix)
 	filePath := filepath.Join(CachePath, fileName)
-	err = CopyDir(VerkleDataPath, filePath)
+	// err = CopyDir(VerkleDataPath, filePath)
+	err = CopyLevelDB(header.Root.KvStore.DB, filePath)
 	log.Printf("Stored header at height %d", header.Height)
 	if err != nil {
 		return err
@@ -126,45 +130,109 @@ func Deserialize(height uint) (*Header, error) {
 	return &myHeader, nil
 }
 
-func CopyDir(src string, dest string) error {
-	entries, err := os.ReadDir(src)
+// CopyLevelDB copies a LevelDB database from an open srcDB to a destination path.
+func CopyLevelDB(srcDB *leveldb.DB, dest string) error {
+	// Create a snapshot of the source DB.
+	snapshot, err := srcDB.GetSnapshot()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create snapshot: %w", err)
 	}
+	defer snapshot.Release()
 
+	// Create the destination directory if it doesn't exist.
 	if err := os.MkdirAll(dest, 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		destPath := filepath.Join(dest, entry.Name())
-
-		fileInfo, err := os.Stat(srcPath)
-		if err != nil {
-			return err
-		}
-
-		if fileInfo.IsDir() {
-			err = os.MkdirAll(destPath, fileInfo.Mode())
+	// Open the destination LevelDB.
+	destDB, err := leveldb.OpenFile(dest, &opt.Options{ErrorIfExist: false})
+	if err != nil {
+		if errors.IsCorrupted(err) {
+			destDB, err = leveldb.RecoverFile(dest, nil)
 			if err != nil {
-				return err
-			}
-			err = CopyDir(srcPath, destPath)
-			if err != nil {
-				return err
+				return fmt.Errorf("failed to recover destination DB: %w", err)
 			}
 		} else {
-			data, err := os.ReadFile(srcPath)
-			if err != nil {
-				return err
-			}
-			err = os.WriteFile(destPath, data, fileInfo.Mode())
-			if err != nil {
-				return err
-			}
+			return fmt.Errorf("failed to open destination DB: %w", err)
 		}
 	}
+	defer destDB.Close()
+
+	// Begin a batch write.
+	batch := new(leveldb.Batch)
+	iter := snapshot.NewIterator(nil, nil)
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		batch.Put(key, value)
+	}
+	iter.Release()
+
+	if err := iter.Error(); err != nil {
+		return fmt.Errorf("iteration error: %w", err)
+	}
+
+	// Write the batch to the destination DB.
+	if err := destDB.Write(batch, nil); err != nil {
+		return fmt.Errorf("failed to write batch to destination DB: %w", err)
+	}
+
+	return nil
+}
+
+func CopyDir(src, dest string) error {
+	// Open the source LevelDB.
+	srcDB, err := leveldb.OpenFile(src, nil)
+	if err != nil {
+		return fmt.Errorf("failed to open source DB: %w", err)
+	}
+	defer srcDB.Close()
+
+	// Create a snapshot of the source DB.
+	snapshot, err := srcDB.GetSnapshot()
+	if err != nil {
+		return fmt.Errorf("failed to create snapshot: %w", err)
+	}
+	defer snapshot.Release()
+
+	// Create the destination directory if it doesn't exist.
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Open the destination LevelDB.
+	destDB, err := leveldb.OpenFile(dest, &opt.Options{ErrorIfExist: true})
+	if err != nil {
+		if errors.IsCorrupted(err) {
+			destDB, err = leveldb.RecoverFile(dest, nil)
+			if err != nil {
+				return fmt.Errorf("failed to recover destination DB: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to open destination DB: %w", err)
+		}
+	}
+	defer destDB.Close()
+
+	// Begin a batch write.
+	batch := new(leveldb.Batch)
+	iter := snapshot.NewIterator(nil, nil)
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		batch.Put(key, value)
+	}
+	iter.Release()
+
+	if err := iter.Error(); err != nil {
+		return fmt.Errorf("iteration error: %w", err)
+	}
+
+	// Write the batch to the destination DB.
+	if err := destDB.Write(batch, nil); err != nil {
+		return fmt.Errorf("failed to write batch to destination DB: %w", err)
+	}
+
 	return nil
 }
 
