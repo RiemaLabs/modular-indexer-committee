@@ -47,7 +47,7 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 
 	// Create a channel to listen for SIGINT (Ctrl+C) signal
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start to catch-up
 	// TODO: Medium. Refine the catchup performance by batching query.

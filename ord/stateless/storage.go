@@ -10,7 +10,6 @@ import (
 
 	"github.com/RiemaLabs/modular-indexer-committee/internal/metrics"
 	"github.com/RiemaLabs/modular-indexer-committee/internal/tree"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 const CachePath = ".cache"
@@ -129,11 +128,6 @@ func Deserialize(height uint) (*Header, error) {
 }
 
 // CopyLevelDB copies a LevelDB database from an open srcDB to a destination path.
-func CopyLevelDBold(srcDB *leveldb.DB, dest string) error {
-	// Create a snapshot of the source DB.
-	return nil
-}
-
 func CopyLevelDB(root *tree.VerkleTreeWithLRU, src string, dest string) error {
 	// first close the levelDB
 	log.Println("Closing the levelDB")
