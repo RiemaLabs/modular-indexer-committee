@@ -29,7 +29,7 @@ go.work
 .idea/
 
 # Config
-config.json
+config.json*
 
 # Cache
 .cache/*

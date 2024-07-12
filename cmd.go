@@ -12,8 +12,12 @@ type RuntimeArguments struct {
 	EnableCommittee      bool
 	EnableStateRootCache bool
 	EnableTest           bool
-	TestBlockHeightLimit uint
 	EnablePprof          bool
+
+	TestBlockHeightLimit uint
+	StateRootCacheFreq   uint
+	StateRootCacheNumber uint
+
 	ConfigFilePath       string
 	CommitteeIndexerName string
 	CommitteeIndexerURL  string
@@ -48,6 +52,8 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 			}
 			if arguments.EnableStateRootCache {
 				log.Println("StateRoot cache is enabled")
+				log.Printf("The cache will be stored per %d bitcoin blocks\n", arguments.StateRootCacheFreq)
+				log.Printf("%d cache files will be stored\n", arguments.StateRootCacheNumber)
 			} else {
 				log.Println("StateRoot cache is disabled")
 			}
@@ -69,8 +75,12 @@ leveraging Bitcoin's immutable and decentralized nature to provide a Turing-comp
 	rootCmd.Flags().BoolVar(&arguments.EnableCommittee, "committee", false, "Enable this flag to provide committee service by uploading checkpoint")
 	rootCmd.Flags().BoolVar(&arguments.EnableStateRootCache, "cache", true, "Enable this flag to cache State Root")
 	rootCmd.Flags().BoolVarP(&arguments.EnableTest, "test", "t", false, "Enable this flag to hijack the blockheight to test the service")
-	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want")
 	rootCmd.Flags().BoolVar(&arguments.EnablePprof, "pprof", false, "Enable the pprof HTTP handler (at `/debug/pprof/`)")
+
+	rootCmd.Flags().UintVar(&arguments.TestBlockHeightLimit, "blockheight", 0, "When -test enabled, you can set TestBlockHeightLimit as a fixed value you want")
+	rootCmd.Flags().UintVar(&arguments.StateRootCacheFreq, "cachefreq", 1000, "When -cache enabled, you can set StateRootCacheFreq as a fixed value you want")
+	rootCmd.Flags().UintVar(&arguments.StateRootCacheNumber, "cachenumber", 2, "When -cache enabled, you can set StateRootCacheNumber as a fixed value you want")
+
 	rootCmd.Flags().StringVar(&arguments.ConfigFilePath, "cfg", "config.json", "Indicate the path of config file")
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerName, "name", "n", "", "Indicate the name of the committee indexer service")
 	rootCmd.Flags().StringVarP(&arguments.CommitteeIndexerURL, "url", "u", "", "Indicate the url of the committee indexer service")

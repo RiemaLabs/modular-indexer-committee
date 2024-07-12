@@ -130,3 +130,11 @@ func (v *VerkleTreeWithLRU) Serialization() error {
 	v.KvStore.Insert(rootKey, serializedNodes[0].SerializedBytes)
 	return nil
 }
+
+func (v *VerkleTreeWithLRU) Close() error {
+	return v.KvStore.Close()
+}
+
+func (v *VerkleTreeWithLRU) ReOpen(path string) error {
+	return v.KvStore.ReOpen(path)
+}

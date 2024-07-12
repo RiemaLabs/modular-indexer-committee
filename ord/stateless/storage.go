@@ -69,7 +69,8 @@ func StoreHeader(header *Header, evictHeight uint) error {
 
 	fileName := fmt.Sprintf("%d%s", header.Height, FileSuffix)
 	filePath := filepath.Join(CachePath, fileName)
-	err = CopyDir(VerkleDataPath, filePath)
+	// err = CopyDir(VerkleDataPath, filePath)
+	err = CopyLevelDB(header.Root, VerkleDataPath, filePath)
 	log.Printf("Stored header at height %d", header.Height)
 	if err != nil {
 		return err
@@ -126,7 +127,30 @@ func Deserialize(height uint) (*Header, error) {
 	return &myHeader, nil
 }
 
-func CopyDir(src string, dest string) error {
+// CopyLevelDB copies a LevelDB database from an open srcDB to a destination path.
+func CopyLevelDB(root *tree.VerkleTreeWithLRU, src string, dest string) error {
+	// first close the levelDB
+	log.Println("Closing the levelDB")
+	err := root.KvStore.Close()
+	if err != nil {
+		return fmt.Errorf("err when closing leveldb: %v", err)
+	}
+	// copy the levelDB
+	log.Println("Copying the levelDB")
+	err = CopyDir(src, dest)
+	if err != nil {
+		return fmt.Errorf("err when copying dir: %v", err)
+	}
+	// reopen the levelDB
+	log.Println("Reopening the levelDB")
+	err = root.KvStore.ReOpen(dest)
+	if err != nil {
+		return fmt.Errorf("err when reopening leveldb: %v", err)
+	}
+	return nil
+}
+
+func CopyDir(src, dest string) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err

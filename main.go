@@ -37,13 +37,17 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	header := stateless.LoadHeader(arguments.EnableStateRootCache, initHeight)
 	curHeight := header.Height
 
+	freq := arguments.StateRootCacheFreq
+	number := arguments.StateRootCacheNumber
+	total := freq * number
+
 	log.Printf("Fast catchup to the lateset block height! From %d to %d \n", curHeight, latestHeight)
 
 	catchupHeight := latestHeight - ord.BitcoinConfirmations
 
 	// Create a channel to listen for SIGINT (Ctrl+C) signal
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start to catch-up
 	// TODO: Medium. Refine the catchup performance by batching query.
@@ -53,7 +57,7 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 			case <-sigChan:
 				// SIGINT received, stop the catch-up process
 				log.Printf("Saving cache file. Please don't force exit.")
-				_ = stateless.StoreHeader(header, header.Height-2000)
+				_ = stateless.StoreHeader(header, header.Height-total)
 				os.Exit(0)
 			default:
 				ordTransfer, err := okxGetter.GetOrdTransfers(i)
@@ -64,12 +68,12 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 				stateless.Exec(header, ordTransfer, i)
 				_ = header.Paging(okxGetter, false)
 				header.Unlock()
-				if i%1000 == 0 {
+				if i%freq == 0 {
 					log.Printf("Blocks: %d / %d \n", i, catchupHeight)
 					if arguments.EnableStateRootCache {
-						err := stateless.StoreHeader(header, header.Height-2000)
+						err := stateless.StoreHeader(header, header.Height-total)
 						if err != nil {
-							log.Printf("Failed to store the cache at height: %d", i)
+							log.Printf("Failed to store the cache at height: %d, err: %v", i, err)
 						}
 					}
 				}
@@ -89,9 +93,9 @@ func CatchupStage(okxGetter getter.OrdGetter, arguments *RuntimeArguments, initH
 	header.OrdTrans = ots
 
 	if arguments.EnableStateRootCache {
-		err := stateless.StoreHeader(header, header.Height-2000)
+		err := stateless.StoreHeader(header, header.Height-total)
 		if err != nil {
-			log.Printf("Failed to store the cache at height: %d", header.Height)
+			log.Printf("Failed to store the cache at height: %d, err: %v", header.Height, err)
 		}
 	}
 
