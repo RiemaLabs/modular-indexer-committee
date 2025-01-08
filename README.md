@@ -81,7 +81,7 @@ Below are the explanation for each of the command flags.
 
 - `--name` `(-n)`: Indicate the name of the committee indexer service. This is useful for identifying different instances or configurations of the indexer.
 
-- `--url` `(-u)`: Indicate the url of the committee indexer service. Usually this prameter is the public IP address or the domain name of your machine.
+- `--url` `(-u)`: Indicate the url of the committee indexer service. Usually this parameter is the public IP address or the domain name of your machine.
 
 - `--protocol`: Indicate the meta protocol supported by the committee indexer. Currently, only BRC-20 is supported by committee indexer. Please name it as `brc-20` by default.
 
