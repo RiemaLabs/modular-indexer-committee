@@ -13,7 +13,7 @@ Stay updated on the latest progress in our [L1F Discourse Group](https://l1f.dis
 
 
 ## What is Committee Indexer?
-Committee indexer serves as a key component of Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
+Committee indexer serves as a key component of the Modular Indexer, and is responsible for reading each block of Bitcoin, calculating protocol states, and summarizing these states as a polynomial commitment namely checkpoint. Whenever the committee indexer obtains a new Bitcoin block, it generates a new checkpoint for the protocol and publishes it to the data availability layer for users to access. It is permissionless; anyone can operate his/her committee indexer for a given meta-protocol.
 
 ## What is Happening for Committee Indexer?
 - Support Self-Mint and Burn logic for the BRC-20 meta-protocol and update to handle transactions with 5-byte ticks efficiently.
@@ -24,7 +24,7 @@ Committee indexer serves as a key component of Modular Indexer, and is responsib
 ## Getting Started
 
 ### 1. Requirements
-Before we stepped into the installation, ensure your machine is equipped with the minimum requirements: (We will optimize the Memory Usage soon)
+Before we step into the installation, ensure your machine is equipped with the minimum requirements: (We will optimize the Memory Usage soon)
 
 | Metric       | Minimum Requirements     | Recommended Requirements   |
 |--------------|------------------------- |----------------------------|
@@ -37,9 +37,9 @@ We highly appreciate you running the committee indexer to contribute to the dece
 
 ### 2. Install Dependence
 Committee indexer is built with Golang. You can run your own one by following the procedure below.
-`Go` version `1.22.0` is required for running repository. Please visit [Golang download Page](https://go.dev/doc/install) to get latest Golang installed.
+`Go` version `1.22.0` is required for running the repository. Please visit [Golang download Page](https://go.dev/doc/install) to get the latest Golang installed.
 
-Golang is easy to install all dependence. Fetch all required package by simply running.
+Golang is easy to install all dependence. Fetch all required packages by simply running.
 ```Bash
 go mod tidy
 ```
@@ -52,7 +52,7 @@ First, clone the repository to get the necessary files:
 git clone https://github.com/bestinslot-xyz/OPI.git
 ```
 
-Run this command to set up it up after indexing API to latest block:
+Run this command to set it up after indexing API to the latest block:
 ```Bash
 cd OPI/modules/main_index
 node index.js
@@ -76,18 +76,18 @@ go build
 ./modular-indexer-committee --cfg ./path/to/your/config.json --name "YourServiceName" --committee --service -t --blockheight 780010
 ```
 
-Below are the explanation for each of the command flags.
+Below are the explanations for each of the command flags.
 - `--cfg`: Specify the path of your configuration file. This can be used to point the indexer to a specific configuration file instead of the default config.json.
 
 - `--name` `(-n)`: Indicate the name of the committee indexer service. This is useful for identifying different instances or configurations of the indexer.
 
-- `--url` `(-u)`: Indicate the url of the committee indexer service. Usually this parameter is the public IP address or the domain name of your machine.
+- `--url` `(-u)`: Indicate the url of the committee indexer service. Usually, this parameter is the public IP address or the domain name of your machine.
 
-- `--protocol`: Indicate the meta protocol supported by the committee indexer. Currently, only BRC-20 is supported by committee indexer. Please name it as `brc-20` by default.
+- `--protocol`: Indicate the meta protocol supported by the committee indexer. Currently, only BRC-20 is supported by the committee indexer. Please name it as `brc-20` by default.
 
 - `--committee`: This flag activates the committee functionality. When enabled, the committee indexer will publish checkpoints to the DA layer/S3.
 
-- `--service` `(-s)`: Use this flag to activate web service from committee indexer. When enabled, the committee indexer will provide web service for incoming query.
+- `--service` `(-s)`: Use this flag to activate web service from the committee indexer. When enabled, the committee indexer will provide web service for incoming queries.
 
 - `--cache`: By default, the state root cache is enabled, facilitating efficient verkle tree storage. This flag ensures that the application starts with the cache service activated, and will therefore fasten the initialization speed next time.
 
@@ -103,7 +103,7 @@ Proper configuration of config.json is key for the smooth operation of the Commi
 
 ### Setting Up `database` Configuration
 The database section requires connection details to the OPI database. If you're running an OPI full node, ensure to provide the correct details as follows:
-- `host`: The IP address or hostname of the machine where database is running.
+- `host`: The IP address or hostname of the machine where a database is running.
 - `user`: The username for accessing the database.
 - `password`: The password associated with the above user account.
 - `dbname`: The name of the database you're connecting to.
