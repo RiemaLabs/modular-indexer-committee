@@ -85,11 +85,11 @@ func (h *Header) VerifyState(records *OPIRecords) {
 			overallBalanceStr := overallBalance.String()
 
 			if availableBalanceStr != opiAvailableBalance {
-				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doesn't match.
 				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
 			}
 			if overallBalanceStr != opiOverallBalance {
-				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doens't match.
+				log.Fatalf(`at block height %d, Pkscript %s's availableBalance doesn't match.
 				Our balance is: %s, OPI balance is: %s`, height, ordPkscript, availableBalanceStr, opiAvailableBalance)
 			}
 		}
